@@ -1,4 +1,4 @@
-# This file is auto-generated from the current state of the database. Instead of editing this file, 
+# This file is auto-generated from the current state of the database. Instead of editing this file,
 # please use the migrations feature of Active Record to incrementally modify your database, and
 # then regenerate this schema definition.
 #
@@ -664,6 +664,7 @@ ActiveRecord::Schema.define(:version => 20120627095520) do
     t.integer  "barcode_printer_type_id",                       :default => 2
     t.boolean  "cherrypickable_target",                         :default => true,      :null => false
     t.boolean  "cherrypickable_source",                         :default => false,     :null => false
+    t.string   "prefix"
   end
 
   add_index "plate_purposes", ["qc_display"], :name => "index_plate_purposes_on_qc_display"
