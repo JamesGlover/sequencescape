@@ -1,4 +1,56 @@
 class PlatePurpose < ActiveRecord::Base
+
+    belongs_to :barcode_prefix
+
+    def self.gel_dilution
+      find( :first, {:conditions => ["name = ?", "Gel Dilution"]} )
+    end
+    def self.working_dilution
+      find(:first, {:conditions => ["name = ?", "Working Dilution"]})
+    end
+    def self.pulldown_aliquot
+      find(:first, {:conditions => ["name = ?", "Pulldown Aliquot"]})
+    end
+    def self.pulldown_sonication
+      find(:first, {:conditions => ["name = ?", "Sonication"]})
+    end
+    def self.pulldown_run_of_robot
+      find(:first, {:conditions => ["name = ?", "Run Of Robot"]})
+    end
+    def self.pulldown_enrichment_one
+      find(:first, {:conditions => ["name = ?", "EnRichment 1"]})
+    end
+    def self.pulldown_enrichment_two
+      find(:first, {:conditions => ["name = ?", "EnRichment 2"]})
+    end
+    def self.pulldown_enrichment_three
+      find(:first, {:conditions => ["name = ?", "EnRichment 3"]})
+    end
+    def self.pulldown_enrichment_four
+      find(:first, {:conditions => ["name = ?", "EnRichment 4"]})
+    end
+    def self.pulldown_sequence_capture
+      find(:first, {:conditions => ["name = ?", "Sequence Capture"]})
+    end
+    def self.pulldown_pcr
+      find(:first, {:conditions => ["name = ?", "Pulldown PCR"]})
+    end
+    def self.pulldown_qpcr
+      find(:first, {:conditions => ["name = ?", "Pulldown qPCR"]})
+    end
+    def self.pico_assay_a
+      find(:first, {:conditions => ["name = ?", "Pico Assay A"]})
+    end
+    def self.pico_dilution
+      find(:first, {:conditions => ["name = ?", "Pico Dilution"]})
+    end
+    def self.sequenom
+      find(:first, {:conditions => ["name = ?", "Sequenom"]})
+    end
+    def self.stock_plate
+      find(:first, {:conditions => ["name = ?", "Stock Plate"]})
+    end
+
   class Relationship < ActiveRecord::Base
     set_table_name('plate_purpose_relationships')
     belongs_to :parent, :class_name => 'PlatePurpose'
@@ -38,6 +90,7 @@ class PlatePurpose < ActiveRecord::Base
   named_scope :cherrypickable_as_target, :conditions => { :cherrypickable_target => true }
   named_scope :cherrypickable_as_source, :conditions => { :cherrypickable_source => true }
   named_scope :cherrypickable_default_type, :conditions => { :cherrypickable_target => true, :cherrypickable_source => true }
+  named_scope :with_prefix,  lambda{ |prefix| { :conditions => ["barcode_prefix_id = ?" , BarcodePrefix.find_by_prefix(prefix)] }}
 
   # The state of a plate is based on the transfer requests.
   def state_of(plate)
@@ -119,8 +172,28 @@ class PlatePurpose < ActiveRecord::Base
     do_not_create_wells = !!args.first
 
     attributes[:size] ||= 96
-    plates.create_with_barcode!(attributes, &block).tap do |plate|
+    create_plate_with_barcode!(attributes, &block).tap do |plate|
       plate.wells.import(Map.where_plate_size(plate.size).in_reverse_row_major_order.all.map { |map| Well.new(:map => map) }) unless do_not_create_wells
     end
+  end
+
+  def create_without_wells!(*args)
+    attributes = args.extract_options!
+    plate_type = target_type.try(:constantize) || Plate
+    attributes.merge!(:plate_purpose => self)
+    plate_type.create!(attributes)
+  end
+
+  # Plate creation and manipulation
+  def create_plate_with_barcode!(*args, &block)
+    attributes = args.extract_options!
+    barcode    = args.first || attributes[:barcode]
+    barcode    = nil if barcode.present? and find_plates_by_barcode(barcode).present?
+    barcode ||= PlateBarcode.create.barcode
+    create_without_wells!(attributes.merge(:barcode => barcode), &block)
+  end
+
+  def find_plates_by_barcode(barcode)
+    self.plates.find_by_barcode(barcode)
   end
 end
