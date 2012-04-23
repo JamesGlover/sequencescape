@@ -14,7 +14,7 @@ end
 Given /^I have a PacBio submission$/ do
   project = Project.find_by_name("Test project")
   study = Study.find_by_name("Test study")
-  
+
   submission_template = SubmissionTemplate.find_by_name('PacBio')
   submission = submission_template.create_and_build_submission!(
     :study => study,
@@ -105,7 +105,7 @@ Given /^sample tube "([^"]*)" is part of study "([^"]*)"$/ do |barcode, study_na
 end
 
 When /^set the location of PacBioLibraryTube "([^"]*)" to be in "([^"]*)"$/ do |barcode,freezer|
-  Asset.find_from_machine_barcode(barcode).update_attributes!(:location => Location.find_by_name(freezer))
+  Tube.find_from_machine_barcode(barcode).update_attributes!(:location => Location.find_by_name(freezer))
 end
 
 Then /^(\d+) PacBioSequencingRequests for "([^"]*)" should be "([^"]*)"$/ do |number_of_requests, asset_barcode, state|
@@ -157,7 +157,7 @@ Then /^the PacBio sample prep worksheet should look like:$/ do |expected_results
   expected_results_table.diff!(actual_table)
 end
 
-Given /^I have progressed to the Reference Sequence task$/ do 
+Given /^I have progressed to the Reference Sequence task$/ do
   Given %Q{I have a PacBio sequencing batch}
   When %Q{I follow "Start batch"}
   When %Q{I fill in "Binding Kit Box Barcode" with "777"}

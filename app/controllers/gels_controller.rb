@@ -1,9 +1,9 @@
 class GelsController < ApplicationController
   before_filter :slf_gel_login_required
-  
+
   def index
     # TODO: if a plate has a working dilution plate and it has a gel dilution plate, display:
-    @gel_plates = GelDilutionPlate.paginate(:page => params[:page], :order => 'id DESC')
+    @gel_plates = PlatePurpose.gel_dilution.plates.paginate(:page => params[:page], :order => 'id DESC')
     @plates     = @gel_plates.map(&:stock_plate).compact
   end
 
@@ -11,20 +11,20 @@ class GelsController < ApplicationController
   end
 
   def lookup
-    @plate = Plate.find_by_barcode_and_barcode_prefix_id(params[:barcode], BarcodePrefix.find_by_prefix(Plate.prefix))
+    @plate = Plate.with_prefix(Plate.prefix).find_by_barcode(params[:barcode])
     if !@plate
       flash[:error] = "plate not found"
       render :action => :find
       return
     end
-      
+
     render :action => :show
   end
 
   def show
     @plate = Plate.find(params[:id])
   end
-  
+
   def update
     ActiveRecord::Base.transaction do
       params[:wells].keys.each do |well_id|

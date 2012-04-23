@@ -80,15 +80,37 @@ Given /^plate with barcode "([^"]*)" has a well$/ do |plate_barcode|
 end
 
 Then /^plate "([^"]*)" should have a child plate of type "([^"]*)"$/ do |machine_barcode, plate_type|
-  plate = Asset.find_from_machine_barcode(machine_barcode)
+  plate = Plate.find_from_machine_barcode(machine_barcode)
   assert plate
   assert plate.child.is_a?(plate_type.constantize)
 end
 
+Then /^plate "([^"]*)" should have a child plate of purpose "([^"]*)"$/ do |machine_barcode, purpose|
+  plate = Plate.find_from_machine_barcode(machine_barcode)
+  assert plate
+  assert plate.child.plate_purpose == PlatePurpose.find_by_name(purpose)
+end
+
 Given /^a plate of type "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_type, machine_barcode|
-  plate_type.constantize.create!(
+  plate_purpose = if plate_type == "Plate"
+    PlatePurpose.find_by_name('Stock Plate')
+  else
+    "#{plate_type}Purpose".constantize.first
+  end
+  plate = plate_type.constantize.create!(
     :barcode =>Barcode.number_to_human("#{machine_barcode}"),
-    :plate_purpose => "#{plate_type}Purpose".constantize.first)
+    :plate_purpose => plate_purpose)
+end
+
+Given /^a plate of purpose "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_purpose, machine_barcode|
+  plate_purpose = if plate_purpose == "Plate"
+    PlatePurpose.find_by_name('Stock Plate')
+  else
+    PlatePurpose.find_by_name(plate_purpose)
+  end
+  plate = plate_purpose.create_without_wells!(
+    :barcode =>Barcode.number_to_human("#{machine_barcode}")
+  )
 end
 
 Given /^a "([^"]*)" plate purpose and of type "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_purpose_name, plate_type, machine_barcode|
@@ -122,8 +144,8 @@ end
 
 
 Then /^plate "([^"]*)" is the parent of plate "([^"]*)"$/ do |parent_plate_barcode, child_plate_barcode|
-  parent_plate = Asset.find_from_machine_barcode(parent_plate_barcode)
-  child_plate = Asset.find_from_machine_barcode(child_plate_barcode)
+  parent_plate = Plate.find_from_machine_barcode(parent_plate_barcode)
+  child_plate = Plate.find_from_machine_barcode(child_plate_barcode)
   assert parent_plate
   assert child_plate
   parent_plate.children << child_plate
@@ -143,7 +165,7 @@ Given /^well "([^"]*)" is holded by plate "([^"]*)"$/ do |well_uuid, plate_uuid|
 end
 
 Then /^plate "([^"]*)" should have a purpose of "([^"]*)"$/ do |plate_barcode, plate_purpose_name|
-  assert_equal plate_purpose_name, Plate.find_by_barcode("1234567").plate_purpose.name 
+  assert_equal plate_purpose_name, Plate.find_by_barcode("1234567").plate_purpose.name
 end
 
 Given /^the well with ID (\d+) contains the sample "([^\"]+)"$/ do |well_id, name|

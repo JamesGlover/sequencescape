@@ -8,13 +8,13 @@ Feature: Printing new plate barcodes in pulldown
 
   Scenario Outline: Creating child plates and verifying plates are linked
     Given I am on the pulldown homepage
-    And a plate of type "<plate_type>" with barcode "<barcode>" exists
-    And asset with barcode "<barcode>" belongs to study "Test study"
+    And a plate of purpose "<plate_purpose>" with barcode "<barcode>" exists
+    And plate with barcode "<barcode>" belongs to study "Test study"
     When I follow "Create Plates"
     When I fill in the field labeled "Source plates" with "<barcode>"
     And I select "xyz" from "Barcode printer"
     When I press "Submit"
-    Then plate "<barcode>" should have a child plate of type "<child_plate_type>"
+    Then plate "<barcode>" should have a child plate of purpose "<child_plate_purpose>"
     Then I should see "Created plates and printed barcodes"
     And I should see "Create new plates"
     When I follow "Pulldown Home"
@@ -27,16 +27,16 @@ Feature: Printing new plate barcodes in pulldown
     And I should see "Verify plates"
 
     Examples:
-    | barcode        | child_barcode  | plate_type                   | child_plate_type             |
-    | 1630133339754  | 1650133339660  | PulldownAliquotPlate         | PulldownSonicationPlate      |
-    | 1650133339660  | 1670133339804  | PulldownSonicationPlate      | PulldownRunOfRobotPlate      |
-    | 1670133339804  | 1690133339710  | PulldownRunOfRobotPlate      | PulldownEnrichmentOnePlate   |
-    | 1690133339710  | 1710133339852  | PulldownEnrichmentOnePlate   | PulldownEnrichmentTwoPlate   |
-    | 1710133339852  | 1730133339768  | PulldownEnrichmentTwoPlate   | PulldownEnrichmentThreePlate |
-    | 1730133339768  | 1750133339674  | PulldownEnrichmentThreePlate | PulldownEnrichmentFourPlate  |
-    | 1750133339674  | 1770133339818  | PulldownEnrichmentFourPlate  | PulldownSequenceCapturePlate |
-    | 1770133339818  | 1790133339724  | PulldownSequenceCapturePlate | PulldownPcrPlate             |
-    | 1790133339724  | 1810133339866  | PulldownPcrPlate             | PulldownQpcrPlate            |
+    | barcode        | child_barcode  | plate_purpose    | child_plate_purpose |
+    | 1630133339754  | 1650133339660  | Pulldown Aliquot | Sonication          |
+    | 1650133339660  | 1670133339804  | Sonication       | Run Of Robot        |
+    | 1670133339804  | 1690133339710  | Run Of Robot     | EnRichment 1        |
+    | 1690133339710  | 1710133339852  | EnRichment 1     | EnRichment 2        |
+    | 1710133339852  | 1730133339768  | EnRichment 2     | EnRichment 3        |
+    | 1730133339768  | 1750133339674  | EnRichment 3     | EnRichment 4        |
+    | 1750133339674  | 1770133339818  | EnRichment 4     | Sequence Capture    |
+    | 1770133339818  | 1790133339724  | Sequence Capture | Pulldown PCR        |
+    | 1790133339724  | 1810133339866  | Pulldown PCR     | Pulldown qPCR       |
  
   Scenario: Creating a child plate where the input is empty
     Given I am on the pulldown homepage

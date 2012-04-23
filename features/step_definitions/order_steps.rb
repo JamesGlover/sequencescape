@@ -47,6 +47,13 @@ Then /^the (string |)request options for the order with UUID "([^\"]+)" should b
   end
 end
 
+Then /^the request options with string keys for the order with UUID "([^\"]+)" should be:$/ do |uuid, options_table|
+  order = Uuid.with_external_id(uuid).first.try(:resource) or raise StandardError, "Could not find order with UUID #{uuid.inspect}"
+  options_table.rows_hash.each do |k,v|
+    assert_equal(v, order.request_options[k].to_s, "Request option #{k.inspect} is unexpected")
+  end
+end
+
 When /^the order with UUID "([^"]*)" has been added to a submission$/ do |uuid|
   order = Uuid.with_external_id(uuid).first.try(:resource) or raise StandardError, "Could not find order with UUID #{uuid.inspect}"
   Submission.create!(:orders => [ order ], :user => order.user )

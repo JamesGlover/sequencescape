@@ -14,8 +14,8 @@ Feature: Gel QC
     
   @gel_index
   Scenario: Gel dilution with working dilution and stock plate should display on index
-    And a "Working Dilution" plate purpose and of type "WorkingDilutionPlate" with barcode "6250000123818" exists
-    And a "Gel Dilution" plate purpose and of type "GelDilutionPlate" with barcode "1930000123708" exists
+    And a "Working Dilution" plate purpose and of type "DilutionPlate" with barcode "6250000123818" exists
+    And a "Gel Dilution" plate purpose and of type "DilutionPlate" with barcode "1930000123708" exists
     And plate "1220000123724" is the parent of plate "6250000123818"
     And plate "6250000123818" is the parent of plate "1930000123708"
     Given I am on the gel QC page
@@ -23,8 +23,8 @@ Feature: Gel QC
   
   @gel_index @qc_event
   Scenario: Gel dilution linked directly to stock plate should display on index
-    And a "Working Dilution" plate purpose and of type "WorkingDilutionPlate" with barcode "6250000123818" exists
-    And a "Gel Dilution" plate purpose and of type "GelDilutionPlate" with barcode "1930000123708" exists
+    And a "Working Dilution" plate purpose and of type "DilutionPlate" with barcode "6250000123818" exists
+    And a "Gel Dilution" plate purpose and of type "DilutionPlate" with barcode "1930000123708" exists
     And plate "1220000123724" is the parent of plate "6250000123818"
     And plate "1220000123724" is the parent of plate "1930000123708"
     Given I am on the gel QC page
@@ -34,15 +34,15 @@ Feature: Gel QC
     
   @gel_index
   Scenario: Gel dilution with no parents should not display
-    And a "Gel Dilution" plate purpose and of type "GelDilutionPlate" with barcode "1930000123708" exists
+    And a "Gel Dilution" plate purpose and of type "DilutionPlate" with barcode "1930000123708" exists
     Given I am on the gel QC page
     Then I should see "Find gel plate"  
     Then I should not see "123"
 
   @qc_event
   Scenario: Gel dilution with score should display rescore
-    And a "Working Dilution" plate purpose and of type "WorkingDilutionPlate" with barcode "6250000123818" exists
-    And a "Gel Dilution" plate purpose and of type "GelDilutionPlate" with barcode "1930000123708" exists
+    And a "Working Dilution" plate purpose and of type "DilutionPlate" with barcode "6250000123818" exists
+    And a "Gel Dilution" plate purpose and of type "DilutionPlate" with barcode "1930000123708" exists
     And all wells on plate "1220000123724" have non-empty sample names
     And plate "1220000123724" is the parent of plate "6250000123818"
     And plate "1220000123724" is the parent of plate "1930000123708"
@@ -64,8 +64,8 @@ Feature: Gel QC
     
   @study_report @qc_study_report @qc_event
   Scenario: Display gel analysed date in the study report
-    And a "Working Dilution" plate purpose and of type "WorkingDilutionPlate" with barcode "6250000123818" exists
-    And a "Gel Dilution" plate purpose and of type "GelDilutionPlate" with barcode "1930000123708" exists
+    And a "Working Dilution" plate purpose and of type "DilutionPlate" with barcode "6250000123818" exists
+    And a "Gel Dilution" plate purpose and of type "DilutionPlate" with barcode "1930000123708" exists
     And all wells on plate "1220000123724" have non-empty sample names
     And plate "1220000123724" is the parent of plate "6250000123818"
     And plate "1220000123724" is the parent of plate "1930000123708"

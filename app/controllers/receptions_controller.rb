@@ -36,16 +36,18 @@ class ReceptionsController < ApplicationController
       end
       prefix, id, checksum = Barcode.split_barcode(barcode)
 
-      case params[:type][:id]
-      when 'LibraryTube' then @asset = LibraryTube.find_by_barcode(id)
-      when 'MultiplexedLibraryTube' then @asset = MultiplexedLibraryTube.find_by_barcode(id)
-      when 'PulldownMultiplexedLibraryTube' then @asset = PulldownMultiplexedLibraryTube.find_by_barcode(id)
-      when 'Plate' then @asset = Asset.find_from_machine_barcode(barcode)
-      when 'SampleTube' then @asset =  SampleTube.find_by_barcode(id)
-      else
-        @asset = Asset.find_from_machine_barcode(barcode)
-      end
-      
+      # case params[:type][:id]
+      #       when 'LibraryTube' then @asset = LibraryTube.find_by_barcode(id)
+      #       when 'MultiplexedLibraryTube' then @asset = MultiplexedLibraryTube.find_by_barcode(id)
+      #       when 'PulldownMultiplexedLibraryTube' then @asset = PulldownMultiplexedLibraryTube.find_by_barcode(id)
+      #       when 'Plate' then @asset = Plate.find_from_machine_barcode(barcode)
+      #       when 'SampleTube' then @asset =  SampleTube.find_by_barcode(id)
+      #       when 'PacBioLibraryTube' then @asset =  PacBioLibraryTube.find_by_barcode(id)
+      #       else
+      #         @asset = Asset.find_from_machine_barcode(barcode)
+      #       end
+      @asset = params[:type][:id].constantize.find_from_machine_barcode(barcode)
+
 
       if @asset.nil?
         @generic_asset = Asset.find_by_barcode(id)
@@ -127,7 +129,7 @@ class ReceptionsController < ApplicationController
         @snp_plates << plate
       end
     end
-    
+
     if @errors.size > 0
       respond_to do |format|
         format.html { render :action => "snp_import" }

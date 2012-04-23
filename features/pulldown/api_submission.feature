@@ -98,10 +98,10 @@ Feature: Beginning with the API progress through pulldown to sequencing
     And I select "Pulldown Aliquot" from "Plate Purpose"
     And I press "Next step"
     When I press "Release this batch"
-    When I set Plate "1220099999705" to be in freezer "Pulldown freezer"
+    When I set Plate "1630099999757" to be in freezer "Pulldown freezer"
 
     Given I am on the show page for pipeline "Pulldown Multiplex Library Preparation"
-    When I check "Select DN99999F for batch"
+    When I check "Select FA99999K for batch"
     And I select "Create Batch" from "Action to perform"
     And I press "Submit"
     When I follow "Start batch"
@@ -207,10 +207,10 @@ Feature: Beginning with the API progress through pulldown to sequencing
     And I select "Pulldown Aliquot" from "Plate Purpose"
     And I press "Next step"
     When I press "Release this batch"
-    When I set Plate "1220099999705" to be in freezer "Pulldown freezer"
+    When I set Plate "1630099999757" to be in freezer "Pulldown freezer"
 
     Given I am on the show page for pipeline "Pulldown Multiplex Library Preparation"
-    When I check "Select DN99999F for batch"
+    When I check "Select FA99999K for batch"
     And I select "Create Batch" from "Action to perform"
     And I press "Submit"
     When I follow "Start batch"
@@ -225,15 +225,15 @@ Feature: Beginning with the API progress through pulldown to sequencing
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
        | Plate    | Well | Study   | Pooled Tube | Tag Group       | Tag   | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-       | DN99999F | A1   | Study A | 1           | UK10K tag group | Tag 1 | ATCACG            | Sample_1234567_1 | 0.0             | 1.0                    |
-       | DN99999F | B1   | Study A | 1           | UK10K tag group | Tag 2 | CGATGT            | Sample_1234567_2 | 11.0            | 40.0                   |
-       | DN99999F | C1   | Study A | 1           | UK10K tag group | Tag 3 | TTAGGC            | Sample_1234567_3 | 22.0            | 80.0                   |
-       | DN99999F | D1   | Study B | 2           | UK10K tag group | Tag 1 | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
-       | DN99999F | E1   | Study B | 2           | UK10K tag group | Tag 2 | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
-       | DN99999F | F1   | Study B | 2           | UK10K tag group | Tag 3 | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
-       | DN99999F | G1   | Study C | 3           | UK10K tag group | Tag 1 | ATCACG            | Sample_333_1     | 0.0             | 1.0                    |
-       | DN99999F | H1   | Study C | 3           | UK10K tag group | Tag 2 | CGATGT            | Sample_333_2     | 11.0            | 40.0                   |
-       | DN99999F | A2   | Study C | 3           | UK10K tag group | Tag 3 | TTAGGC            | Sample_333_3     | 22.0            | 80.0                   |
+       | FA99999K | A1   | Study A | 1           | UK10K tag group | Tag 1 | ATCACG            | Sample_1234567_1 | 0.0             | 1.0                    |
+       | FA99999K | B1   | Study A | 1           | UK10K tag group | Tag 2 | CGATGT            | Sample_1234567_2 | 11.0            | 40.0                   |
+       | FA99999K | C1   | Study A | 1           | UK10K tag group | Tag 3 | TTAGGC            | Sample_1234567_3 | 22.0            | 80.0                   |
+       | FA99999K | D1   | Study B | 2           | UK10K tag group | Tag 1 | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
+       | FA99999K | E1   | Study B | 2           | UK10K tag group | Tag 2 | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
+       | FA99999K | F1   | Study B | 2           | UK10K tag group | Tag 3 | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
+       | FA99999K | G1   | Study C | 3           | UK10K tag group | Tag 1 | ATCACG            | Sample_333_1     | 0.0             | 1.0                    |
+       | FA99999K | H1   | Study C | 3           | UK10K tag group | Tag 2 | CGATGT            | Sample_333_2     | 11.0            | 40.0                   |
+       | FA99999K | A2   | Study C | 3           | UK10K tag group | Tag 3 | TTAGGC            | Sample_333_3     | 22.0            | 80.0                   |
 
 
   Scenario Outline: Create a single API submission and progress all the way to sequencing
@@ -328,9 +328,9 @@ Feature: Beginning with the API progress through pulldown to sequencing
      And I select "Pulldown Aliquot" from "Plate Purpose"
      And I press "Next step"
      When I press "Release this batch"
-     When I set Plate "1220099999705" to be in freezer "Pulldown freezer"
+     When I set Plate "1630099999757" to be in freezer "Pulldown freezer"
      Given I am on the show page for pipeline "Pulldown Multiplex Library Preparation"
-     When I check "Select DN99999F for batch"
+     When I check "Select FA99999K for batch"
      And I select "Create Batch" from "Action to perform"
      And I press "Submit"
      When I follow "Start batch"

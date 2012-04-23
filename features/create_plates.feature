@@ -107,39 +107,39 @@ Feature: Printing new plate barcodes
     And plate with barcode "1931234567771" should exist
     And plate with barcode "1220077777868" should exist
     
-    Given I am on the events page for asset with barcode "1221234567841"
+    Given I am on the events page for plate with barcode "1221234567841"
     Then the events table should be:
       | Message                              | Content    | Created by | Created at           |
       | Created child Working Dilution plate | 2010-07-12 | jack       | Monday 12 July, 2010 |
       | Created child Pico Dilution plate    | 2010-07-12 | jack       | Monday 12 July, 2010 |
-    Given I am on the events page for asset with barcode "1220001454858"
+    Given I am on the events page for plate with barcode "1220001454858"
     Then the events table should be:
       | Message                         | Content    | Created by | Created at           |
       | Created child Stock Plate plate | 2010-07-12 | jack       | Monday 12 July, 2010 |
-    Given I am on the events page for asset with barcode "4361234567667"
+    Given I am on the events page for plate with barcode "4361234567667"
     Then the events table should be:
       | Message                          | Content    | Created by | Created at           |
       | Created Pico Dilution plate      | 2010-07-12 | jack       | Monday 12 July, 2010 |
       | Created child Pico Assay A plate | 2010-07-12 | jack       | Monday 12 July, 2010 |
       | Created child Pico Assay B plate | 2010-07-12 | jack       | Monday 12 July, 2010 |
-    Given I am on the events page for asset with barcode "6251234567836"
+    Given I am on the events page for plate with barcode "6251234567836"
     Then the events table should be:
       | Message                          | Content    | Created by | Created at           |
       | Created Working Dilution plate   | 2010-07-12 | jack       | Monday 12 July, 2010 |
       | Created child Gel Dilution plate | 2010-07-12 | jack       | Monday 12 July, 2010 |
-    Given I am on the events page for asset with barcode "4331234567653"
+    Given I am on the events page for plate with barcode "4331234567653"
     Then the events table should be:
       | Message                    | Content    | Created by | Created at           |
       | Created Pico Assay A plate | 2010-07-12 | jack       | Monday 12 July, 2010 |
-    Given I am on the events page for asset with barcode "4341234567737"
+    Given I am on the events page for plate with barcode "4341234567737"
     Then the events table should be:
        | Message                    | Content    | Created by | Created at           |
        | Created Pico Assay B plate | 2010-07-12 | jack       | Monday 12 July, 2010 |
-    Given I am on the events page for asset with barcode "1931234567771"
+    Given I am on the events page for plate with barcode "1931234567771"
     Then the events table should be:
       | Message                    | Content    | Created by | Created at           |
       | Created Gel Dilution plate | 2010-07-12 | jack       | Monday 12 July, 2010 |
-    Given I am on the events page for asset with barcode "1220077777868"
+    Given I am on the events page for plate with barcode "1220077777868"
     Then the events table should be:
       | Message                   | Content    | Created by | Created at           |
       | Created Stock Plate plate | 2010-07-12 | jack       | Monday 12 July, 2010 |

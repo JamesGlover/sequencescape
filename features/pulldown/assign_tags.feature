@@ -12,8 +12,8 @@ Feature: Cherrypicking for Pulldown pipeline
   Scenario: I select 2 pulldown plates for a batch, but the max is 1  
     Given I have 2 pulldown plates
     Given I am on the show page for pipeline "Pulldown Multiplex Library Preparation"
-    When I check "Select DN99999F for batch"
-    And I check "Select DN88888N for batch"
+    When I check "Select FA99999K for batch"
+    And I check "Select FA88888S for batch"
     And I press "Submit"
     Then I should see "Too many request groups selected, maximum is 1"
     
@@ -24,22 +24,22 @@ Feature: Cherrypicking for Pulldown pipeline
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
      | Plate    | Well | Study      | Pooled Tube    | Tag Group | Tag | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-     | DN99999F | A1   | Test study | 1              |           |     |                   | Sample_1234567_1 | 0.0             | 1.0                    |
-     | DN99999F | B1   | Test study | 1              |           |     |                   | Sample_1234567_2 | 11.0            | 40.0                   |
-     | DN99999F | C1   | Test study | 1              |           |     |                   | Sample_1234567_3 | 22.0            | 80.0                   |
-     | DN99999F | D1   | Test study | 1              |           |     |                   | Sample_1234567_4 | 33.0            | 120.0                  |
-     | DN99999F | E1   | Test study | 1              |           |     |                   | Sample_1234567_5 | 44.0            | 160.0                  |
-     | DN99999F | F1   | Test study | 1              |           |     |                   | Sample_1234567_6 | 55.0            | 200.0                  |
-     | DN99999F | G1   | Test study | 1              |           |     |                   | Sample_1234567_7 | 66.0            | 240.0                  |
-     | DN99999F | H1   | Test study | 1              |           |     |                   | Sample_1234567_8 | 77.0            | 280.0                  |
-     | DN99999F | A2   | Study A    | 2              |           |     |                   | Sample_222_1     | 0.0             | 1.0                    |
-     | DN99999F | B2   | Study A    | 2              |           |     |                   | Sample_222_2     | 11.0            | 40.0                   |
-     | DN99999F | C2   | Study A    | 2              |           |     |                   | Sample_222_3     | 22.0            | 80.0                   |
-     | DN99999F | D2   | Study A    | 2              |           |     |                   | Sample_222_4     | 33.0            | 120.0                  |
-     | DN99999F | E2   | Study A    | 2              |           |     |                   | Sample_222_5     | 44.0            | 160.0                  |
-     | DN99999F | F2   | Study A    | 2              |           |     |                   | Sample_222_6     | 55.0            | 200.0                  |
-     | DN99999F | G2   | Study A    | 2              |           |     |                   | Sample_222_7     | 66.0            | 240.0                  |
-     | DN99999F | H2   | Study A    | 2              |           |     |                   | Sample_222_8     | 77.0            | 280.0                  |
+     | FA99999K | A1   | Test study | 1              |           |     |                   | Sample_1234567_1 | 0.0             | 1.0                    |
+     | FA99999K | B1   | Test study | 1              |           |     |                   | Sample_1234567_2 | 11.0            | 40.0                   |
+     | FA99999K | C1   | Test study | 1              |           |     |                   | Sample_1234567_3 | 22.0            | 80.0                   |
+     | FA99999K | D1   | Test study | 1              |           |     |                   | Sample_1234567_4 | 33.0            | 120.0                  |
+     | FA99999K | E1   | Test study | 1              |           |     |                   | Sample_1234567_5 | 44.0            | 160.0                  |
+     | FA99999K | F1   | Test study | 1              |           |     |                   | Sample_1234567_6 | 55.0            | 200.0                  |
+     | FA99999K | G1   | Test study | 1              |           |     |                   | Sample_1234567_7 | 66.0            | 240.0                  |
+     | FA99999K | H1   | Test study | 1              |           |     |                   | Sample_1234567_8 | 77.0            | 280.0                  |
+     | FA99999K | A2   | Study A    | 2              |           |     |                   | Sample_222_1     | 0.0             | 1.0                    |
+     | FA99999K | B2   | Study A    | 2              |           |     |                   | Sample_222_2     | 11.0            | 40.0                   |
+     | FA99999K | C2   | Study A    | 2              |           |     |                   | Sample_222_3     | 22.0            | 80.0                   |
+     | FA99999K | D2   | Study A    | 2              |           |     |                   | Sample_222_4     | 33.0            | 120.0                  |
+     | FA99999K | E2   | Study A    | 2              |           |     |                   | Sample_222_5     | 44.0            | 160.0                  |
+     | FA99999K | F2   | Study A    | 2              |           |     |                   | Sample_222_6     | 55.0            | 200.0                  |
+     | FA99999K | G2   | Study A    | 2              |           |     |                   | Sample_222_7     | 66.0            | 240.0                  |
+     | FA99999K | H2   | Study A    | 2              |           |     |                   | Sample_222_8     | 77.0            | 280.0                  |
      
   Scenario: Cherrypick and multiplex library prep for pulldown with 16 tags
     Given I have a tag group called "UK10K tag group" with 16 tags
@@ -93,22 +93,22 @@ Feature: Cherrypicking for Pulldown pipeline
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
     | Plate    | Well | Study      | Pooled Tube      | Tag Group       | Tag      | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-    | DN99999F | A1   | Test study | 1                | UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_1 | 0.0             | 1.0                    |
-    | DN99999F | B1   | Test study | 1                | UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_2 | 11.0            | 40.0                   |
-    | DN99999F | C1   | Test study | 1                | UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_3 | 22.0            | 80.0                   |
-    | DN99999F | D1   | Test study | 1                | UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_4 | 33.0            | 120.0                  |
-    | DN99999F | E1   | Test study | 1                | UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
-    | DN99999F | F1   | Test study | 1                | UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
-    | DN99999F | G1   | Test study | 1                | UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
-    | DN99999F | H1   | Test study | 1                | UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
-    | DN99999F | A2   | Study A    | 2                | UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
-    | DN99999F | B2   | Study A    | 2                | UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
-    | DN99999F | C2   | Study A    | 2                | UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
-    | DN99999F | D2   | Study A    | 2                | UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
-    | DN99999F | E2   | Study A    | 2                | UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
-    | DN99999F | F2   | Study A    | 2                | UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
-    | DN99999F | G2   | Study A    | 2                | UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
-    | DN99999F | H2   | Study A    | 2                | UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
+    | FA99999K | A1   | Test study | 1                | UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_1 | 0.0             | 1.0                    |
+    | FA99999K | B1   | Test study | 1                | UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_2 | 11.0            | 40.0                   |
+    | FA99999K | C1   | Test study | 1                | UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_3 | 22.0            | 80.0                   |
+    | FA99999K | D1   | Test study | 1                | UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_4 | 33.0            | 120.0                  |
+    | FA99999K | E1   | Test study | 1                | UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
+    | FA99999K | F1   | Test study | 1                | UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
+    | FA99999K | G1   | Test study | 1                | UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
+    | FA99999K | H1   | Test study | 1                | UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
+    | FA99999K | A2   | Study A    | 2                | UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
+    | FA99999K | B2   | Study A    | 2                | UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
+    | FA99999K | C2   | Study A    | 2                | UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
+    | FA99999K | D2   | Study A    | 2                | UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
+    | FA99999K | E2   | Study A    | 2                | UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
+    | FA99999K | F2   | Study A    | 2                | UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
+    | FA99999K | G2   | Study A    | 2                | UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
+    | FA99999K | H2   | Study A    | 2                | UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
      
   Scenario: Use 8 tags and rearrange manually in an invalid order
     Given I have a tag group called "UK10K tag group" with 8 tags
@@ -139,22 +139,22 @@ Feature: Cherrypicking for Pulldown pipeline
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
     | Plate    | Well | Study      |  Pooled Tube    | Tag Group | Tag | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-    | DN99999F | A1   | Test study | 1               |           |     |                   | Sample_1234567_1 | 0.0             | 1.0                    |
-    | DN99999F | B1   | Test study | 1               |           |     |                   | Sample_1234567_2 | 11.0            | 40.0                   |
-    | DN99999F | C1   | Test study | 1               |           |     |                   | Sample_1234567_3 | 22.0            | 80.0                   |
-    | DN99999F | D1   | Test study | 1               |           |     |                   | Sample_1234567_4 | 33.0            | 120.0                  |
-    | DN99999F | E1   | Test study | 1               |           |     |                   | Sample_1234567_5 | 44.0            | 160.0                  |
-    | DN99999F | F1   | Test study | 1               |           |     |                   | Sample_1234567_6 | 55.0            | 200.0                  |
-    | DN99999F | G1   | Test study | 1               |           |     |                   | Sample_1234567_7 | 66.0            | 240.0                  |
-    | DN99999F | H1   | Test study | 1               |           |     |                   | Sample_1234567_8 | 77.0            | 280.0                  |
-    | DN99999F | A2   | Study A    | 2               |           |     |                   | Sample_222_1     | 0.0             | 1.0                    |
-    | DN99999F | B2   | Study A    | 2               |           |     |                   | Sample_222_2     | 11.0            | 40.0                   |
-    | DN99999F | C2   | Study A    | 2               |           |     |                   | Sample_222_3     | 22.0            | 80.0                   |
-    | DN99999F | D2   | Study A    | 2               |           |     |                   | Sample_222_4     | 33.0            | 120.0                  |
-    | DN99999F | E2   | Study A    | 2               |           |     |                   | Sample_222_5     | 44.0            | 160.0                  |
-    | DN99999F | F2   | Study A    | 2               |           |     |                   | Sample_222_6     | 55.0            | 200.0                  |
-    | DN99999F | G2   | Study A    | 2               |           |     |                   | Sample_222_7     | 66.0            | 240.0                  |
-    | DN99999F | H2   | Study A    | 2               |           |     |                   | Sample_222_8     | 77.0            | 280.0                  |
+    | FA99999K | A1   | Test study | 1               |           |     |                   | Sample_1234567_1 | 0.0             | 1.0                    |
+    | FA99999K | B1   | Test study | 1               |           |     |                   | Sample_1234567_2 | 11.0            | 40.0                   |
+    | FA99999K | C1   | Test study | 1               |           |     |                   | Sample_1234567_3 | 22.0            | 80.0                   |
+    | FA99999K | D1   | Test study | 1               |           |     |                   | Sample_1234567_4 | 33.0            | 120.0                  |
+    | FA99999K | E1   | Test study | 1               |           |     |                   | Sample_1234567_5 | 44.0            | 160.0                  |
+    | FA99999K | F1   | Test study | 1               |           |     |                   | Sample_1234567_6 | 55.0            | 200.0                  |
+    | FA99999K | G1   | Test study | 1               |           |     |                   | Sample_1234567_7 | 66.0            | 240.0                  |
+    | FA99999K | H1   | Test study | 1               |           |     |                   | Sample_1234567_8 | 77.0            | 280.0                  |
+    | FA99999K | A2   | Study A    | 2               |           |     |                   | Sample_222_1     | 0.0             | 1.0                    |
+    | FA99999K | B2   | Study A    | 2               |           |     |                   | Sample_222_2     | 11.0            | 40.0                   |
+    | FA99999K | C2   | Study A    | 2               |           |     |                   | Sample_222_3     | 22.0            | 80.0                   |
+    | FA99999K | D2   | Study A    | 2               |           |     |                   | Sample_222_4     | 33.0            | 120.0                  |
+    | FA99999K | E2   | Study A    | 2               |           |     |                   | Sample_222_5     | 44.0            | 160.0                  |
+    | FA99999K | F2   | Study A    | 2               |           |     |                   | Sample_222_6     | 55.0            | 200.0                  |
+    | FA99999K | G2   | Study A    | 2               |           |     |                   | Sample_222_7     | 66.0            | 240.0                  |
+    | FA99999K | H2   | Study A    | 2               |           |     |                   | Sample_222_8     | 77.0            | 280.0                  |
 
 
   Scenario: Apply 8 tags and progress to hiseq sequencing
@@ -193,22 +193,22 @@ Feature: Cherrypicking for Pulldown pipeline
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
       | Plate    | Well | Study      | Pooled Tube     |   Tag Group      | Tag      | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-      | DN99999F | A1   | Test study | 1               |  UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_1 | 0.0             | 1.0                    |
-      | DN99999F | B1   | Test study | 1               |  UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_2 | 11.0            | 40.0                   |
-      | DN99999F | C1   | Test study | 1               |  UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_3 | 22.0            | 80.0                   |
-      | DN99999F | D1   | Test study | 1               |  UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_4 | 33.0            | 120.0                  |
-      | DN99999F | E1   | Test study | 1               |  UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
-      | DN99999F | F1   | Test study | 1               |  UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
-      | DN99999F | G1   | Test study | 1               |  UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
-      | DN99999F | H1   | Test study | 1               |  UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
-      | DN99999F | A2   | Study A    | 2               |  UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
-      | DN99999F | B2   | Study A    | 2               |  UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
-      | DN99999F | C2   | Study A    | 2               |  UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
-      | DN99999F | D2   | Study A    | 2               |  UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
-      | DN99999F | E2   | Study A    | 2               |  UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
-      | DN99999F | F2   | Study A    | 2               |  UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
-      | DN99999F | G2   | Study A    | 2               |  UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
-      | DN99999F | H2   | Study A    | 2               |  UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
+      | FA99999K | A1   | Test study | 1               |  UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_1 | 0.0             | 1.0                    |
+      | FA99999K | B1   | Test study | 1               |  UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_2 | 11.0            | 40.0                   |
+      | FA99999K | C1   | Test study | 1               |  UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_3 | 22.0            | 80.0                   |
+      | FA99999K | D1   | Test study | 1               |  UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_4 | 33.0            | 120.0                  |
+      | FA99999K | E1   | Test study | 1               |  UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
+      | FA99999K | F1   | Test study | 1               |  UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
+      | FA99999K | G1   | Test study | 1               |  UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
+      | FA99999K | H1   | Test study | 1               |  UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
+      | FA99999K | A2   | Study A    | 2               |  UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
+      | FA99999K | B2   | Study A    | 2               |  UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
+      | FA99999K | C2   | Study A    | 2               |  UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
+      | FA99999K | D2   | Study A    | 2               |  UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
+      | FA99999K | E2   | Study A    | 2               |  UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
+      | FA99999K | F2   | Study A    | 2               |  UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
+      | FA99999K | G2   | Study A    | 2               |  UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
+      | FA99999K | H2   | Study A    | 2               |  UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
 
     Given I am on the last batch show page
     When I follow "Tag Groups"
@@ -225,22 +225,22 @@ Feature: Cherrypicking for Pulldown pipeline
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
       | Plate    | Well | Study      | Pooled Tube      | Tag Group       | Tag      | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-      | DN99999F | A1   | Test study | 1                | UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_1 | 0.0             | 1.0                    |
-      | DN99999F | B1   | Test study | 1                | UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_2 | 11.0            | 40.0                   |
-      | DN99999F | C1   | Test study | 1                | UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_3 | 22.0            | 80.0                   |
-      | DN99999F | D1   | Test study | 1                | UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_4 | 33.0            | 120.0                  |
-      | DN99999F | E1   | Test study | 1                | UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
-      | DN99999F | F1   | Test study | 1                | UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
-      | DN99999F | G1   | Test study | 1                | UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
-      | DN99999F | H1   | Test study | 1                | UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
-      | DN99999F | A2   | Study A    | 2                | UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
-      | DN99999F | B2   | Study A    | 2                | UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
-      | DN99999F | C2   | Study A    | 2                | UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
-      | DN99999F | D2   | Study A    | 2                | UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
-      | DN99999F | E2   | Study A    | 2                | UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
-      | DN99999F | F2   | Study A    | 2                | UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
-      | DN99999F | G2   | Study A    | 2                | UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
-      | DN99999F | H2   | Study A    | 2                | UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
+      | FA99999K | A1   | Test study | 1                | UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_1 | 0.0             | 1.0                    |
+      | FA99999K | B1   | Test study | 1                | UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_2 | 11.0            | 40.0                   |
+      | FA99999K | C1   | Test study | 1                | UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_3 | 22.0            | 80.0                   |
+      | FA99999K | D1   | Test study | 1                | UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_4 | 33.0            | 120.0                  |
+      | FA99999K | E1   | Test study | 1                | UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
+      | FA99999K | F1   | Test study | 1                | UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
+      | FA99999K | G1   | Test study | 1                | UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
+      | FA99999K | H1   | Test study | 1                | UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
+      | FA99999K | A2   | Study A    | 2                | UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
+      | FA99999K | B2   | Study A    | 2                | UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
+      | FA99999K | C2   | Study A    | 2                | UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
+      | FA99999K | D2   | Study A    | 2                | UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
+      | FA99999K | E2   | Study A    | 2                | UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
+      | FA99999K | F2   | Study A    | 2                | UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
+      | FA99999K | G2   | Study A    | 2                | UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
+      | FA99999K | H2   | Study A    | 2                | UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
       
   Scenario: Release batch then change your mind about tag assignment
     Given I have a tag group called "UK10K tag group" with 8 tags
@@ -255,22 +255,22 @@ Feature: Cherrypicking for Pulldown pipeline
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
       | Plate    | Well | Study      | Pooled Tube     |   Tag Group      | Tag      | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-      | DN99999F | A1   | Test study | 1               |  UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_1 | 0.0             | 1.0                    |
-      | DN99999F | B1   | Test study | 1               |  UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_2 | 11.0            | 40.0                   |
-      | DN99999F | C1   | Test study | 1               |  UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_3 | 22.0            | 80.0                   |
-      | DN99999F | D1   | Test study | 1               |  UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_4 | 33.0            | 120.0                  |
-      | DN99999F | E1   | Test study | 1               |  UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
-      | DN99999F | F1   | Test study | 1               |  UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
-      | DN99999F | G1   | Test study | 1               |  UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
-      | DN99999F | H1   | Test study | 1               |  UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
-      | DN99999F | A2   | Study A    | 2               |  UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
-      | DN99999F | B2   | Study A    | 2               |  UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
-      | DN99999F | C2   | Study A    | 2               |  UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
-      | DN99999F | D2   | Study A    | 2               |  UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
-      | DN99999F | E2   | Study A    | 2               |  UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
-      | DN99999F | F2   | Study A    | 2               |  UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
-      | DN99999F | G2   | Study A    | 2               |  UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
-      | DN99999F | H2   | Study A    | 2               |  UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
+      | FA99999K | A1   | Test study | 1               |  UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_1 | 0.0             | 1.0                    |
+      | FA99999K | B1   | Test study | 1               |  UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_2 | 11.0            | 40.0                   |
+      | FA99999K | C1   | Test study | 1               |  UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_3 | 22.0            | 80.0                   |
+      | FA99999K | D1   | Test study | 1               |  UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_4 | 33.0            | 120.0                  |
+      | FA99999K | E1   | Test study | 1               |  UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
+      | FA99999K | F1   | Test study | 1               |  UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
+      | FA99999K | G1   | Test study | 1               |  UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
+      | FA99999K | H1   | Test study | 1               |  UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
+      | FA99999K | A2   | Study A    | 2               |  UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
+      | FA99999K | B2   | Study A    | 2               |  UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
+      | FA99999K | C2   | Study A    | 2               |  UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
+      | FA99999K | D2   | Study A    | 2               |  UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
+      | FA99999K | E2   | Study A    | 2               |  UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
+      | FA99999K | F2   | Study A    | 2               |  UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
+      | FA99999K | G2   | Study A    | 2               |  UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
+      | FA99999K | H2   | Study A    | 2               |  UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
     Given I am on the last batch show page
     When I follow "Tag Groups"
     When I select "UK10K tag group" from "Tag Group"
@@ -286,22 +286,22 @@ Feature: Cherrypicking for Pulldown pipeline
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
       | Plate    | Well | Study      | Pooled Tube      | Tag Group       | Tag      | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-      | DN99999F | A1   | Test study | 1                | UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_1 | 0.0             | 1.0                    |
-      | DN99999F | B1   | Test study | 1                | UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_2 | 11.0            | 40.0                   |
-      | DN99999F | C1   | Test study | 1                | UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_3 | 22.0            | 80.0                   |
-      | DN99999F | D1   | Test study | 1                | UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_4 | 33.0            | 120.0                  |
-      | DN99999F | E1   | Test study | 1                | UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
-      | DN99999F | F1   | Test study | 1                | UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
-      | DN99999F | G1   | Test study | 1                | UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
-      | DN99999F | H1   | Test study | 1                | UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
-      | DN99999F | A2   | Study A    | 2                | UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
-      | DN99999F | B2   | Study A    | 2                | UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
-      | DN99999F | C2   | Study A    | 2                | UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
-      | DN99999F | D2   | Study A    | 2                | UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
-      | DN99999F | E2   | Study A    | 2                | UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
-      | DN99999F | F2   | Study A    | 2                | UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
-      | DN99999F | G2   | Study A    | 2                | UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
-      | DN99999F | H2   | Study A    | 2                | UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
+      | FA99999K | A1   | Test study | 1                | UK10K tag group | Tag 4    | TGACCA            | Sample_1234567_1 | 0.0             | 1.0                    |
+      | FA99999K | B1   | Test study | 1                | UK10K tag group | Tag 3    | TTAGGC            | Sample_1234567_2 | 11.0            | 40.0                   |
+      | FA99999K | C1   | Test study | 1                | UK10K tag group | Tag 2    | CGATGT            | Sample_1234567_3 | 22.0            | 80.0                   |
+      | FA99999K | D1   | Test study | 1                | UK10K tag group | Tag 1    | ATCACG            | Sample_1234567_4 | 33.0            | 120.0                  |
+      | FA99999K | E1   | Test study | 1                | UK10K tag group | Tag 5    | ATCACG            | Sample_1234567_5 | 44.0            | 160.0                  |
+      | FA99999K | F1   | Test study | 1                | UK10K tag group | Tag 6    | CGATGT            | Sample_1234567_6 | 55.0            | 200.0                  |
+      | FA99999K | G1   | Test study | 1                | UK10K tag group | Tag 7    | TTAGGC            | Sample_1234567_7 | 66.0            | 240.0                  |
+      | FA99999K | H1   | Test study | 1                | UK10K tag group | Tag 8    | TGACCA            | Sample_1234567_8 | 77.0            | 280.0                  |
+      | FA99999K | A2   | Study A    | 2                | UK10K tag group | Tag 1    | ATCACG            | Sample_222_1     | 0.0             | 1.0                    |
+      | FA99999K | B2   | Study A    | 2                | UK10K tag group | Tag 2    | CGATGT            | Sample_222_2     | 11.0            | 40.0                   |
+      | FA99999K | C2   | Study A    | 2                | UK10K tag group | Tag 3    | TTAGGC            | Sample_222_3     | 22.0            | 80.0                   |
+      | FA99999K | D2   | Study A    | 2                | UK10K tag group | Tag 4    | TGACCA            | Sample_222_4     | 33.0            | 120.0                  |
+      | FA99999K | E2   | Study A    | 2                | UK10K tag group | Tag 5    | ATCACG            | Sample_222_5     | 44.0            | 160.0                  |
+      | FA99999K | F2   | Study A    | 2                | UK10K tag group | Tag 6    | CGATGT            | Sample_222_6     | 55.0            | 200.0                  |
+      | FA99999K | G2   | Study A    | 2                | UK10K tag group | Tag 7    | TTAGGC            | Sample_222_7     | 66.0            | 240.0                  |
+      | FA99999K | H2   | Study A    | 2                | UK10K tag group | Tag 8    | TGACCA            | Sample_222_8     | 77.0            | 280.0                  |
           
   Scenario: Different sized submissions
     Given I have a tag group called "UK10K tag group" with 4 tags
@@ -328,9 +328,9 @@ Feature: Cherrypicking for Pulldown pipeline
     And I select "Pulldown Aliquot" from "Plate Purpose"
     And I press "Next step"
     When I press "Release this batch"
-    When I set Plate "1220099999705" to be in freezer "Pulldown freezer"
+    When I set Plate "1630099999757" to be in freezer "Pulldown freezer"
     Given I am on the show page for pipeline "Pulldown Multiplex Library Preparation"
-    When I check "Select DN99999F for batch"
+    When I check "Select FA99999K for batch"
     And I press "Submit"
     When I follow "Start batch"
     When I select "UK10K tag group" from "Tag Group"
@@ -342,16 +342,16 @@ Feature: Cherrypicking for Pulldown pipeline
     And I follow "Batch Report"
     When I look at the pulldown report for the batch it should be:
       | Plate    | Well | Study      | Pooled Tube | Tag Group       | Tag   | Expected Sequence | Sample Name      | Measured Volume | Measured Concentration |
-      | DN99999F | A1   | Test study | 1           | UK10K tag group | Tag 1 | ATCACG            | Sample_1234567_1 | 0.0             | 1.0                    |
-      | DN99999F | B1   | Test study | 1           | UK10K tag group | Tag 2 | CGATGT            | Sample_1234567_2 | 11.0            | 40.0                   |
-      | DN99999F | C1   | Study C    | 4           | UK10K tag group | Tag 3 | TTAGGC            | Sample_444_1     | 0.0             | 1.0                    |
-      | DN99999F | D1   | Study C    | 4           | UK10K tag group | Tag 4 | TGACCA            | Sample_444_2     | 11.0            | 40.0                   |
-      | DN99999F | E1   | Study C    | 4           | UK10K tag group | Tag 1 | ATCACG            | Sample_444_3     | 22.0            | 80.0                   |
-      | DN99999F | F1   | Study C    | 4           | UK10K tag group | Tag 2 | CGATGT            | Sample_444_4     | 33.0            | 120.0                  |
-      | DN99999F | G1   | Study B    | 3           | UK10K tag group | Tag 3 | TTAGGC            | Sample_333_1     | 0.0             | 1.0                    |
-      | DN99999F | H1   | Study B    | 3           | UK10K tag group | Tag 4 | TGACCA            | Sample_333_2     | 11.0            | 40.0                   |
-      | DN99999F | A2   | Study B    | 3           | UK10K tag group | Tag 1 | ATCACG            | Sample_333_3     | 22.0            | 80.0                   |
-      | DN99999F | B2   | Study A    | 2           | UK10K tag group | Tag 2 | CGATGT            | Sample_222_1     | 0.0             | 1.0                    |
+      | FA99999K | A1   | Test study | 1           | UK10K tag group | Tag 1 | ATCACG            | Sample_1234567_1 | 0.0             | 1.0                    |
+      | FA99999K | B1   | Test study | 1           | UK10K tag group | Tag 2 | CGATGT            | Sample_1234567_2 | 11.0            | 40.0                   |
+      | FA99999K | C1   | Study C    | 4           | UK10K tag group | Tag 3 | TTAGGC            | Sample_444_1     | 0.0             | 1.0                    |
+      | FA99999K | D1   | Study C    | 4           | UK10K tag group | Tag 4 | TGACCA            | Sample_444_2     | 11.0            | 40.0                   |
+      | FA99999K | E1   | Study C    | 4           | UK10K tag group | Tag 1 | ATCACG            | Sample_444_3     | 22.0            | 80.0                   |
+      | FA99999K | F1   | Study C    | 4           | UK10K tag group | Tag 2 | CGATGT            | Sample_444_4     | 33.0            | 120.0                  |
+      | FA99999K | G1   | Study B    | 3           | UK10K tag group | Tag 3 | TTAGGC            | Sample_333_1     | 0.0             | 1.0                    |
+      | FA99999K | H1   | Study B    | 3           | UK10K tag group | Tag 4 | TGACCA            | Sample_333_2     | 11.0            | 40.0                   |
+      | FA99999K | A2   | Study B    | 3           | UK10K tag group | Tag 1 | ATCACG            | Sample_333_3     | 22.0            | 80.0                   |
+      | FA99999K | B2   | Study A    | 2           | UK10K tag group | Tag 2 | CGATGT            | Sample_222_1     | 0.0             | 1.0                    |
   
   Scenario: Different sized submissions and the tag group is too small
     Given I have a tag group called "UK10K tag group" with 2 tags
@@ -370,9 +370,9 @@ Feature: Cherrypicking for Pulldown pipeline
     And I select "Pulldown Aliquot" from "Plate Purpose"
     And I press "Next step"
     When I press "Release this batch"
-    When I set Plate "1220099999705" to be in freezer "Pulldown freezer"
+    When I set Plate "1630099999757" to be in freezer "Pulldown freezer"
     Given I am on the show page for pipeline "Pulldown Multiplex Library Preparation"
-    When I check "Select DN99999F for batch"
+    When I check "Select FA99999K for batch"
     And I press "Submit"
     When I follow "Start batch"
     When I select "UK10K tag group" from "Tag Group"
@@ -416,9 +416,9 @@ Feature: Cherrypicking for Pulldown pipeline
     And I select "Pulldown Aliquot" from "Plate Purpose"
     And I press "Next step"
     When I press "Release this batch"
-    When I set Plate "1220099999705" to be in freezer "Pulldown freezer"
+    When I set Plate "1630099999757" to be in freezer "Pulldown freezer"
     Given I am on the show page for pipeline "Pulldown Multiplex Library Preparation"
-    When I check "Select DN99999F for batch"
+    When I check "Select FA99999K for batch"
     And I press "Submit"
     When I follow "Start batch"
     When I select "UK10K tag group" from "Tag Group"
@@ -467,21 +467,21 @@ Feature: Cherrypicking for Pulldown pipeline
     When I follow "Print worksheet"
     Then the worksheet for the last batch should be:
      |  Pooled Tube | Plate    | Well | Tag      |  Sample           | 
-     |  1           | DN99999F | A1   | Tag 1    |  Sample_1234567_1 | 
-     |  1           | DN99999F | B1   | Tag 2    |  Sample_1234567_2 | 
-     |  1           | DN99999F | C1   | Tag 3    |  Sample_1234567_3 | 
-     |  1           | DN99999F | D1   | Tag 4    |  Sample_1234567_4 | 
-     |  1           | DN99999F | E1   | Tag 5    |  Sample_1234567_5 | 
-     |  1           | DN99999F | F1   | Tag 6    |  Sample_1234567_6 | 
-     |  1           | DN99999F | G1   | Tag 7    |  Sample_1234567_7 | 
-     |  1           | DN99999F | H1   | Tag 8    |  Sample_1234567_8 | 
-     |  2           | DN99999F | A2   | Tag 1    |  Sample_222_1     | 
-     |  2           | DN99999F | B2   | Tag 2    |  Sample_222_2     | 
-     |  2           | DN99999F | C2   | Tag 3    |  Sample_222_3     | 
-     |  2           | DN99999F | D2   | Tag 4    |  Sample_222_4     | 
-     |  2           | DN99999F | E2   | Tag 5    |  Sample_222_5     | 
-     |  2           | DN99999F | F2   | Tag 6    |  Sample_222_6     | 
-     |  2           | DN99999F | G2   | Tag 7    |  Sample_222_7     | 
-     |  2           | DN99999F | H2   | Tag 8    |  Sample_222_8     | 
+     |  1           | FA99999K | A1   | Tag 1    |  Sample_1234567_1 | 
+     |  1           | FA99999K | B1   | Tag 2    |  Sample_1234567_2 | 
+     |  1           | FA99999K | C1   | Tag 3    |  Sample_1234567_3 | 
+     |  1           | FA99999K | D1   | Tag 4    |  Sample_1234567_4 | 
+     |  1           | FA99999K | E1   | Tag 5    |  Sample_1234567_5 | 
+     |  1           | FA99999K | F1   | Tag 6    |  Sample_1234567_6 | 
+     |  1           | FA99999K | G1   | Tag 7    |  Sample_1234567_7 | 
+     |  1           | FA99999K | H1   | Tag 8    |  Sample_1234567_8 | 
+     |  2           | FA99999K | A2   | Tag 1    |  Sample_222_1     | 
+     |  2           | FA99999K | B2   | Tag 2    |  Sample_222_2     | 
+     |  2           | FA99999K | C2   | Tag 3    |  Sample_222_3     | 
+     |  2           | FA99999K | D2   | Tag 4    |  Sample_222_4     | 
+     |  2           | FA99999K | E2   | Tag 5    |  Sample_222_5     | 
+     |  2           | FA99999K | F2   | Tag 6    |  Sample_222_6     | 
+     |  2           | FA99999K | G2   | Tag 7    |  Sample_222_7     | 
+     |  2           | FA99999K | H2   | Tag 8    |  Sample_222_8     | 
     
 

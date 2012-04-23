@@ -51,35 +51,36 @@ Factory.define :control_plate do |a|
   a.barcode             {|a| Factory.next :barcode_number }
 end
 
-Factory.define :dilution_plate do |a|
+Factory.define :dilution_plate, :class => Plate do |a|
   a.plate_purpose { |_| PlatePurpose.find_by_name('Stock plate') }
   a.barcode             {|a| Factory.next :barcode_number }
 end
-Factory.define :gel_dilution_plate do |a|
+Factory.define :gel_dilution_plate, :class => Plate do |a|
   a.plate_purpose { |_| PlatePurpose.find_by_name('Gel Dilution') }
   a.barcode             {|a| Factory.next :barcode_number }
 end
-Factory.define :pico_assay_a_plate do |a|
+Factory.define :pico_assay_a_plate, :class => Plate do |a|
   a.plate_purpose { |_| PlatePurpose.find_by_name('Pico Assay A') }
   a.barcode             {|a| Factory.next :barcode_number }
 end
-Factory.define :pico_assay_b_plate do |a|
+Factory.define :pico_assay_b_plate, :class => Plate do |a|
   a.plate_purpose { |_| PlatePurpose.find_by_name('Pico Assay B') }
   a.barcode             {|a| Factory.next :barcode_number }
 end
-Factory.define :pico_assay_plate do |a|
-  a.plate_purpose { |_| PlatePurpose.find_by_name('Stock plate') }
+# Pico Assay Plate purpose was previously set to stock plate. Assuming this was wrong.s
+Factory.define :pico_assay_plate, :class => Plate do |a|
+  a.plate_purpose { |_| PlatePurpose.find_by_name('Pico Assay PLates') }
   a.barcode             {|a| Factory.next :barcode_number }
 end
-Factory.define :pico_dilution_plate do |a|
+Factory.define :pico_dilution_plate, :class => Plate do |a|
   a.plate_purpose { |_| PlatePurpose.find_by_name('Pico Dilution') }
   a.barcode             {|a| Factory.next :barcode_number }
 end
-Factory.define :sequenom_qc_plate do |a|
+Factory.define :sequenom_qc_plate, :class => Plate do |a|
   a.plate_purpose { |_| PlatePurpose.find_by_name('Sequenom') }
   a.barcode             {|a| Factory.next :barcode_number }
 end
-Factory.define :working_dilution_plate do |a|
+Factory.define :working_dilution_plate, :class => Plate do |a|
   a.plate_purpose { |_| PlatePurpose.find_by_name('Working Dilution') }
   a.barcode             {|a| Factory.next :barcode_number }
 end
@@ -238,11 +239,11 @@ Factory.define :request_information_type do |w|
   w.name                   ""
   w.key                    ""
   w.label                  ""
-  w.hide_in_inbox          ""    
+  w.hide_in_inbox          ""
 end
 
 Factory.define :pipeline_request_information_type do |prit|
-  prit.pipeline                  {|pipeline| pipeline.association(:pipeline)}   
+  prit.pipeline                  {|pipeline| pipeline.association(:pipeline)}
   prit.request_information_type  {|request_information_type| request_information_type.association(:request_information_type)}
 end
 

@@ -4,7 +4,7 @@ Feature: Searching for assets by barcode
     Given all HTTP requests to the API have the cookie "WTSISignOn" set to "I-am-authenticated"
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
     Given I am using the latest version of the API
-    Given the UUID for the search "Find source assets by destination asset barcode" is "00000000-1111-2222-3333-444444444444"
+    Given the UUID for the search "Find source plates by destination plate barcode" is "00000000-1111-2222-3333-444444444444"
 
   @multiple @plate
   Scenario: Looking up multiple source assets by destination asset barcode

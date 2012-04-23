@@ -6,7 +6,7 @@ Feature: display an overview of all plates going through QC in SLF
      And I have an active study called "Test Study"
      # And a "Stock Plate" plate purpose and of type "Plate" with barcode "1221234567841" exists
      And there is a 1 well "Stock Plate" plate with a barcode of "1221234567841"
-     And asset with barcode "1221234567841" belongs to study "Test study"
+     And plate with barcode "1221234567841" belongs to study "Test study"
      And the "96 Well Plate" barcode printer "xyz" exists
      And I am on the sample logistics homepage
      Given all of this is happening at exactly "14-Feb-2011 23:00:00+01:00"

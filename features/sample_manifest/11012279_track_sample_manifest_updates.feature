@@ -70,7 +70,7 @@ Feature: Track when a sample and its plate has been updated by a manifest
      | Created by Sample Manifest | 2010-07-12 | john       | Monday 12 July, 2010 |
      | Updated by Sample Manifest | 2010-07-12 | jane       | Monday 12 July, 2010 |
      
-   Given I am on the events page for asset with barcode "1221234567841"
+   Given I am on the events page for plate with barcode "1221234567841"
    Then the events table should be:
      | Message                    | Content    | Created by | Created at           |
      | Created by Sample Manifest | 2010-07-12 | john       | Monday 12 July, 2010 |

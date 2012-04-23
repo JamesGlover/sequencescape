@@ -55,7 +55,7 @@ module Tasks::CherrypickHandler
     @plate_cols = Map.plate_width(plate_template.size)
     @plate_rows = Map.plate_length(plate_template.size)
   end
-  
+
   def setup_input_params_for_pass_through
     @robot = Robot.find((params[:robot])["0"].to_i)
     @plate_type = params[:plate_type]
@@ -105,12 +105,12 @@ module Tasks::CherrypickHandler
         plate = partial_plate
         if plate.nil?
           barcode = PlateBarcode.create.barcode
-          plate   = Plate.create!(:name => "Cherrypicked #{barcode}", :size => size, :barcode => barcode)
+          plate   = PlatePurpose.stock_plate.create_without_wells!(:name => "Cherrypicked #{barcode}", :size => size, :barcode => barcode)
         end
 
         # Set the plate type, regardless of what it was.  This may change the standard plate.
         plate.set_plate_type(plate_type) unless plate_type.nil?
- 
+
         plate_params.each do |row, row_params|
           row = row.to_i
           row_params.each do |col, request_id|
@@ -119,10 +119,9 @@ module Tasks::CherrypickHandler
               when request_id.match(/control/) then create_control_request_and_add_to_batch(task, request_id)
               else request_and_well[request_id.to_i] or raise ActiveRecord::RecordNotFound, "Cannot find request #{request_id.inspect}"
             end
- 
             # NOTE: Performance enhancement here
             # This collects the wells together for the plate they should be on, and modifies
-            # the values in the well data.  It *does not* save either of these, which means that 
+            # the values in the well data.  It *does not* save either of these, which means that
             # SELECT & INSERT/UPDATE are not interleaved, which affects the cache
             well.map = well_locations[Map.location_from_row_and_column(row, col.to_i+1)]
             cherrypicker.call(well, request)
@@ -134,7 +133,6 @@ module Tasks::CherrypickHandler
         # At this point we can consider ourselves finished with the partial plate
         partial_plate = nil
       end
-
       # Attach the wells into their plate for maximum efficiency.
       plates_and_wells.each do |plate, wells|
         wells.map { |w| w.well_attribute.save! ; w.save! }

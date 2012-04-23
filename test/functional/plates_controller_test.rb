@@ -97,11 +97,11 @@ class PlatesControllerTest < ActionController::TestCase
               @parent_raw_barcode = Barcode.calculate_barcode(Plate.prefix, @parent_plate.barcode.to_i)
               post :create, :plates => {:creator_id => @dilution_plates_creator.id, :barcode_printer => @barcode_printer.id, :source_plates =>"#{@parent_raw_barcode}", :user_barcode => '2470000100730'}
             end
-            should_change("WorkingDilutionPlate.count", :by => 1) { WorkingDilutionPlate.count }
+            should_change("PlatePurpose.working_dilution.plates.count", :by => 1) { PlatePurpose.working_dilution.plates.count }
             should_change("PicoDilutionPlate.count", :by => 1) { PicoDilutionPlate.count }
 
             should "add a child to the parent plate" do
-              assert_equal Plate.find(@parent_plate.id), WorkingDilutionPlate.last.parent
+              assert_equal Plate.find(@parent_plate.id), PlatePurpose.working_dilution.plates.last.parent
               assert_equal Plate.find(@parent_plate.id), PicoDilutionPlate.last.parent
             end
             should_respond_with :redirect
@@ -115,7 +115,7 @@ class PlatesControllerTest < ActionController::TestCase
               @parent_raw_barcode3 = Barcode.calculate_barcode(Plate.prefix, @parent_plate3.barcode.to_i)
               post :create, :plates => {:creator_id => @dilution_plates_creator.id, :barcode_printer => @barcode_printer.id, :source_plates =>"#{@parent_raw_barcode}\n#{@parent_raw_barcode2}\t#{@parent_raw_barcode3}", :user_barcode => '2470000100730'}
             end
-            should_change("WorkingDilutionPlate.count", :by => 3) { WorkingDilutionPlate.count }
+            should_change("PlatePurpose.working_dilution.plates.count", :by => 3) { PlatePurpose.working_dilution.plates.count }
             should_change("PicoDilutionPlate.count", :by => 3) { PicoDilutionPlate.count }
             should "have child plates" do
               [@parent_plate, @parent_plate2, @parent_plate3].each do  |plate|

@@ -15,6 +15,8 @@ class Plate < Asset
   # The type of the barcode is delegated to the plate purpose because that governs the number of wells
   delegate :barcode_type, :to => :plate_purpose, :allow_nil => true
 
+  delegate :barcode_prefix, :to => :plate_purpose_or_stock_plate
+
   # Transfer requests into a plate are the requests leading into the wells of said plate.
   def transfer_requests
     wells.map(&:transfer_requests_as_target).flatten
@@ -33,7 +35,7 @@ class Plate < Asset
     # tables to find all of the child plates of our parent that have the same plate purpose, numbering
     # those rows to give the iteration number for each plate.
     iteration_of_plate = connection.select_one(%Q{
-      SELECT iteration 
+      SELECT iteration
       FROM (
         SELECT iteration_plates.id, @rownum:=@rownum+1 AS iteration
         FROM (
@@ -108,16 +110,26 @@ WHERE c.container_id=?
   end
 
   named_scope :include_wells_and_attributes, { :include => { :wells => [ :map, :well_attribute ] } }
+  named_scope :with_prefix, lambda { |prefix|
+    {
+      :joins => :plate_purpose,
+      :conditions => ["plate_purposes.barcode_prefix_id = ?", BarcodePrefix.find_by_prefix(prefix).id]
+    }
+  }
 
   #has_many :wells, :as => :holder, :class_name => "Well"
   DEFAULT_SIZE = 96
   self.prefix = "DN"
+  def prefix
+    barcode_prefix.prefix || super
+  end
+
   cattr_reader :per_page
   @@per_page = 50
 
   before_create :set_plate_name_and_size
 
-  named_scope :qc_started_plates, lambda { 
+  named_scope :qc_started_plates, lambda {
     {
       :select => "distinct assets.*",
       :order => 'assets.id DESC',
@@ -126,6 +138,31 @@ WHERE c.container_id=?
       :include => [:events, :asset_audits]
     }
   }
+
+  named_scope :with_machine_barcode, lambda { |*barcodes|
+    query_details = barcodes.flatten.map do |source_barcode|
+      barcode_number = Barcode.number_to_human(source_barcode)
+      prefix_string  = Barcode.prefix_from_barcode(source_barcode)
+      barcode_prefix = BarcodePrefix.find_by_prefix(prefix_string)
+
+      if barcode_number.nil? or prefix_string.nil? or barcode_prefix.nil?
+        { :query => 'FALSE' }
+      else
+        { :query => '(barcode=? AND (plate_purposes.barcode_prefix_id =? OR assets.barcode_prefix_id=?) )', :conditions => [ barcode_number, barcode_prefix.id, barcode_prefix.id ] }
+      end
+    end.inject({ :query => [], :conditions => [] }) do |building, current|
+      building.tap do
+        building[:query]      << current[:query]
+        building[:conditions] << current[:conditions]
+      end
+    end
+
+    { :joins => :plate_purpose, :conditions => [ query_details[:query].join(' OR '), *query_details[:conditions].flatten.compact ], :readonly => false }
+  }
+
+  def self.find_from_machine_barcode(source_barcode)
+    with_machine_barcode(source_barcode).first
+  end
 
   def wells_sorted_by_map_id
     wells.sorted
@@ -191,7 +228,7 @@ WHERE c.container_id=?
   def find_well_by_name(well_name)
     self.wells.position_name(well_name, self.size).first
   end
-  alias :find_well_by_map_description :find_well_by_name 
+  alias :find_well_by_map_description :find_well_by_name
 
   def plate_header
     rows = [""]
@@ -379,7 +416,7 @@ WHERE c.container_id=?
 
     true
   end
-  
+
   # Should return true if any samples on the plate contains gender information
   def contains_gendered_samples?
     wells.any? do |well|
@@ -445,25 +482,31 @@ WHERE c.container_id=?
     nil
   end
   private :lookup_stock_plate
+  # Are these still used? I've updated them in case they are
+  def child_dilution_plates_filtered_by_purpose(parent_purpose)
+    self.children.select{ |p| p.method_defined?(:plate_purpose) && p.plate_purpose == parent_purpose }
+  end
 
   def child_dilution_plates_filtered_by_type(parent_model)
     self.children.select{ |p| p.is_a?(parent_model) }
   end
 
-  def children_of_dilution_plates(parent_model, child_model)
-    child_dilution_plates_filtered_by_type(parent_model).map{ |dilution_plate| dilution_plate.children.select{ |p| p.is_a?(child_model) } }.flatten.select{ |p| ! p.nil? }
+  def children_of_dilution_plates(parent_purpose, child_purpose)
+    child_dilution_plates_filtered_by_purpose(parent_purpose).map do |dilution_plate|
+      dilution_plate.children.select{ |p| p.method_defined?(:plate_purpose) && p.plate_purpose == child_purpose }
+    end.flatten.select{ |p| ! p.nil? }
   end
 
   def child_pico_assay_plates
-    children_of_dilution_plates(PicoDilutionPlate, PicoAssayAPlate)
+    children_of_dilution_plates(PlatePurpose.pico_dilution, PlatePurpose.pico_assay_a)
   end
 
   def child_gel_dilution_plates
-    children_of_dilution_plates(WorkingDilutionPlate, GelDilutionPlate)
+    children_of_dilution_plates(PlatePurpose.working_dilution, PlatePurpose.gel_dilution)
   end
 
   def child_sequenom_qc_plates
-    children_of_dilution_plates(WorkingDilutionPlate, SequenomQcPlate)
+    children_of_dilution_plates(PlatePurpose.working_dilution, PlatePurpose.sequenom)
   end
 
   def find_study_abbreviation_from_parent
@@ -474,7 +517,7 @@ WHERE c.container_id=?
     attributes = args.extract_options!
     barcode    = args.first || attributes[:barcode]
     barcode    = nil if barcode.present? and find_by_barcode(barcode).present?
-    barcode  ||= PlateBarcode.create.barcode
+    barcode = PlateBarcode.create.barcode
     create!(attributes.merge(:barcode => barcode), &block)
   end
 
@@ -510,7 +553,7 @@ WHERE c.container_id=?
   def default_plate_size
     DEFAULT_SIZE
   end
-  
+
   def move_study_sample(study_from, study_to, current_user)
     study_from.events.create(
       :message => "Plate #{self.id} was moved to Study #{study_to.id}",
@@ -561,7 +604,7 @@ WHERE c.container_id=?
       :number => self.barcode,
       :study  => self.find_study_abbreviation_from_parent,
       :suffix => self.parent.try(:barcode),
-      :prefix => self.barcode_prefix.prefix
+      :prefix => self.plate_purpose.barcode_prefix.prefix
     )
   end
 end

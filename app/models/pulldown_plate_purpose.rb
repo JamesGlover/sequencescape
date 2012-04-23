@@ -1,2 +1,3 @@
 class PulldownPlatePurpose < PlatePurpose
+
 end

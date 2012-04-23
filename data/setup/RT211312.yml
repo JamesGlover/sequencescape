@@ -65,8 +65,8 @@
     id: 2504126
     plate_purpose_id: 14
     barcode_prefix_id: 7
-    sti_type: GelDilutionPlate
-  :class: GelDilutionPlate
+    sti_type: DilutionPlate
+  :class: DilutionPlate
   :id: 2504126
 - :attributes: 
     request_type_id: 11
@@ -102,8 +102,8 @@
     id: 2514297
     plate_purpose_id: 19
     barcode_prefix_id: 5
-    sti_type: PicoAssayAPlate
-  :class: PicoAssayAPlate
+    sti_type: PicoAssayPlate
+  :class: PicoAssayPlate
   :id: 2514297
 - :attributes: 
     request_type_id: 11
@@ -121,8 +121,8 @@
     id: 2514394
     plate_purpose_id: 60
     barcode_prefix_id: 6
-    sti_type: PicoAssayBPlate
-  :class: PicoAssayBPlate
+    sti_type: PicoAssayPlate
+  :class: PicoAssayPlate
   :id: 2514394
 - :attributes: 
     name: PicoDilutionPlate_2498783_name
@@ -151,8 +151,8 @@
     id: 2498686
     plate_purpose_id: 1
     barcode_prefix_id: 2
-    sti_type: WorkingDilutionPlate
-  :class: WorkingDilutionPlate
+    sti_type: DilutionPlate
+  :class: DilutionPlate
   :id: 2498686
 - :attributes: 
     name: SequenomQcPlate_2503727_name
@@ -180,8 +180,8 @@
     id: 2504247
     plate_purpose_id: 14
     barcode_prefix_id: 7
-    sti_type: GelDilutionPlate
-  :class: GelDilutionPlate
+    sti_type: DilutionPlate
+  :class: DilutionPlate
   :id: 2504247
 - :attributes: 
     request_type_id: 11
@@ -217,8 +217,8 @@
     id: 2514491
     plate_purpose_id: 19
     barcode_prefix_id: 5
-    sti_type: PicoAssayAPlate
-  :class: PicoAssayAPlate
+    sti_type: PicoAssayPlate
+  :class: PicoAssayPlate
   :id: 2514491
 - :attributes: 
     request_type_id: 11
@@ -236,8 +236,8 @@
     id: 2514588
     plate_purpose_id: 60
     barcode_prefix_id: 6
-    sti_type: PicoAssayBPlate
-  :class: PicoAssayBPlate
+    sti_type: PicoAssayPlate
+  :class: PicoAssayPlate
   :id: 2514588
 - :attributes: 
     name: PicoDilutionPlate_2498589_name
@@ -266,8 +266,8 @@
     id: 2498492
     plate_purpose_id: 1
     barcode_prefix_id: 2
-    sti_type: WorkingDilutionPlate
-  :class: WorkingDilutionPlate
+    sti_type: DilutionPlate
+  :class: DilutionPlate
   :id: 2498492
 - :attributes: 
     name: SequenomQcPlate_2503726_name
@@ -295,8 +295,8 @@
     id: 2504015
     plate_purpose_id: 14
     barcode_prefix_id: 7
-    sti_type: GelDilutionPlate
-  :class: GelDilutionPlate
+    sti_type: DilutionPlate
+  :class: DilutionPlate
   :id: 2504015
 - :attributes: 
     name: WorkingDilutionPlate_2498880_name
@@ -305,8 +305,8 @@
     id: 2498880
     plate_purpose_id: 1
     barcode_prefix_id: 2
-    sti_type: WorkingDilutionPlate
-  :class: WorkingDilutionPlate
+    sti_type: DilutionPlate
+  :class: DilutionPlate
   :id: 2498880
 - :attributes: 
     request_id: 3164303
@@ -343,8 +343,8 @@
     id: 2514103
     plate_purpose_id: 19
     barcode_prefix_id: 5
-    sti_type: PicoAssayAPlate
-  :class: PicoAssayAPlate
+    sti_type: PicoAssayPlate
+  :class: PicoAssayPlate
   :id: 2514103
 - :attributes: 
     request_id: 3164908
@@ -367,8 +367,8 @@
     id: 2514200
     plate_purpose_id: 60
     barcode_prefix_id: 6
-    sti_type: PicoAssayBPlate
-  :class: PicoAssayBPlate
+    sti_type: PicoAssayPlate
+  :class: PicoAssayPlate
   :id: 2514200
 - :attributes: 
     name: PicoDilutionPlate_2498977_name

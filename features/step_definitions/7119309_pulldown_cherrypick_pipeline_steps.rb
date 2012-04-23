@@ -100,7 +100,7 @@ Then /^I should see the cherrypick worksheet table:$/ do |expected_results_table
   1.upto(12).each do |column_name|
     actual_table.map_column!("#{column_name}") { |text| text.tr("\n\t",' ') }
   end
-  
+
   expected_results_table.diff!(actual_table)
 end
 
@@ -115,18 +115,24 @@ Given /^I have a tag group called "([^"]*)" with (\d+) tags$/ do |tag_group_name
   1.upto(number_of_tags.to_i) do |i|
     tags << Tag.new(:oligo => oligos[(i-1)%oligos.size], :map_id => i, :tag_group_id => tag_group.id)
   end
-  
+
   Tag.import tags
 end
 
 Then /^the default plates to wells table should look like:$/ do |expected_results_table|
   actual_table = table(tableish('table.plate tr', 'td,th').collect{ |row| row.collect{|cell| cell[/^(Tag [\d]+)|(\w+)/] }})
-  
+
   expected_results_table.diff!(actual_table)
 end
 
-When /^I set (PacBioLibraryTube|Plate|Sample|Multiplexed Library|Library|Pulldown Multiplexed Library) "([^"]*)" to be in freezer "([^"]*)"$/ do |asset_type, plate_barcode,freezer_name|  
-  asset = Asset.find_from_machine_barcode(plate_barcode)
+When /^I set (PacBioLibraryTube|Sample|Multiplexed Library|Library|Pulldown Multiplexed Library) "([^"]*)" to be in freezer "([^"]*)"$/ do |asset_type, plate_barcode,freezer_name|
+  asset = Tube.find_from_machine_barcode(plate_barcode)
+  location = Location.find_by_name(freezer_name)
+  asset.update_attributes!(:location => location)
+end
+
+When /^I set Plate "([^"]*)" to be in freezer "([^"]*)"$/ do |plate_barcode,freezer_name|
+  asset = Plate.find_from_machine_barcode(plate_barcode)
   location = Location.find_by_name(freezer_name)
   asset.update_attributes!(:location => location)
 end
@@ -149,9 +155,9 @@ Given /^I have a pulldown batch$/ do
   And %Q{I select "Pulldown Aliquot" from "Plate Purpose"}
   And %Q{I press "Next step"}
   When %Q{I press "Release this batch"}
-  When %Q{I set Plate "1220099999705" to be in freezer "Pulldown freezer"}
+  When %Q{I set Plate "1630099999757" to be in freezer "Pulldown freezer"}
   Given %Q{I am on the show page for pipeline "Pulldown Multiplex Library Preparation"}
-  When %Q{I check "Select DN99999F for batch"}
+  When %Q{I check "Select FA99999K for batch"}
   And %Q{I press "Submit"}
 end
 
@@ -169,8 +175,8 @@ Given /^I have 2 pulldown plates$/ do
   And %Q{I select "Pulldown Aliquot" from "Plate Purpose"}
   And %Q{I press "Next step"}
   When %Q{I press "Release this batch"}
-  When %Q{I set Plate "1220099999705" to be in freezer "Pulldown freezer"}
-  
+  When %Q{I set Plate "1630099999757" to be in freezer "Pulldown freezer"}
+
   Given %Q{plate "222" with 1 samples in study "Study A" has a "Cherrypicking for Pulldown - Pulldown Multiplex Library Preparation - HiSeq Paired end sequencing" submission}
   Given %Q{plate "222" has nonzero concentration results}
   Given %Q{plate "222" has measured volume results}
@@ -182,8 +188,8 @@ Given /^I have 2 pulldown plates$/ do
   And %Q{I select "Pulldown Aliquot" from "Plate Purpose"}
   And %Q{I press "Next step"}
   When %Q{I press "Release this batch"}
-  When %Q{I set Plate "1220088888782" to be in freezer "Pulldown freezer"}
-  
+  When %Q{I set Plate "1630088888833" to be in freezer "Pulldown freezer"}
+
 end
 
 
@@ -199,7 +205,7 @@ Then /^the worksheet for the last batch should be:$/ do |expected_results_table|
 end
 
 Then /^library "([^"]*)" should have (\d+) sequencing requests$/ do |library_barcode, number_of_sequencing_requests|
-  library = Asset.find_from_machine_barcode(library_barcode) or raise "Cannot find library with barcode #{library_barcode.inspect}"
+  library = Tube.find_from_machine_barcode(library_barcode) or raise "Cannot find library with barcode #{library_barcode.inspect}"
   assert_equal number_of_sequencing_requests.to_i, SequencingRequest.count(:conditions => ["asset_id = #{library.id}"])
 end
 
@@ -224,7 +230,7 @@ Given /^I have a "([^"]*)" submission with 2 plates$/ do |submission_template_na
     [plate_1, plate_2].each do |plate|
       Well.create!(:map_id => 1, :plate => plate)
     end
-    
+
     submission_template = SubmissionTemplate.find_by_name(submission_template_name)
     submission = submission_template.create_and_build_submission!(
       :study => study,

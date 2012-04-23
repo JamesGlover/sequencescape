@@ -18,7 +18,7 @@ class Plate::Creator < ActiveRecord::Base
   # Executes the plate creation so that the appropriate child plates are built.
   def execute(source_plate_barcodes, barcode_printer, scanned_user)
     ActiveRecord::Base.transaction do
-      new_plates = source_plate_barcodes.blank? ? [ self.plate_purpose.plates.create_with_barcode! ] : create_plates(source_plate_barcodes, scanned_user)
+      new_plates = source_plate_barcodes.blank? ? [ self.plate_purpose.create_plate_with_barcode! ] : create_plates(source_plate_barcodes, scanned_user)
       return false if new_plates.empty?
 
       new_plates.group_by(&:plate_purpose).each do |plate_purpose, plates|
@@ -47,9 +47,11 @@ class Plate::Creator < ActiveRecord::Base
   private :create_plates
 
   def create_child_plates_from(plate, current_user)
+
     plate_purposes.map do |target_plate_purpose|
-      target_plate_purpose.target_plate_type.constantize.create_with_barcode!(plate.barcode) do |child_plate|
-        child_plate.plate_purpose = target_plate_purpose
+      target_plate_purpose.create_plate_with_barcode!(plate.barcode) do |child_plate|
+
+        #child_plate.plate_purpose = target_plate_purpose
         child_plate.size          = plate.size
         child_plate.location      = plate.location
         child_plate.name          = "#{target_plate_purpose.name} #{child_plate.barcode}"
@@ -64,6 +66,7 @@ class Plate::Creator < ActiveRecord::Base
         AssetLink.create_edge!(plate, child_plate)
 
         plate.events.create_plate!(target_plate_purpose, child_plate, current_user)
+
       end
     end
   end

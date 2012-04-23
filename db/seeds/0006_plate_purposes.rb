@@ -1,3 +1,8 @@
+@barcode_prefixes = {}
+BarcodePrefix.all.each do |bp|
+  @barcode_prefixes[bp.prefix] = bp.id
+end
+
 # Initially copied from SNP
 plate_purposes = <<-EOS
 - name: Working Dilution
@@ -5,7 +10,8 @@ plate_purposes = <<-EOS
   pulldown_display:
   id: 1
   type: DilutionPlatePurpose
-  target_type: WorkingDilutionPlate
+  target_type: DilutionPlate
+  barcode_prefix_id: #{@barcode_prefixes['WD']}
 - name: Stock Plate
   qc_display: true
   pulldown_display:
@@ -84,7 +90,8 @@ plate_purposes = <<-EOS
   pulldown_display:
   id: 14
   type: WorkingDilutionPlatePurpose
-  target_type: GelDilutionPlate
+  target_type: DilutionPlate
+  barcode_prefix_id: #{@barcode_prefixes['GD']}
 - name: Infinium 15k
   qc_display: false
   pulldown_display:
@@ -109,12 +116,14 @@ plate_purposes = <<-EOS
   id: 18
   type: DilutionPlatePurpose
   target_type: PicoDilutionPlate
+  barcode_prefix_id: #{@barcode_prefixes['PD']}
 - name: Pico Assay A
   qc_display: false
   pulldown_display:
   id: 19
   type: PicoAssayPlatePurpose
-  target_type: PicoAssayAPlate
+  target_type: PicoAssayPlate
+  barcode_prefix_id: #{@barcode_prefixes['PA']}
 - name: Normalisation
   qc_display: true
   pulldown_display:
@@ -349,12 +358,14 @@ plate_purposes = <<-EOS
   id: 58
   type: PicoAssayPlatePurpose
   target_type:
+  barcode_prefix_id: #{@barcode_prefixes['PA']}
 - name: Pico Assay B
   qc_display: false
   pulldown_display:
   id: 59
   type: PicoAssayPlatePurpose
-  target_type: PicoAssayBPlate
+  target_type: PicoAssayPlate
+  barcode_prefix_id: #{@barcode_prefixes['PB']}
 - name: Gel Dilution Plates
   qc_display: true
   pulldown_display:
@@ -366,63 +377,73 @@ plate_purposes = <<-EOS
   pulldown_display: true
   id: 74
   type: PulldownAliquotPlatePurpose
-  target_type: PulldownAliquotPlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FA']}
 - name: Sonication
   qc_display: false
   pulldown_display: true
   id: 75
   type: PulldownSonicationPlatePurpose
-  target_type: PulldownSonicationPlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FC']}
 - name: Run of Robot
   qc_display: false
   pulldown_display: true
   id: 76
   type: PulldownRunOfRobotPlatePurpose
-  target_type: PulldownRunOfRobotPlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FE']}
 - name: EnRichment 1
   qc_display: false
   pulldown_display: true
   id: 77
   type: PulldownEnrichmentOnePlatePurpose
-  target_type: PulldownEnrichmentOnePlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FG']}
 - name: EnRichment 2
   qc_display: false
   pulldown_display: true
   id: 78
   type: PulldownEnrichmentTwoPlatePurpose
-  target_type: PulldownEnrichmentTwoPlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FI']}
 - name: EnRichment 3
   qc_display: false
   pulldown_display: true
   id: 79
   type: PulldownEnrichmentThreePlatePurpose
-  target_type: PulldownEnrichmentThreePlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FK']}
 - name: EnRichment 4
   qc_display: false
   pulldown_display: true
   id: 80
   type: PulldownEnrichmentFourPlatePurpose
-  target_type: PulldownEnrichmentFourPlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FM']}
 - name: Sequence Capture
   qc_display: false
   pulldown_display: true
   id: 81
   type: PulldownSequenceCapturePlatePurpose
-  target_type: PulldownSequenceCapturePlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FO']}
 - name: Pulldown PCR
   qc_display: false
   pulldown_display: true
   id: 82
   type: PulldownPcrPlatePurpose
-  target_type: PulldownPcrPlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FQ']}
 - name: Pulldown qPCR
   qc_display: false
   pulldown_display: true
   id: 83
   type: PulldownQpcrPlatePurpose
-  target_type: PulldownQpcrPlate
+  target_type: PulldownPlate
+  barcode_prefix_id: #{@barcode_prefixes['FS']}
   EOS
-  
+
 plate_purposes_data = []
 YAML::load(plate_purposes).each do |plate_purpose|
   if plate_purpose["type"].blank?

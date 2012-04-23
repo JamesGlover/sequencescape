@@ -42,7 +42,7 @@ Feature: Pick by micro litre (stock transfer) using the Tecan robot
      And I press "Next step"
      And I press "Release this batch"
     Given the last batch has a barcode of "550000555760"
-    Then the downloaded tecan file for batch "550000555760" and plate "1220099999705" is
+    Then the downloaded tecan file for batch "550000555760" and plate "1630099999757" is
     """
     C;
     A;1220000222748;;ABgene 0765;2;;<volume>.0

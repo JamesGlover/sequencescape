@@ -161,7 +161,7 @@ GivenStudyMetadata(:data_release_timing,        /^the study "([^\"]+)" data rele
 GivenStudyMetadata(:study_ebi_accession_number, /^the study "([^\"]+)" has the accession number "([^\"]+)"$/)
 
 def GivenStudyTypeStudyMetadata(attribute, regexp)
-  Given(regexp) do |name,value|       
+  Given(regexp) do |name,value|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
     study_type = StudyType.find_by_name(value) or raise StandardError, "Study type not valid: '#{ value}'"
     study.study_metadata.send(:"#{ attribute }=", study_type)
@@ -169,10 +169,10 @@ def GivenStudyTypeStudyMetadata(attribute, regexp)
   end
 end
 
-GivenStudyTypeStudyMetadata(:study_type,              /^the study "([^\"]+)" is a "([^\"]*)" study$/) 
+GivenStudyTypeStudyMetadata(:study_type,              /^the study "([^\"]+)" is a "([^\"]*)" study$/)
 
 def GivenStudyDataReleaseTypeStudyMetadata(attribute, regexp)
-  Given(regexp) do |name,value|       
+  Given(regexp) do |name,value|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
     study_type_dr = DataReleaseStudyType.find_by_name(value) or raise StandardError, "Data Release Study type not valid: '#{ value}'"
     study.study_metadata.send(:"#{ attribute }=", study_type_dr)
@@ -183,7 +183,7 @@ end
 GivenStudyDataReleaseTypeStudyMetadata(:data_release_study_type, /^the study "([^\"]+)" is a "([^\"]+)" study for data release$/)
 
 def GivenReferenceGenomeStudyMetadata(attribute, regexp)
-  Given(regexp) do |name,value|       
+  Given(regexp) do |name,value|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
     ref_genome = ReferenceGenome.find_by_name(value) or raise StandardError, "Study type not valid: '#{ value}'"
     study.study_metadata.send(:"#{ attribute }=", ref_genome)
@@ -192,7 +192,7 @@ def GivenReferenceGenomeStudyMetadata(attribute, regexp)
 end
 
 def GivenFacultySponsor(attribute, regexp)
-  Given(regexp) do |name,value|       
+  Given(regexp) do |name,value|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
     faculty_sponsor = FacultySponsor.create!({:name => value})
     study.study_metadata.send(:"#{ attribute }=", faculty_sponsor)
@@ -202,7 +202,7 @@ end
 
 GivenFacultySponsor(:faculty_sponsor,                /^the faculty sponsor for study "([^\"]+)" is "([^\"]+)"$/)
 
-GivenReferenceGenomeStudyMetadata(:reference_genome, /^the reference genome for study "([^\"]+)" is "([^\"]+)"$/) 
+GivenReferenceGenomeStudyMetadata(:reference_genome, /^the reference genome for study "([^\"]+)" is "([^\"]+)"$/)
 
 GivenStudyMetadata(:dac_policy, /^the policy for study "([^\"]+)" is "([^\"]+)"$/)
 GivenStudyMetadata(:ega_dac_accession_number, /^the dac accession number for study "([^\"]+)" is "([^\"]+)"$/)
@@ -313,13 +313,15 @@ Then /^I should see the study for study list "([^\"]+)"$/ do |study_list|
   Then %Q{I should see "Study: #{ study_list }"}
 end
 
-Given /^asset with barcode "([^"]*)" belongs to study "([^"]*)"$/ do |raw_barcode, study_name|
+Given /^(plate|tube) with barcode "([^"]*)" belongs to study "([^"]*)"$/ do |asset_type, raw_barcode, study_name|
+  asset_class = asset_type.titleize.constantize
   study = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
-  asset = Asset.find_from_machine_barcode(raw_barcode) or raise StandardError, "Cannot find asset with machine barcode #{raw_barcode.inspect}"
+  asset = asset_class.find_from_machine_barcode(raw_barcode) or raise StandardError, "Cannot find asset with machine barcode #{raw_barcode.inspect}"
   asset_ids = [asset.id]
   asset_ids += asset.well_ids if asset.respond_to?(:wells)
   RequestFactory.create_assets_requests(asset_ids, study.id)
 end
+
 
 Given /^the asset "([^\"]+)" belongs to study "([^\"]+)"$/ do |asset_name, study_name|
   study = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"

@@ -62,7 +62,7 @@ Feature: Cherrypicking for Pulldown pipeline
    Then I should see "Batch released!"
    And I should see "Pulldown Aliquot"
    Given the last batch has a barcode of "550000555760"
-   Then the downloaded tecan file for batch "550000555760" and plate "1220099999705" is
+   Then the downloaded tecan file for batch "550000555760" and plate "1630099999757" is
    """
    C;
    A;1221234567841;;ABgene 0765;1;;13.0

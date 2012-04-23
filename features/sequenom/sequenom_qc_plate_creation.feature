@@ -29,8 +29,6 @@ Feature: Sequenom QC Plate Creation
       And I fill in "Number of Plates" with "<number_of_plates>"
       And select "<plate_type>" from "Plate Type"
       And select "xyz" from "Barcode Printer"
-      
-
 
     When I press "Create new Plate"
     Then exactly <number_of_plates> labels should have been printed
