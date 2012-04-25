@@ -88,9 +88,9 @@ class AssignTagsToWellsTask < Task
     well_to_tagged = {}
     tube_to_pool = {}
 
-    pooled_plate  = Plate.create!(:size => source_plate.size)
-    library_plate = Plate.create!(:size => source_plate.size)
-    tag_plate     = Plate.create!(:size => source_plate.size)
+    pooled_plate  = PlatePurpose.legacy_pulldown.create_without_wells!(:size => source_plate.size)
+    library_plate = PlatePurpose.legacy_pulldown.create_without_wells!(:size => source_plate.size)
+    tag_plate     = PlatePurpose.legacy_pulldown.create_without_wells!(:size => source_plate.size)
 
     source_plate.wells.each do |well|
       library_well =  Well.create!

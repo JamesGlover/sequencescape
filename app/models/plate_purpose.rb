@@ -1,55 +1,61 @@
 class PlatePurpose < ActiveRecord::Base
 
     belongs_to :barcode_prefix
-
-    def self.gel_dilution
+  module PurposePaths
+    def gel_dilution
       find( :first, {:conditions => ["name = ?", "Gel Dilution"]} )
     end
-    def self.working_dilution
+    def working_dilution
       find(:first, {:conditions => ["name = ?", "Working Dilution"]})
     end
-    def self.pulldown_aliquot
+    def pulldown_aliquot
       find(:first, {:conditions => ["name = ?", "Pulldown Aliquot"]})
     end
-    def self.pulldown_sonication
+    def pulldown_sonication
       find(:first, {:conditions => ["name = ?", "Sonication"]})
     end
-    def self.pulldown_run_of_robot
+    def pulldown_run_of_robot
       find(:first, {:conditions => ["name = ?", "Run Of Robot"]})
     end
-    def self.pulldown_enrichment_one
+    def pulldown_enrichment_one
       find(:first, {:conditions => ["name = ?", "EnRichment 1"]})
     end
-    def self.pulldown_enrichment_two
+    def pulldown_enrichment_two
       find(:first, {:conditions => ["name = ?", "EnRichment 2"]})
     end
-    def self.pulldown_enrichment_three
+    def pulldown_enrichment_three
       find(:first, {:conditions => ["name = ?", "EnRichment 3"]})
     end
-    def self.pulldown_enrichment_four
+    def pulldown_enrichment_four
       find(:first, {:conditions => ["name = ?", "EnRichment 4"]})
     end
-    def self.pulldown_sequence_capture
+    def pulldown_sequence_capture
       find(:first, {:conditions => ["name = ?", "Sequence Capture"]})
     end
-    def self.pulldown_pcr
+    def pulldown_pcr
       find(:first, {:conditions => ["name = ?", "Pulldown PCR"]})
     end
-    def self.pulldown_qpcr
+    def pulldown_qpcr
       find(:first, {:conditions => ["name = ?", "Pulldown qPCR"]})
     end
-    def self.pico_assay_a
+    def pico_assay_a
       find(:first, {:conditions => ["name = ?", "Pico Assay A"]})
     end
-    def self.pico_dilution
+    def pico_dilution
       find(:first, {:conditions => ["name = ?", "Pico Dilution"]})
     end
-    def self.sequenom
+    def sequenom
       find(:first, {:conditions => ["name = ?", "Sequenom"]})
     end
-    def self.stock_plate
+    def stock_plate
       find(:first, {:conditions => ["name = ?", "Stock Plate"]})
     end
+    alias :default :stock_plate
+    def legacy_pulldown
+      find(:first, {:conditions => ["name = ?", "Legacy Pulldown Intermediate"]})
+    end
+  end
+  extend PurposePaths
 
   class Relationship < ActiveRecord::Base
     set_table_name('plate_purpose_relationships')

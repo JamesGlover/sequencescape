@@ -442,10 +442,19 @@ plate_purposes = <<-EOS
   type: PulldownQpcrPlatePurpose
   target_type: PulldownPlate
   barcode_prefix_id: #{@barcode_prefixes['FS']}
+- name: Legacy Pulldown Intermediate
+  visible: true
+  barcode_prefix_id: #{@barcode_prefixes['DN']}
+  target_type: Plate
+  can_be_considered_a_stock_plate: true
+  default_state: 'pending'
+  cherrypickable_target: 0
+  qc_display: 1
   EOS
 
 plate_purposes_data = []
 YAML::load(plate_purposes).each do |plate_purpose|
+  plate_purpose["barcode_prefix_id"] ||= @barcode_prefixes['DN']
   if plate_purpose["type"].blank?
     plate_purposes_data << PlatePurpose.new(plate_purpose)
   else
@@ -457,7 +466,7 @@ PlatePurpose.import plate_purposes_data
 
 # Some plate purposes that appear to be used by SLF but are not in the seeds from SNP.
 (1..5).each do |index|
-  PlatePurpose.create!(:name => "Aliquot #{index}", :qc_display => true, :can_be_considered_a_stock_plate => true)
+  PlatePurpose.create!(:name => "Aliquot #{index}", :qc_display => true, :can_be_considered_a_stock_plate => true, :barcode_prefix => BarcodePrefix.find_by_prefix(Plate.prefix))
 end
 PlatePurpose.create!(:name => "ABgene_0765", :can_be_considered_a_stock_plate => false, :cherrypickable_source => true, :cherrypickable_target => false)
 PlatePurpose.create!(:name => "ABgene_0800", :can_be_considered_a_stock_plate => false, :cherrypickable_source => true, :cherrypickable_target => true)
