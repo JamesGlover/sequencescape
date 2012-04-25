@@ -292,7 +292,6 @@ end
 
 Factory.define :plate_template do |p|
   p.name      "testtemplate"
-  p.value     96
   p.size      96
 end
 

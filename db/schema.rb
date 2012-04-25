@@ -664,13 +664,23 @@ ActiveRecord::Schema.define(:version => 20120627095520) do
     t.integer  "barcode_printer_type_id",                       :default => 2
     t.boolean  "cherrypickable_target",                         :default => true,      :null => false
     t.boolean  "cherrypickable_source",                         :default => false,     :null => false
-    t.string   "prefix"
+    t.boolean  "visible",                                       :default => true,      :null => false
+    t.integer  "barcode_prefix_id",                                                    :null => false
   end
 
   add_index "plate_purposes", ["qc_display"], :name => "index_plate_purposes_on_qc_display"
   add_index "plate_purposes", ["target_type"], :name => "index_plate_purposes_on_target_type"
   add_index "plate_purposes", ["type"], :name => "index_plate_purposes_on_type"
   add_index "plate_purposes", ["updated_at"], :name => "index_plate_purposes_on_updated_at"
+
+  create_table "plate_templates", :force => true do |t|
+    t.string  "name",         :null => false
+    t.text    "wells"
+    t.integer "size",         :null => false
+    t.boolean "control_well"
+  end
+
+  add_index "plate_templates", ["name"], :name => "index_plate_templates_on_name", :unique => true
 
   create_table "plate_volumes", :force => true do |t|
     t.text     "uploaded_file"

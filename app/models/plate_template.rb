@@ -1,28 +1,36 @@
-class PlateTemplate < Plate
+class PlateTemplate < ActiveRecord::Base
+
+  serialize :wells
 
   def update_params!(details = {})
     self.name = details[:name]
-    self.wells.delete_all
+    self.wells = []
     self.size = (details[:rows]).to_i * (details[:cols]).to_i
     set_control_well(details[:control_well]) unless set_control_well(details[:control_well]).nil?
-    self.save!
-
     unless details[:wells].nil?
-      empty_wells = details[:wells].keys
-      empty_wells.each do |well|
-        self.add_well_by_map_description(Well.create!(), well)
-      end
+      self.wells = details[:wells].map {|k,v| [k,v.to_i]}
     end
+    self.save!
   end
-  
+
   def set_control_well(result)
-    self.add_descriptor(Descriptor.new({:name => "control_well", :value => result}))
-    self.save
+    self.control_well = result
+    self.save!
   end
-  
-  def control_well?
-    return false if descriptors.nil?
-    return 1 == descriptor_value('control_well').to_i
+
+  def find_well_by_name(well)
+    self.wells.detect {|w| w.first == well }
   end
-  
+
+  def add_well(well, row=nil, col=nil)
+    self.wells ||= []
+    self.wells << [well.map_description, well.map_id]
+    self.save!
+  end
+  alias :add_and_save_well :add_well
+
+  def before_create
+    self.wells ||= []
+  end
+
 end

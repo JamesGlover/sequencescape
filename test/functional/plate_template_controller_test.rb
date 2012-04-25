@@ -48,8 +48,9 @@ class PlateTemplatesControllerTest < ActionController::TestCase
         should "increment plate templates" do
           assert_equal @old_count_plate+1, PlateTemplate.count
         end
-        should "increase wells by 2" do
-          assert_equal @old_count_wells+2, Well.count
+        should "not increase wells by 2" do
+          assert_equal @old_count_wells, Well.count
+          assert_equal(2,PlateTemplate.last.wells.length)
         end
       end
     end
