@@ -34,6 +34,8 @@ class AddPrefixesToPurposes < ActiveRecord::Migration
         plate_purpose.barcode_prefix = BarcodePrefix.find_by_prefix(purpose[:prefix])
         plate_purpose.save!
       end
+      say "Updating remaining with prefix DN"
+      PlatePurpose.update_all({:barcode_prefix_id => BarcodePrefix.find_by_prefix('DN').id}, "barcode_prefix_id = 0")
     end
   end
 

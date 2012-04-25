@@ -35,6 +35,10 @@ class Tube < Aliquot::Receptacle
     { :conditions => [ query_details[:query].join(' OR '), *query_details[:conditions].flatten.compact ] }
   }
 
+  def self.find_from_machine_barcode(source_barcode)
+    with_machine_barcode(source_barcode).first
+  end
+
   def name_for_label
     (primary_aliquot.nil? or primary_aliquot.sample.sanger_sample_id.blank?) ? self.name : primary_aliquot.sample.shorten_sanger_sample_id
   end

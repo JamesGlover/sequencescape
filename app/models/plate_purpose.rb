@@ -197,4 +197,8 @@ class PlatePurpose < ActiveRecord::Base
   def find_plates_by_barcode(barcode)
     self.plates.find_by_barcode(barcode)
   end
+
+  def before_create
+    self.barcode_prefix_id ||= BarcodePrefix.find_by_prefix(Plate.prefix).id
+  end
 end

@@ -1,7 +1,7 @@
 class AddPrefixToPlatePurpose < ActiveRecord::Migration
 
   def self.up
-    add_column :plate_purposes, :barcode_prefix_id, :integer, :null => false, :default => BarcodePrefix.find_by_prefix('DN').id
+    add_column :plate_purposes, :barcode_prefix_id, :integer, :null => false
   end
 
   def self.down

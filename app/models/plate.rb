@@ -128,6 +128,7 @@ WHERE c.container_id=?
   @@per_page = 50
 
   before_create :set_plate_name_and_size
+  before_create :set_default_plate_purpose
 
   named_scope :qc_started_plates, lambda {
     {
@@ -593,6 +594,10 @@ WHERE c.container_id=?
     self.location = Location.find_by_name("Sample logistics freezer") if self.location.nil?
   end
   private :set_plate_name_and_size
+  def set_default_plate_purpose
+    self.plate_purpose ||= PlatePurpose.default
+  end
+  private :set_default_plate_purpose
 
   extend Metadata
   has_metadata do

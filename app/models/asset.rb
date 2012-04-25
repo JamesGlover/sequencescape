@@ -142,6 +142,21 @@ class Asset < ActiveRecord::Base
     self.class
   end
 
+  named_scope :source_assets_from_machine_barcode, lambda { |destination_barcode|
+    destination_asset = find_from_machine_barcode(destination_barcode)
+    if destination_asset
+      source_asset_ids = destination_asset.parents.map(&:id)
+      unless source_asset_ids.empty?
+        { :conditions => ["id IN (?)",source_asset_ids ] }
+      else
+        { :conditions => 'FALSE' }
+      end
+    else
+      { :conditions => 'FALSE' }
+    end
+  }
+
+
   def tube_name
     (primary_aliquot.nil? or primary_aliquot.sample.sanger_sample_id.blank?) ? self.name : primary_aliquot.sample.shorten_sanger_sample_id
   end

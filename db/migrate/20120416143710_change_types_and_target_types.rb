@@ -1,18 +1,6 @@
 class ChangeTypesAndTargetTypes < ActiveRecord::Migration
   def self.up
     @replacements = {
-      # :type => {
-      #     'PulldownPlatePurpose' => [
-      #       'PulldownAliquotPlatePurpose',        'PulldownSonicationPlatePurpose',
-      #       'PulldownRunOfRobotPlatePurpose',     'PulldownEnrichmentOnePlatePurpose',
-      #       'PulldownEnrichmentTwoPlatePurpose',  'PulldownEnrichmentThreePlatePurpose',
-      #       'PulldownEnrichmentFourPlatePurpose', 'PulldownSequenceCapturePlatePurpose',
-      #       'PulldownPcrPlatePurpose',            'PulldownQpcrPlatePurpose'
-      #     ],
-      #     'DilutionPlatePurpose' => [
-      #       'WorkingDilutionPlatePurpose'
-      #     ]
-      # },
       :target_type => {
         'PulldownPlate' => [
           'PulldownAliquotPlate',        'PulldownSonicationPlate',
