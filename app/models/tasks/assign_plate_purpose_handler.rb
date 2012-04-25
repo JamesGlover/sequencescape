@@ -18,7 +18,7 @@ module Tasks::AssignPlatePurposeHandler
 
   # Sets up instance variables so that the task's partial can be rendered.
   def render_assign_plate_purpose_task(task,params)
-    @potential_plate_purposes = PlatePurpose.all
+    @potential_plate_purposes = PlatePurpose.visible
     @plate_purpose_options = task.plate_purpose_options(@batch)
   end
 end

@@ -91,6 +91,7 @@ class PlatePurpose < ActiveRecord::Base
   named_scope :cherrypickable_as_source, :conditions => { :cherrypickable_source => true }
   named_scope :cherrypickable_default_type, :conditions => { :cherrypickable_target => true, :cherrypickable_source => true }
   named_scope :with_prefix,  lambda{ |prefix| { :conditions => ["barcode_prefix_id = ?" , BarcodePrefix.find_by_prefix(prefix)] }}
+  named_scope :visible, :conditions => { :visible =>true }
 
   # The state of a plate is based on the transfer requests.
   def state_of(plate)
