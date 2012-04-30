@@ -14,7 +14,7 @@ class AddDummyPlatePurposes < ActiveRecord::Migration
     say "Adding dummy plate purposes"
     [
       {
-        :name => 'Dummy Purpose A',
+        :name => 'Control Plate Purpose',
         :visible => false,
         :barcode_prefix => BarcodePrefix.find_by_prefix('NT'),
         :type => nil,
@@ -64,6 +64,19 @@ class AddDummyPlatePurposes < ActiveRecord::Migration
         :barcode_printer_type => BarcodePrinterType.find_by_type('BarcodePrinterType96Plate'),
         :cherrypickable_target => 0,
         :qc_display => 0
+      },
+      {
+        :name => 'Dummy Purpose E',
+        :visible => false,
+        :barcode_prefix => BarcodePrefix.find_by_prefix('GD'),
+        :type => nil,
+        :target_type => nil,
+        :can_be_considered_a_stock_plate => true,
+        :pulldown_display => nil,
+        :default_state => 'pending',
+        :barcode_printer_type => BarcodePrinterType.find_by_type('BarcodePrinterType96Plate'),
+        :cherrypickable_target => 0,
+        :qc_display => 1
       }
     ].each do |atts|
       PlatePurpose.create!(atts)
@@ -71,8 +84,10 @@ class AddDummyPlatePurposes < ActiveRecord::Migration
   end
 
   def self.down
-    ['Dummy Purpose A','Dummy Purpose B','Dummy Purpose C','Dummy Purpose D'].each do |name|
-      PlatePurpose.find_by_name(name).destroy
+    ActiveRecord::Base.transaction do
+      ['Control Plate Purpose','Dummy Purpose B','Dummy Purpose C','Dummy Purpose D','Dummy Purpose E'].each do |name|
+        PlatePurpose.find_by_name(name).destroy
+      end
     end
   end
 end

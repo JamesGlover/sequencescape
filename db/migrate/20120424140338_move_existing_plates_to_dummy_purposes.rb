@@ -3,6 +3,20 @@ class PlatePurposes < ActiveRecord::Base
   belongs_to :barcode_prefix
 end
 
+class Asset < ActiveRecord::Base
+  belongs_to :plate_purpose
+  belongs_to :barcode_prefix
+end
+
+class Plate < Asset
+end
+
+class ControlPlate < Plate
+end
+
+class PicoAssayAPlate < Plate
+end
+
 class BarcodePrinterType < ActiveRecord::Base
 end
 
@@ -13,7 +27,7 @@ class MoveExistingPlatesToDummyPurposes < ActiveRecord::Migration
 
   @purposes = [
     {
-      :name => 'Dummy Purpose A',
+      :name => 'Control Plate Purpose',
       :sti_type => 'ControlPlate',
       :plate_purpose_id => PlatePurpose.find_by_name('Stock Plate'),
       :barcode_prefix_id => BarcodePrefix.find_by_prefix('NT').id
@@ -34,7 +48,13 @@ class MoveExistingPlatesToDummyPurposes < ActiveRecord::Migration
       :name => 'Dummy Purpose D',
       :sti_type => 'Plate',
       :plate_purpose_id => PlatePurpose.find_by_name('Working Dilution'),
-      :barcode_prefix_id => BarcodePrefix.find_by_prefix('NT').id
+      :barcode_prefix_id => BarcodePrefix.find_by_prefix('DN').id
+    },
+    {
+      :name => 'Dummy Purpose E',
+      :sti_type => 'GelDilutionPlate',
+      :plate_purpose_id => PlatePurpose.find_by_name('Stock Plate'),
+      :barcode_prefix_id => BarcodePrefix.find_by_prefix('GD').id
     }
   ]
 
@@ -46,7 +66,7 @@ class MoveExistingPlatesToDummyPurposes < ActiveRecord::Migration
           {:plate_purpose_id => PlatePurpose.find_by_name(r[:name]).id},
           [
             "sti_type = ? AND plate_purpose_id = ? AND barcode_prefix_id = ?",
-            'r[:sti_type]','r[:plate_purpose_id]','r[:barcode_prefix_id]'])
+            r[:sti_type],r[:plate_purpose_id],r[:barcode_prefix_id]])
       end
     end
   end

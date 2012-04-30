@@ -11,6 +11,9 @@ class ChangeTypesAndTargetTypes < ActiveRecord::Migration
         ],
         'DilutionPlate' => [
           'WorkingDilutionPlate', 'GelDilutionPlate'
+        ],
+        'PicoAssayPlate' => [
+          'PicoAssayAPlate', 'PicoAssayBPlate'
         ]
       }
     }
