@@ -3,7 +3,7 @@ class Plate < Asset
   include ModelExtensions::Plate
   include LocationAssociation::Locatable
   include Transfer::Associations
-  include PlatePurpose::Associations
+  # include PlatePurpose::Associations
   include Barcode::Barcodeable
 
   # The default state for a plate comes from the plate purpose
@@ -11,11 +11,13 @@ class Plate < Asset
   def state
     plate_purpose.state_of(self)
   end
+  delegate :plate_purpose, :plate_purpose_id, :plate_purpose=, :plate_purpose_id=, :to => :plate_metadata, :allow_nil => false
 
   # The type of the barcode is delegated to the plate purpose because that governs the number of wells
   delegate :barcode_type, :to => :plate_purpose, :allow_nil => true
 
   delegate :barcode_prefix, :to => :plate_purpose_or_stock_plate
+
 
   # Transfer requests into a plate are the requests leading into the wells of said plate.
   def transfer_requests
@@ -42,7 +44,8 @@ class Plate < Asset
           SELECT assets.id
           FROM asset_links
           JOIN assets ON asset_links.descendant_id=assets.id
-          WHERE asset_links.direct=TRUE AND ancestor_id=#{parent.id} AND assets.sti_type in (#{Plate.derived_classes.map(&:inspect).join(',')}) AND assets.plate_purpose_id=#{plate_purpose.id}
+          JOIN plate_metadata ON assets.id = plate_metadata.plate_id
+          WHERE asset_links.direct=TRUE AND ancestor_id=#{parent.id} AND assets.sti_type in (#{Plate.derived_classes.map(&:inspect).join(',')}) AND plate_metadata.plate_purpose_id=#{plate_purpose.id}
           ORDER by assets.created_at ASC
         ) AS iteration_plates,
         (SELECT @rownum:=0) AS r
@@ -112,8 +115,8 @@ WHERE c.container_id=?
   named_scope :include_wells_and_attributes, { :include => { :wells => [ :map, :well_attribute ] } }
   named_scope :with_prefix, lambda { |prefix|
     {
-      :joins => :plate_purpose,
-      :conditions => ["plate_purposes.barcode_prefix_id = ?", BarcodePrefix.find_by_prefix(prefix).id]
+      :joins => ', plate_purposes, plate_metadata',
+      :conditions => ["(assets.id = plate_metadata.plate_id AND plate_metadata.plate_purpose_id = plate_purposes.id) AND plate_purposes.barcode_prefix_id = ?", BarcodePrefix.find_by_prefix(prefix).id]
     }
   }
 
@@ -134,8 +137,8 @@ WHERE c.container_id=?
     {
       :select => "distinct assets.*",
       :order => 'assets.id DESC',
-      :conditions => ["(events.family = 'create_dilution_plate_purpose' OR asset_audits.key = 'slf_receive_plates') AND plate_purpose_id = ?", PlatePurpose.find_by_name('Stock Plate') ],
-      :joins => "LEFT OUTER JOIN `events` ON events.eventful_id = assets.id LEFT OUTER JOIN `asset_audits` ON asset_audits.asset_id = assets.id" ,
+      :conditions => ["(events.family = 'create_dilution_plate_purpose' OR asset_audits.key = 'slf_receive_plates') AND plate_purpose_id = ?", PlatePurpose.stock_plate ],
+      :joins => "LEFT OUTER JOIN `events` ON events.eventful_id = assets.id LEFT OUTER JOIN `asset_audits` ON asset_audits.asset_id = assets.id LEFT OUTER JOIN plate_metadata ON assets.id = plate_metadata.plate_id" ,
       :include => [:events, :asset_audits]
     }
   }
@@ -149,7 +152,8 @@ WHERE c.container_id=?
       if barcode_number.nil? or prefix_string.nil? or barcode_prefix.nil?
         { :query => 'FALSE' }
       else
-        { :query => '(barcode=? AND (plate_purposes.barcode_prefix_id =? OR assets.barcode_prefix_id=?) )', :conditions => [ barcode_number, barcode_prefix.id, barcode_prefix.id ] }
+        { :query => '(assets.barcode=? AND (plate_purposes.barcode_prefix_id =?) )',
+          :conditions => [ barcode_number, barcode_prefix.id ] }
       end
     end.inject({ :query => [], :conditions => [] }) do |building, current|
       building.tap do
@@ -158,7 +162,7 @@ WHERE c.container_id=?
       end
     end
 
-    { :joins => :plate_purpose, :conditions => [ query_details[:query].join(' OR '), *query_details[:conditions].flatten.compact ], :readonly => false }
+    { :joins => ", plate_metadata, plate_purposes", :conditions => [ "(assets.id = plate_metadata.plate_id AND plate_metadata.plate_purpose_id = plate_purposes.id) AND (#{query_details[:query].join(' OR ')})", *query_details[:conditions].flatten.compact ], :readonly => false }
   }
 
   def self.find_from_machine_barcode(source_barcode)
@@ -603,6 +607,9 @@ WHERE c.container_id=?
   has_metadata do
     attribute(:infinium_barcode)
   end
+
+  include PlatePurpose::Associations
+
 
   def barcode_label_for_printing
     PrintBarcode::Label.new(

@@ -26,10 +26,11 @@ module StudyReport::StudyDetails
       :joins => [
         "INNER JOIN container_associations ON assets.id=container_associations.content_id",
         "INNER JOIN assets AS plates ON container_associations.container_id=plates.id AND plates.sti_type='Plate'",
+        "INNER JOIN plate_metadata ON plates.id = plate_metadata.plate_id",
         join
       ],
       :conditions => [
-        "plates.plate_purpose_id IN (?) AND #{study_condition}=?",
+        "plate_metadata.plate_purpose_id IN (?) AND #{study_condition}=?",
         plate_purpose_id,
         self.id
       ],

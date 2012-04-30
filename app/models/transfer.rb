@@ -45,7 +45,8 @@ class Transfer < ActiveRecord::Base
             # pulldown at least).
             query_conditions = 'transfer_requests_as_target.state IN (?)'
             if states.include?('pending')
-              joins << "INNER JOIN `plate_purposes` ON (`plate_purposes`.`id` = `assets`.`plate_purpose_id`)"
+              joins << "INNER JOIN `plate_metadata` ON `plate_metadata`.plate_id = `assets`.id"
+              joins << "INNER JOIN `plate_purposes` ON (`plate_purposes`.`id` = `plate_metadata`.`plate_purpose_id`)"
               query_conditions << ' OR (transfer_requests_as_target.state IS NULL AND plate_purposes.can_be_considered_a_stock_plate=TRUE)'
             end
 

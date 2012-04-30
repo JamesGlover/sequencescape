@@ -21,7 +21,6 @@ class SequenomQcPlatesController < ApplicationController
     # This will hold the first bad plate with errors preventing it's creation
     bad_plate  = nil
 
-    #TODO: XYZZY Look at this.
     (1..number_of_barcodes).each do
       sequenom_qc_plate = SequenomQcPlate.new(
         :plate_prefix        => params[:plate_prefix],

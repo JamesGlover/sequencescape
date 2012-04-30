@@ -23,15 +23,42 @@
   <tbody>
   <% @pulldown_aliquot_plates.each do |pulldown_aliquot_plate|  %>
     <% aliquot_descendants = pulldown_aliquot_plate.descendants %>
-    <% sonication       = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_sonication.id) %>
-    <% run_of_robot     = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_run_of_robot.id) %>
-    <% er1              = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_enrichment_one.id) %>
-    <% er2              = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_enrichment_two.id) %>
-    <% er3              = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_enrichment_three.id) %>
-    <% er4              = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_enrichment_four.id) %>
-    <% sequence_capture = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_sequence_capture.id) %>
-    <% pcr              = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_pcr.id) %>
-    <% qpcr             = aliquot_descendants.find_by_plate_purpose_id(PlatePurpose.pulldown_qpcr.id) %>
+    <% sonication = aliquot_descendants.find(:first, {
+      :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+      :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_sonication.id ]
+    })%>
+    <% run_of_robot = aliquot_descendants.find(:first, {
+       :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+       :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_run_of_robot.id ]
+    })%>
+    <% er1 = aliquot_descendants.find(:first, {
+       :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+       :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_enrichment_one ]
+    })%>
+    <% er2 = aliquot_descendants.find(:first, {
+       :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+       :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_enrichment_two ]
+    })%>
+    <% er3 = aliquot_descendants.find(:first, {
+       :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+       :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_enrichment_three ]
+    })%>
+    <% er4 = aliquot_descendants.find(:first, {
+       :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+       :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_enrichment_four ]
+    })%>
+    <% sequence_capture = aliquot_descendants.find(:first, {
+       :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+       :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_sequence_capture ]
+    })%>
+    <% pcr = aliquot_descendants.find(:first, {
+       :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+       :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_pcr ]
+    })%>
+    <% qpcr = aliquot_descendants.find(:first, {
+        :joins => 'INNER JOIN plate_metadata pm ON assets.id = pm.plate_id',
+        :conditions => ["pm.plate_purpose_id = ? ", PlatePurpose.pulldown_qpcr ]
+    })%>
     <tr>
       <td><%= link_to pulldown_aliquot_plate.sanger_human_barcode, asset_path(pulldown_aliquot_plate) %></td>
       <td><%= sonication ? link_to(sonication.sanger_human_barcode, asset_path(sonication)) : "" %></td>

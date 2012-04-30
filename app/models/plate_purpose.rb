@@ -78,10 +78,22 @@ class PlatePurpose < ActiveRecord::Base
   module Associations
     def self.included(base)
       base.class_eval do
+        named_scope :with_plate_purpose, lambda { |*purposes|
+          { :joins => :plate_metadata,
+            :conditions => ["plate_metadata.plate_purpose_id IN (?)", purposes.flatten.map(&:id).join(',') ] }
+          }
+      end
+      base::Metadata.class_eval do
         belongs_to :plate_purpose
         named_scope :with_plate_purpose, lambda { |*purposes|
           { :conditions => { :plate_purpose_id => purposes.flatten.map(&:id) } }
         }
+        association(:plate_purpose, :name)
+        validates_presence_of :plate_purpose
+
+        before_validation(:on => :create) do |record|
+          record.plate_purpose ||= PlatePurpose.default
+        end
       end
     end
 
@@ -156,7 +168,8 @@ class PlatePurpose < ActiveRecord::Base
     barcode_printer_type.printer_type_id
   end
 
-  has_many :plates #, :class_name => "Asset"
+  has_many :plate_metadata, :class_name=>'Plate::Metadata'
+  has_many :plates, :through => :plate_metadata
   acts_as_audited :on => [:destroy, :update]
 
   named_scope :considered_stock_plate, { :conditions => { :can_be_considered_a_stock_plate => true } }

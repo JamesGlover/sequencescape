@@ -103,7 +103,6 @@ ActiveRecord::Schema.define(:version => 20120627095520) do
     t.boolean  "archive"
     t.boolean  "external_release"
     t.string   "two_dimensional_barcode"
-    t.integer  "plate_purpose_id"
     t.decimal  "volume",                                :precision => 10, :scale => 2
     t.integer  "barcode_prefix_id"
     t.decimal  "concentration",                         :precision => 18, :scale => 8
@@ -642,9 +641,11 @@ ActiveRecord::Schema.define(:version => 20120627095520) do
   create_table "plate_metadata", :force => true do |t|
     t.integer "plate_id"
     t.string  "infinium_barcode"
+    t.integer "plate_purpose_id", :null => false
   end
 
   add_index "plate_metadata", ["plate_id"], :name => "index_plate_metadata_on_plate_id"
+  add_index "plate_metadata", ["plate_purpose_id"], :name => "index_plate_metadata_on_plate_purpose_id"
 
   create_table "plate_purpose_relationships", :force => true do |t|
     t.integer "parent_id"

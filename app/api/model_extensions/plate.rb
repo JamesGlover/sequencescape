@@ -31,7 +31,7 @@ module ModelExtensions::Plate
 
   def self.included(base)
     base.class_eval do
-      named_scope :include_plate_purpose, :include => :plate_purpose
+      named_scope :include_plate_purpose, :include => {:plate_metadata => :plate_purpose}
       named_scope :include_plate_metadata, :include => :plate_metadata
       delegate :pool_id_for_well, :to => :plate_purpose, :allow_nil => true
     end
