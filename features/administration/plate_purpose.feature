@@ -3,11 +3,14 @@ Feature: Manage Plate Purposes
 
   Background:
     Given I am a "administrator" user logged in as "user"
+    And I have a hidden plate purpose
     And I am on the plate purpose homepage
 
   Scenario: Adding a new plate purpose
     Then I should see "Listing All Plate Purposes"
     And I should see "Stock Plate"
+    And I should see "Legacy Pulldown Intermediate"
+    And I should not see "Hidden Purpose"
     When I follow "New Plate Purpose"
     And I fill in the field labeled "Name" with "A new plate purpose"
     And I press "Create"
