@@ -18,8 +18,8 @@ Feature: Access plates through the API
     Given the plate exists with ID 1
       And the plate with ID 1 has a barcode of "1220000001831"
       And the UUID for the plate with ID 1 is "00000000-1111-2222-3333-444444444444"
-      And the plate with ID 1 has a plate purpose of "Stock plate"
-      And the UUID for the plate purpose "Stock plate" is "11111111-2222-3333-4444-555555555555"
+      And the plate with ID 1 has a plate purpose of "Working Dilution"
+      And the UUID for the plate purpose "Working Dilution" is "11111111-2222-3333-4444-555555555555"
 
     When I GET the API path "/00000000-1111-2222-3333-444444444444"
     Then the HTTP response should be "200 OK"
@@ -37,9 +37,9 @@ Feature: Access plates through the API
           },
 
           "barcode": {
-            "prefix": "DN",
+            "prefix": "WD",
             "number": "1",
-            "ean13": "1220000001831",
+            "ean13": "6250000001741",
             "type": 1
           },
 
