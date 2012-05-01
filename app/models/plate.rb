@@ -488,8 +488,9 @@ WHERE c.container_id=?
   end
   private :lookup_stock_plate
   # Are these still used? I've updated them in case they are
+  # Hmm, I'm assuming we'll have a problem here, eager loading needed, but on asset, rather than plate.
   def child_dilution_plates_filtered_by_purpose(parent_purpose)
-    self.children.select{ |p| p.method_defined?(:plate_purpose) && p.plate_purpose == parent_purpose }
+    self.children.select{ |p| p.is_a?(Plate) && p.plate_purpose == parent_purpose }
   end
 
   def child_dilution_plates_filtered_by_type(parent_model)
@@ -498,7 +499,7 @@ WHERE c.container_id=?
 
   def children_of_dilution_plates(parent_purpose, child_purpose)
     child_dilution_plates_filtered_by_purpose(parent_purpose).map do |dilution_plate|
-      dilution_plate.children.select{ |p| p.method_defined?(:plate_purpose) && p.plate_purpose == child_purpose }
+      dilution_plate.children.find(:all, :include=>:plate_metadata).select{ |p| p.is_a?(Plate) && p.plate_purpose == child_purpose }
     end.flatten.select{ |p| ! p.nil? }
   end
 
