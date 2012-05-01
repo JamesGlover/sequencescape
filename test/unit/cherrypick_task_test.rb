@@ -9,7 +9,7 @@ class CherrypickTaskTest < ActiveSupport::TestCase
     setup do
       pipeline = Pipeline.find_by_name('Cherrypick') or raise StandardError, "Cannot find cherrypick pipeline"
       @task = CherrypickTask.new(:workflow => pipeline.workflow)
-    end 
+    end
 
     context "#map_empty_wells with 1 empty_well" do
       setup do
@@ -147,52 +147,52 @@ class CherrypickTaskTest < ActiveSupport::TestCase
         end
       end
 
-      context "#map_wells_to_plates with 2 requests and a partial plate inputted and a control well" do
-        setup do
-          @template = Factory :plate_template
-          @template.set_control_well(1)
-          @map  = Map.find_by_description_and_asset_size("A1",96)
-          @map2 = Map.find_by_description_and_asset_size("B1",96)
-          @map3 = Map.find_by_description_and_asset_size("C1",96)
-          @request.asset.map_id  = @map.id
-          @request2.asset.map_id = @map2.id
-          @request3.asset.map_id = @map3.id
-          @plate = Factory :plate
-          @plate.add_and_save_well @request.asset
-          @plate.add_and_save_well @request2.asset
+      # context "#map_wells_to_plates with 2 requests and a partial plate inputted and a control well" do
+      #   setup do
+      #     @template = Factory :plate_template
+      #     @template.set_control_well(1)
+      #     @map  = Map.find_by_description_and_asset_size("A1",96)
+      #     @map2 = Map.find_by_description_and_asset_size("B1",96)
+      #     @map3 = Map.find_by_description_and_asset_size("C1",96)
+      #     @request.asset.map_id  = @map.id
+      #     @request2.asset.map_id = @map2.id
+      #     @request3.asset.map_id = @map3.id
+      #     @plate = Factory :plate
+      #     @plate.add_and_save_well @request.asset
+      #     @plate.add_and_save_well @request2.asset
 
-          @control_plate = Factory :control_plate, :barcode => 134443
-          [["A1","Sample_111"],["C1","Sample_222"],["E1","Sample_333"],["H1","Affy1"],["G1","Affy2"]].each do |description,value|
-            map = Map.find_by_description_and_asset_size(description,96)
-            sample = Factory :sample, :name=> value
-            well = Well.create!(:map => map, :value => value).tap { |well| well.aliquots.create!(:sample => sample) }
-            @control_plate.add_and_save_well well
-          end
+      #     @control_plate = Factory :control_plate, :barcode => 134443
+      #     [["A1","Sample_111"],["C1","Sample_222"],["E1","Sample_333"],["H1","Affy1"],["G1","Affy2"]].each do |description,value|
+      #       map = Map.find_by_description_and_asset_size(description,96)
+      #       sample = Factory :sample, :name=> value
+      #       well = Well.create!(:map => map, :value => value).tap { |well| well.aliquots.create!(:sample => sample) }
+      #       @control_plate.add_and_save_well well
+      #     end
 
-          @control_request = @task.create_control_request(@batch,@plate,@template)
-          @parentasset4 = Factory :asset
-          @assetlink4  = Factory :asset_link, :ancestor_id => @parentasset4.id,  :descendant_id => @control_request.asset.id
-          @map4 = Map.find_by_description_and_asset_size("C1",96)
-          @control_request.asset.map_id  = @map4.id
-          @plate.add_and_save_well @control_request.asset
-          @robot  = Factory :robot
-          @robot.robot_properties.create(:key=> 'max_plates', :value => 15)
-          @robot.save
+      #     @control_request = @task.create_control_request(@batch,@plate,@template)
+      #     @parentasset4 = Factory :asset
+      #     @assetlink4  = Factory :asset_link, :ancestor_id => @parentasset4.id,  :descendant_id => @control_request.asset.id
+      #     @map4 = Map.find_by_description_and_asset_size("C1",96)
+      #     @control_request.asset.map_id  = @map4.id
+      #     @plate.add_and_save_well @control_request.asset
+      #     @robot  = Factory :robot
+      #     @robot.robot_properties.create(:key=> 'max_plates', :value => 15)
+      #     @robot.save
 
-          @requests = [@request3]
-          @plate.reload
-        end
-        should "produce initial layout for cherrypicking" do
-          assert_not_nil @control_request
-          cplayout = @task.map_wells_to_plates(@requests,@template,@robot,@batch,@plate)
-          assert_equal [0, "---", ""], cplayout[0][0][0]
-          assert_equal [0, "---", ""], cplayout[0][0][1]
-          assert_equal [0, "---", ""], cplayout[0][0][2]
-          assert_equal [@request3.id, @request3.asset.parent.barcode, "C1"], cplayout[0][0][3]
-          assert_equal @control_request.asset.parent.barcode,cplayout[0][0][4][1]
-          assert_equal [0, "Empty", ""], cplayout[0][0][5]
-        end
-      end
+      #     @requests = [@request3]
+      #     @plate.reload
+      #   end
+      #   should "produce initial layout for cherrypicking" do
+      #     assert_not_nil @control_request
+      #     cplayout = @task.map_wells_to_plates(@requests,@template,@robot,@batch,@plate)
+      #     assert_equal [0, "---", ""], cplayout[0][0][0]
+      #     assert_equal [0, "---", ""], cplayout[0][0][1]
+      #     assert_equal [0, "---", ""], cplayout[0][0][2]
+      #     assert_equal [@request3.id, @request3.asset.parent.barcode, "C1"], cplayout[0][0][3]
+      #     assert_equal @control_request.asset.parent.barcode,cplayout[0][0][4][1]
+      #     assert_equal [0, "Empty", ""], cplayout[0][0][5]
+      #   end
+      # end
 
       context "#map_wells_to_plates with 2 requests with a control well on the template" do
         setup do
@@ -228,28 +228,28 @@ class CherrypickTaskTest < ActiveSupport::TestCase
         end
       end
 
-      context "#create_control_request" do
-        setup do
-          @plate = Factory :control_plate, :barcode => 134443
-          [["A1","Sample_111"],["C1","Sample_222"],["E1","Sample_333"],["H1","Affy1"],["G1","Affy2"]].each do |description,value|
-            map = Map.find_by_description_and_asset_size(description,96)
-            sample = Factory :sample, :name=> value
-            well = Well.create!(:map => map, :value => value).tap { |well| well.aliquots.create!(:sample => sample) }
-            @plate.add_and_save_well well
-          end
-          @template = Factory :plate_template
-          @template.add_and_save_well Well.new(:map=>Map.find_by_description_and_asset_size("A1",96))
-          @template.set_control_well(1)
-          @plate.reload
-        end
-        should "randomly return a request and correct asset" do
-          request = @task.create_control_request(@batch,nil,@template)
-          assert request.is_a?(Request)
-          assert_equal false, request.asset.nil?
-          assert_equal false, request.target_asset.nil?
-          assert_equal false, ["A1","C1","E1"].index(request.asset.map.description).nil?
-        end
-      end
+      # context "#create_control_request" do
+      #   setup do
+      #     @plate = Factory :control_plate, :barcode => 134443
+      #     [["A1","Sample_111"],["C1","Sample_222"],["E1","Sample_333"],["H1","Affy1"],["G1","Affy2"]].each do |description,value|
+      #       map = Map.find_by_description_and_asset_size(description,96)
+      #       sample = Factory :sample, :name=> value
+      #       well = Well.create!(:map => map, :value => value).tap { |well| well.aliquots.create!(:sample => sample) }
+      #       @plate.add_and_save_well well
+      #     end
+      #     @template = Factory :plate_template
+      #     @template.add_and_save_well Well.new(:map=>Map.find_by_description_and_asset_size("A1",96))
+      #     @template.set_control_well(1)
+      #     @plate.reload
+      #   end
+      #   should "randomly return a request and correct asset" do
+      #     request = @task.create_control_request(@batch,nil,@template)
+      #     assert request.is_a?(Request)
+      #     assert_equal false, request.asset.nil?
+      #     assert_equal false, request.target_asset.nil?
+      #     assert_equal false, ["A1","C1","E1"].index(request.asset.map.description).nil?
+      #   end
+      # end
     end
 
     context "#parse_spreadsheet_row" do

@@ -184,7 +184,7 @@ class CherrypickTask < Task
   def map_empty_wells(template,plate)
     {}.tap do |empty_wells|
       empty_wells.merge!(Hash[plate.wells.map { |w| [w.map.horizontal_plate_position,w.map.description] }]) unless plate.nil?
-      empty_wells.merge!(Hash[template.wells.map { |w| [w.map.snp_id, w.map.description] }])
+      empty_wells.merge!(Hash[template.wells.map { |w| [Map.find(w).snp_id, Map.find(w).description] }])
     end
   end
   private :map_empty_wells

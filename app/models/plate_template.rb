@@ -8,7 +8,7 @@ class PlateTemplate < ActiveRecord::Base
     self.size = (details[:rows]).to_i * (details[:cols]).to_i
     set_control_well(details[:control_well]) unless set_control_well(details[:control_well]).nil?
     unless details[:wells].nil?
-      self.wells = details[:wells].map {|k,v| [k,v.to_i]}
+      self.wells = details[:wells].map {|k,v| v.to_i}
     end
     self.save!
   end
@@ -19,12 +19,12 @@ class PlateTemplate < ActiveRecord::Base
   end
 
   def find_well_by_name(well)
-    self.wells.detect {|w| w.first == well }
+    self.wells.detect {|w| Map.find(w).description == well }
   end
 
   def add_well(well, row=nil, col=nil)
     self.wells ||= []
-    self.wells << [well.map_description, well.map_id]
+    self.wells << well.map_id
     self.save!
   end
   alias :add_and_save_well :add_well

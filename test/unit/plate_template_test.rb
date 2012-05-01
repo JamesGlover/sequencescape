@@ -59,7 +59,7 @@ class PlateTemplateTest < ActiveSupport::TestCase
       end
       should "not be added" do
         assert_equal @old_wells, Well.count
-        assert_equal([['A1',123]],@template.wells)
+        assert_equal([123],@template.wells)
       end
     end
 
@@ -72,7 +72,7 @@ class PlateTemplateTest < ActiveSupport::TestCase
       end
       should "not be added" do
         assert_equal @old_wells, Well.count
-        assert_equal([['A1',123],['B3',345]],@template.wells)
+        assert_equal([123,345],@template.wells)
       end
     end
 
