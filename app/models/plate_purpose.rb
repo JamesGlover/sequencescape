@@ -3,56 +3,56 @@ class PlatePurpose < ActiveRecord::Base
     belongs_to :barcode_prefix
   module PurposePaths
     def gel_dilution
-      find( :first, {:conditions => ["name = ?", "Gel Dilution"]} )
+      @gel_dilution ||= find( :first, {:conditions => ["name = ?", "Gel Dilution"]} )
     end
     def working_dilution
-      find(:first, {:conditions => ["name = ?", "Working Dilution"]})
+      @working_dilution ||= find(:first, {:conditions => ["name = ?", "Working Dilution"]})
     end
     def pulldown_aliquot
-      find(:first, {:conditions => ["name = ?", "Pulldown Aliquot"]})
+      @pulldown_aliquot ||= find(:first, {:conditions => ["name = ?", "Pulldown Aliquot"]})
     end
     def pulldown_sonication
-      find(:first, {:conditions => ["name = ?", "Sonication"]})
+      @pulldown_sonication ||= find(:first, {:conditions => ["name = ?", "Sonication"]})
     end
     def pulldown_run_of_robot
-      find(:first, {:conditions => ["name = ?", "Run Of Robot"]})
+      @pulldown_run_of_robot ||= find(:first, {:conditions => ["name = ?", "Run Of Robot"]})
     end
     def pulldown_enrichment_one
-      find(:first, {:conditions => ["name = ?", "EnRichment 1"]})
+      @pulldown_enrichment_one  ||= find(:first, {:conditions => ["name = ?", "EnRichment 1"]})
     end
     def pulldown_enrichment_two
-      find(:first, {:conditions => ["name = ?", "EnRichment 2"]})
+      @pulldown_enrichment_two ||= find(:first, {:conditions => ["name = ?", "EnRichment 2"]})
     end
     def pulldown_enrichment_three
-      find(:first, {:conditions => ["name = ?", "EnRichment 3"]})
+      @pulldown_enrichment_three ||= find(:first, {:conditions => ["name = ?", "EnRichment 3"]})
     end
     def pulldown_enrichment_four
-      find(:first, {:conditions => ["name = ?", "EnRichment 4"]})
+      @pulldown_enrichment_four ||= find(:first, {:conditions => ["name = ?", "EnRichment 4"]})
     end
     def pulldown_sequence_capture
-      find(:first, {:conditions => ["name = ?", "Sequence Capture"]})
+      @pulldown_sequence_capture ||= find(:first, {:conditions => ["name = ?", "Sequence Capture"]})
     end
     def pulldown_pcr
-      find(:first, {:conditions => ["name = ?", "Pulldown PCR"]})
+      @pulldown_pcr ||= find(:first, {:conditions => ["name = ?", "Pulldown PCR"]})
     end
     def pulldown_qpcr
-      find(:first, {:conditions => ["name = ?", "Pulldown qPCR"]})
+      @pulldown_qpcr ||= find(:first, {:conditions => ["name = ?", "Pulldown qPCR"]})
     end
     def pico_assay_a
-      find(:first, {:conditions => ["name = ?", "Pico Assay A"]})
+      @pico_assay_a ||= find(:first, {:conditions => ["name = ?", "Pico Assay A"]})
     end
     def pico_dilution
-      find(:first, {:conditions => ["name = ?", "Pico Dilution"]})
+      @pico_dilution ||= find(:first, {:conditions => ["name = ?", "Pico Dilution"]})
     end
     def sequenom
-      find(:first, {:conditions => ["name = ?", "Sequenom"]})
+      @sequenom ||= find(:first, {:conditions => ["name = ?", "Sequenom"]})
     end
     def stock_plate
-      find(:first, {:conditions => ["name = ?", "Stock Plate"]})
+      @stock_plate ||= find(:first, {:conditions => ["name = ?", "Stock Plate"]})
     end
     alias :default :stock_plate
     def legacy_pulldown
-      find(:first, {:conditions => ["name = ?", "Legacy Pulldown Intermediate"]})
+      @legacy_pulldown ||= find(:first, {:conditions => ["name = ?", "Legacy Pulldown Intermediate"]})
     end
   end
   extend PurposePaths
