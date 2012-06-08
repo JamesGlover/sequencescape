@@ -75,6 +75,10 @@ class SampleRegistrar < ActiveRecord::Base
   validates_presence_of :sample
 
   after_create do |record|
+    record.sample_tube.aliquots.create!(:sample => record.sample)
+  end
+
+  after_create do |record|
     # NOTE: this looks like it should be 'record.user.is_owner_of(record.sample)' but ActiveRecord and the
     # dynamic methods associated with User and Role causes that not to work.  So you have to be explicit
     # and send the request for the method!
@@ -91,9 +95,7 @@ class SampleRegistrar < ActiveRecord::Base
   before_validation do |record|
     record.sample_tube.name = record.sample.name
   end
-  after_create do |record|
-    record.sample_tube.aliquots.create!(:sample => record.sample)
-  end
+
 
   # SampleTubes are registered within an AssetGroup, unless the AssetGroup is unspecified.
   attr_accessor :asset_group_helper
