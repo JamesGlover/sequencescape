@@ -4,6 +4,12 @@ class ContainerAssociation < ActiveRecord::Base
   belongs_to :container , :class_name => "Asset"
   belongs_to :content , :class_name => "Asset"
 
+  before_save :ensure_position_copied
+  def ensure_position_copied
+    position_id = content.map_id if position_id != content.map_id
+  end
+  private :ensure_position_copied
+
   # NOTE: This was originally on the content asset but this causes massive performance issues.
   # It causes the plate and it's metadata to be loaded for each well, which would be cached if 
   # it were not for inserts/updates being performed.  I'm disabling this as it should be caught
@@ -34,8 +40,8 @@ class ContainerAssociation < ActiveRecord::Base
             ActiveRecord::Base.transaction do
               #{class_name}.import(records)
 
-              sub_query = #{class_name}.send(:construct_finder_sql, :select => 'id', :order => 'id DESC')
-              records   = #{class_name}.connection.select_all(%Q{SELECT id FROM (\#{sub_query}) AS a LIMIT \#{records.size}})
+              sub_query = #{class_name}.send(:construct_finder_sql, :select => 'id, map_id', :order => 'id DESC')
+              records   = #{class_name}.connection.select_all(%Q{SELECT id, map_id FROM (\#{sub_query}) AS a LIMIT \#{records.size}})
               attach(records)
               post_import(records.map { |r| [proxy_owner.id, r['id']] })
             end
@@ -43,8 +49,8 @@ class ContainerAssociation < ActiveRecord::Base
 
           def attach(records)
             ActiveRecord::Base.transaction do
-              links_data = records.map { |r| [proxy_owner.id, r['id']] }
-              ContainerAssociation.import([:container_id, :content_id], links_data, :validate => false)
+              links_data = records.map { |r| [proxy_owner.id, r['id'], r['map_id']] }
+              ContainerAssociation.import([:container_id, :content_id, :position_id], links_data, :validate => false)
             end
           end
         }, __FILE__, line)
