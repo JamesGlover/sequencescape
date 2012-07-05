@@ -17,8 +17,8 @@ end
 
 Given /^each well in "([^"]*)" has a child well on a plate$/ do |study_name|
   study = Study.find_by_name(study_name)
-  plate = Plate.create!(:barcode => "44444", :plate_purpose => PlatePurpose.find_by_name('Pulldown'))
-  
+  plate = PlatePurpose.find_by_name('Pulldown').create!(true, :barcode => "44444")
+
   Well.find_each do |well|
     child_well = Well.create(:map => well.map, :plate => plate)
     well.children << child_well
