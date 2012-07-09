@@ -45,7 +45,7 @@ class ReceptionsController < ApplicationController
       else
         @asset = Asset.find_from_machine_barcode(barcode)
       end
-      
+
 
       if @asset.nil?
         @generic_asset = Asset.find_by_barcode(id)
@@ -127,7 +127,7 @@ class ReceptionsController < ApplicationController
         @snp_plates << plate
       end
     end
-    
+
     if @errors.size > 0
       respond_to do |format|
         format.html { render :action => "snp_import" }
@@ -145,18 +145,40 @@ class ReceptionsController < ApplicationController
 
   def import_from_snp
     respond_to do |format|
-      if Plate.create_plates_with_barcodes(params)
+      if create_plates_with_barcodes(params)
         flash[:notice] = "Plates queued to be imported"
         format.html { redirect_to :action => "snp_import" }
         format.xml  { head :ok }
         format.json { head :ok }
       else
-        flash[:errors] = "Plates could not be created"
+        flash[:errors] = "Plates could not be created, no plates were queued to be imported"
         format.html { render :action => "snp_import" }
         format.xml  { render :xml  => @errors, :status => :unprocessable_entity }
         format.json { render :json => @errors, :status => :unprocessable_entity }
       end
     end
+  end
+
+  def create_plates_with_barcodes(params)
+    begin
+      ActiveRecord::Base.transaction do
+
+        location = Location.find(params[:asset][:location_id])
+
+        params[:snp_plates].each do |index,plate_barcode_id|
+          Plate.create!(
+            :barcode => "#{plate_barcode_id}",
+            :name => "Plate #{plate_barcode_id}",
+            :size => Plate::DEFAULT_SIZE,
+            :location => location
+          ) unless plate_barcode_id.blank?
+        end
+
+      end
+    rescue
+      return false
+    end
+    true
   end
 
   def find_asset_by_id

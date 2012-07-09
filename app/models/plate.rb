@@ -283,46 +283,8 @@ WHERE c.container_id=?
     true
   end
 
-  def self.create_from_rack_csv(file_location, plate_barcode)
-    plate = self.create(:name => "Plate #{plate_barcode}", :barcode => plate_barcode, :size => 96)
-
-    FasterCSV.foreach(file_location) do |row|
-      map = Map.find_for_cell_location(row.first, plate.size)
-      unless row.last.strip.blank?
-        asset = Asset.find_by_two_dimensional_barcode(row.last.strip)
-        unless asset.nil?
-          well = plate.wells.create(:sample => asset.sample, :map_id => map.id)
-          well.name = "#{asset} #{well.id}"
-          well.save
-          AssetLink.create_edge(asset, well)
-        else
-          well = plate.wells.create(:map_id => map.id)
-        end
-      else
-        well = plate.wells.create(:map_id => map.id)
-      end
-    end
-    plate
-  end
-
   def submission_time(current_time)
     current_time.strftime("%Y-%m-%dT%H_%M_%SZ")
-  end
-
-  def self.create_plates_with_barcodes(params)
-    begin
-      params[:snp_plates].each do |index,plate_barcode_id|
-        next if plate_barcode_id.blank?
-        plate = Plate.create(:barcode => "#{plate_barcode_id}", :name => "Plate #{plate_barcode_id}", :size => DEFAULT_SIZE)
-        storage_location = Location.find(params[:asset][:location_id])
-        plate.location = storage_location
-        plate.save!
-      end
-    rescue
-      return false
-    end
-
-    true
   end
 
   def self.plate_ids_from_requests(requests)
