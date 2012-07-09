@@ -1,7 +1,5 @@
 class PlatePurpose < ActiveRecord::Base
 
-  extend PlatePurpose::PurposePaths
-
   class Relationship < ActiveRecord::Base
     set_table_name('plate_purpose_relationships')
     belongs_to :parent, :class_name => 'PlatePurpose'
