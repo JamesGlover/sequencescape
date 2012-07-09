@@ -115,7 +115,6 @@ private
   def rescue_find_plate_from_barcode_with_create(exception, barcode, human_barcode)
     rescue_find_plate_from_barcode_without_create(exception, barcode, human_barcode) unless ActiveRecord::RecordNotFound === exception
     @plate = Plate.create!(:barcode => Barcode.number_to_human(barcode))
-    # XYZZY ! Should this be a stock plate, or something else, such as Sequenom?
   end
   alias_method_chain(:rescue_find_plate_from_barcode, :create)
 end

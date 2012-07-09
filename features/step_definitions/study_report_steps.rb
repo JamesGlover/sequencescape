@@ -29,7 +29,7 @@ Then /^the last report for "([^"]*)" should be:$/ do |study_name, expected_resul
 end
 
 Given /^study "([^"]*)" has a plate "([^"]*)"$/ do |study_name, plate_barcode|
-  plate = PlatePurpose.stock_plate.create!(:without_wells, :barcode => plate_barcode )
+  plate = PlatePurpose.stock_plate_purpose.create!(:without_wells, :barcode => plate_barcode )
   samples = []
   1.upto(3) do |i|
     well = Well.create!(:plate => plate, :map_id => i)

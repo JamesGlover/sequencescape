@@ -41,7 +41,7 @@ if ENV['PULLDOWN']
     end
 
     # Plate that can be submitted for each pipeline
-    stock_plate = PlatePurpose.find(2).create!.tap do |plate|
+    stock_plate = PlatePurpose.stock_plate_purpose.create!.tap do |plate|
       plate.wells.each { |w| w.aliquots.create!(:sample => Sample.create!(:name => "sample_in_stock_well_#{w.map.description}")) }
     end
 

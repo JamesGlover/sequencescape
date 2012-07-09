@@ -432,6 +432,7 @@ WHERE c.container_id=?
     self.parent.try(:wells).try(:first).try(:study).try(:abbreviation)
   end
 
+  # Do not call this method directly. Go through the appropriate plate pupose
   def self.create_with_barcode!(*args, &block)
     attributes = args.extract_options!
     barcode    = args.first || attributes[:barcode]
