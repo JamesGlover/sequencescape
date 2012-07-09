@@ -1,6 +1,6 @@
 Given /^I have a plate in study "([^"]*)" with samples with known sanger_sample_ids$/ do |study_name|
   study = Study.find_by_name(study_name)
-  plate = PlatePurpose.stock_plate_purpose.create!(true, :barcode => "1234567", :location => Location.find_by_name("Sample logistics freezer"))
+  plate = PlatePurpose.stock_plate_purpose.create!(:without_wells, :barcode => "1234567", :location => Location.find_by_name("Sample logistics freezer"))
   1.upto(4) do |i|
     Well.create!(:plate => plate, :map_id => i).aliquots.create!(:sample => Sample.create!(:name => "Sample_#{i}", :sanger_sample_id => "ABC_#{i}"))
   end
@@ -139,7 +139,7 @@ end
 
 Given /^the sample tubes are part of submission "([^\"]*)"$/ do |submission_uuid|
   submission = Uuid.find_by_external_id(submission_uuid).resource or raise StandardError, "Couldnt find object for UUID"
-  Asset.all.map{ |asset| submission.orders.first.assets << asset } 
+  Asset.all.map{ |asset| submission.orders.first.assets << asset }
 end
 
 Then /^I create the order and submit the submission/ do
@@ -152,7 +152,7 @@ end
 Given /^I have a "([^\"]*)" submission with the following setup:$/ do |template_name, table|
   submission_template = SubmissionTemplate.find_by_name(template_name)
   params = table.rows_hash
-  request_options = {} 
+  request_options = {}
   request_type_ids = submission_template.new_order.request_types
 
   params.each do |k,v|

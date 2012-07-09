@@ -91,6 +91,18 @@ Given /^a plate of type "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_type
     :plate_purpose => "#{plate_type}Purpose".constantize.first)
 end
 
+Given /^a plate of purpose "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_purpose, machine_barcode|
+  plate_purpose = if plate_purpose == "Plate"
+    PlatePurpose.find_by_name('Stock Plate')
+  else
+    PlatePurpose.find_by_name(plate_purpose)
+  end
+  plate = plate_purpose.create!(
+    :without_wells,
+    :barcode =>Barcode.number_to_human("#{machine_barcode}")
+  )
+end
+
 Given /^a "([^"]*)" plate purpose and of type "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_purpose_name, plate_type, machine_barcode|
   plate_type.constantize.create!(
     :barcode =>Barcode.number_to_human("#{machine_barcode}"),
@@ -143,7 +155,7 @@ Given /^well "([^"]*)" is holded by plate "([^"]*)"$/ do |well_uuid, plate_uuid|
 end
 
 Then /^plate "([^"]*)" should have a purpose of "([^"]*)"$/ do |plate_barcode, plate_purpose_name|
-  assert_equal plate_purpose_name, Plate.find_by_barcode("1234567").plate_purpose.name 
+  assert_equal plate_purpose_name, Plate.find_by_barcode("1234567").plate_purpose.name
 end
 
 Given /^the well with ID (\d+) contains the sample "([^\"]+)"$/ do |well_id, name|

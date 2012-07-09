@@ -15,8 +15,7 @@ module Tasks::AssignTubesToWellsHandler
     requests = task.find_batch_requests(params[:batch_id])
 
     ActiveRecord::Base.transaction do
-      # XYZZY! Caution! As it stands this will leave some wells empty.
-      plate = PlatePurpose.stock_plate.create!(true, :barcode => PlateBarcode.create.barcode)
+      plate = Plate.create!(:barcode => PlateBarcode.create.barcode)
 
       library_tubes.each do |library_tube|
         library_well_positions = all_well_positions_for_library_tube(tubes_to_well_positions, library_tube)
