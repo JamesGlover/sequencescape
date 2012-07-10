@@ -148,7 +148,7 @@ module SampleManifest::PlateBehaviour
 
     well_data = []
     plates    = (0...self.count).map do |_|
-      stock_plate_purpose.create!(:without_wells)
+      PlatePurpose.stock_plate_purpose.create!(:without_wells)
     end.sort_by(&:barcode).map do |plate|
       plate.tap do |plate|
         sanger_sample_ids = generate_sanger_ids(plate.size)

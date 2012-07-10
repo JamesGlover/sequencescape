@@ -78,7 +78,7 @@ plate_purposes = <<-EOS
   pulldown_display:
   id: 13
   type: QcPlatePurpose
-  target_type:
+  target_type: SequenomQcPlate
 - name: Gel Dilution
   qc_display: false
   pulldown_display:
@@ -422,7 +422,7 @@ plate_purposes = <<-EOS
   type: PulldownQpcrPlatePurpose
   target_type: PulldownQpcrPlate
   EOS
-  
+
 plate_purposes_data = []
 YAML::load(plate_purposes).each do |plate_purpose|
   if plate_purpose["type"].blank?

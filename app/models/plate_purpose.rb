@@ -112,20 +112,22 @@ class PlatePurpose < ActiveRecord::Base
 
   def self.stock_plate_purpose
     # IDs copied from SNP
-    @stock_plate_purpose ||= PlatePurpose.find(2)
+    @stock_plate_purpose ||= PlatePurpose.find_by_name('Stock Plate')
   end
 
   def create!(*args, &block)
     attributes          = args.extract_options!
     do_not_create_wells = !!args.first
     attributes[:size] ||= 96
-    plates.create_with_barcode!(attributes, &block).tap do |plate|
+    plate_type = target_type.try(:constantize) || Plate
+    attributes[:plate_purpose] = self
+    plate_type.create_with_barcode!(attributes, &block).tap do |plate|
       plate.wells.import(generate_wells(plate)) unless do_not_create_wells
     end
   end
 
   def generate_wells(plate)
-    Map.where_plate_size(size).in_reverse_row_major_order.all.map do |map|
+    Map.where_plate_size(plate.size).in_reverse_row_major_order.all.map do |map|
       Well.new(:map => map)
     end
   end
