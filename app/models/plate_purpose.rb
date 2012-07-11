@@ -118,7 +118,6 @@ class PlatePurpose < ActiveRecord::Base
   def create!(*args, &block)
     attributes          = args.extract_options!
     do_not_create_wells = !!args.first
-    attributes[:size] ||= 96
     plate_type = target_type.try(:constantize) || Plate
     attributes[:plate_purpose] = self
     plate_type.create_with_barcode!(attributes, &block).tap do |plate|

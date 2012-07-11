@@ -19,38 +19,28 @@ class SequenomQcPlatesController < ApplicationController
     new_plates = []
 
     # This will hold the first bad plate with errors preventing it's creation
-    bad_plate  = nil
-
-
-    (1..number_of_barcodes).each do
-      sequenom_qc_plate = PlatePurpose.find_by_name('Sequenom').create!(
-        {:plate_prefix        => params[:plate_prefix],
-        :gender_check_bypass => gender_check_bypass,
-        :user_barcode        => user_barcode}
-      ) do |sequenom_qc_plate|
-        #TODO: create a factory object
-
-        # Need to be done before saving the plate
-        valid = input_plate_names && sequenom_qc_plate.compute_and_set_name(input_plate_names)
-        errors = sequenom_qc_plate.errors.inject({}) { |h, (k, v)| h.update(k=>v) }
-        if sequenom_qc_plate.save and valid and sequenom_qc_plate.add_event_to_stock_plates(user_barcode)
-          new_plates << sequenom_qc_plate
-        else
-          # If saving any of our new plates fails then catch that plate, for errors
-          # and move straight on to sending a response
-          bad_plate = sequenom_qc_plate
-          errors.each do |att, value|
-            bad_plate.errors.add(att, value)
-          end
-          break
+    error  = nil
+    begin
+      ActiveRecord::Base.transaction do
+        new_plates = (1..number_of_barcodes).map do
+          puts "Crearing"
+          PlatePurpose.find_by_name('Sequenom').create!(
+            :without_wells,
+            :input_plate_names   => input_plate_names,
+            :plate_prefix        => params[:plate_prefix],
+            :gender_check_bypass => gender_check_bypass,
+            :user_barcode        => user_barcode
+          )
         end
       end
+    rescue ActiveRecord::RecordInvalid => invalid
+      error = invalid.to_s
     end
 
     respond_to do |format|
-      if bad_plate
+      if error
         # Something's gone wrong, render the errors on the first plate that failed
-        flash[:error] = bad_plate.errors.on_base || "Failed to create Sequenom QC Plate"
+        flash[:error] = "Failed to create Sequenom QC Plates: #{error}"
         format.html { render :new }
       else
         # Everything's tickity boo so...

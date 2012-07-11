@@ -22,7 +22,7 @@ Feature: Sequenom QC Plates
     Then the table of sequenom plates should be:
       | Plate      | Name in MSPEC                          | Created    | Quadrant | Source Plate | No. Blanks | Study   | Type             | A1 Name         |
       | DN1234567T | QC125054_125056_125069_125048_20100804 | 2010-08-04 | 1        | 125054       | 1          | Study A | Working Dilution | 125054_0        |
-      | DN1234567T | QC125054_125056_125069_125048_20100804 | 2010-08-04 | 2        | 125056       | 0          | Study A | Working Dilution | 1220125056761_x |
+      | DN1234567T | QC125054_125056_125069_125048_20100804 | 2010-08-04 | 2        | 125056       | 0          | Study A | Working Dilution | 6250125056664_x |
       | DN1234567T | QC125054_125056_125069_125048_20100804 | 2010-08-04 | 3        | 125069       | 0          | Study B | Stock Plate      | 1220125069815_x |
       | DN1234567T | QC125054_125056_125069_125048_20100804 | 2010-08-04 | 4        | 125048       | 3          | Study B | Stock Plate      | 125048_0        |
 
