@@ -119,12 +119,6 @@ Given /^the plate with ID (\d+) has a plate purpose of "([^\"]+)"$/ do |id, name
   Plate.find(id).update_attributes!(:plate_purpose => purpose)
 end
 
-Given /^a plate with purpose "([^"]*)" and barcode "([^"]*)" exists$/ do |plate_purpose_name, machine_barcode|
-  PlatePurpose.find_by_name(plate_purpose_name).create!(:without_wells, :barcode =>Barcode.number_to_human("#{machine_barcode}"))
-  # Plate.create!(:barcode =>Barcode.number_to_human("#{machine_barcode}"), :plate_purpose => PlatePurpose.find_by_name(plate_purpose_name))
-end
-
-
 Given /^a stock plate with barcode "([^"]*)" exists$/ do |machine_barcode|
   @stock_plate = Factory(:plate,
     :name => "A_TEST_STOCK_PLATE",
