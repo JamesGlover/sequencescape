@@ -120,7 +120,8 @@ Given /^the plate with ID (\d+) has a plate purpose of "([^\"]+)"$/ do |id, name
 end
 
 Given /^a plate with purpose "([^"]*)" and barcode "([^"]*)" exists$/ do |plate_purpose_name, machine_barcode|
-  PlatePurpose.find_by_name(plate_purpose_name).create!(:barcode =>Barcode.number_to_human("#{machine_barcode}"))
+  PlatePurpose.find_by_name(plate_purpose_name).create!(:without_wells, :barcode =>Barcode.number_to_human("#{machine_barcode}"))
+  # Plate.create!(:barcode =>Barcode.number_to_human("#{machine_barcode}"), :plate_purpose => PlatePurpose.find_by_name(plate_purpose_name))
 end
 
 

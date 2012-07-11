@@ -42,62 +42,62 @@ Feature: Pick by micro litre (stock transfer) using the Tecan robot
      And I press "Next step"
      And I press "Release this batch"
     Given the last batch has a barcode of "550000555760"
-    Then the downloaded tecan file for batch "550000555760" and plate "1220099999705" is
+    Then the downloaded tecan file for batch "550000555760" and plate "1630099999757" is
     """
     C;
     A;1220000222748;;ABgene 0765;2;;<volume>.0
-    D;1220099999705;;ABgene 0800;1;;<volume>.0
+    D;1630099999757;;ABgene 0800;1;;<volume>.0
     W;
     A;1220000222748;;ABgene 0765;10;;<volume>.0
-    D;1220099999705;;ABgene 0800;2;;<volume>.0
+    D;1630099999757;;ABgene 0800;2;;<volume>.0
     W;
     A;1220000222748;;ABgene 0765;18;;<volume>.0
-    D;1220099999705;;ABgene 0800;3;;<volume>.0
+    D;1630099999757;;ABgene 0800;3;;<volume>.0
     W;
     A;1220000222748;;ABgene 0765;26;;<volume>.0
-    D;1220099999705;;ABgene 0800;4;;<volume>.0
+    D;1630099999757;;ABgene 0800;4;;<volume>.0
     W;
     A;1220000222748;;ABgene 0765;34;;<volume>.0
-    D;1220099999705;;ABgene 0800;5;;<volume>.0
+    D;1630099999757;;ABgene 0800;5;;<volume>.0
     W;
     A;1220000222748;;ABgene 0765;42;;<volume>.0
-    D;1220099999705;;ABgene 0800;6;;<volume>.0
+    D;1630099999757;;ABgene 0800;6;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;19;;<volume>.0
-    D;1220099999705;;ABgene 0800;7;;<volume>.0
+    D;1630099999757;;ABgene 0800;7;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;27;;<volume>.0
-    D;1220099999705;;ABgene 0800;8;;<volume>.0
+    D;1630099999757;;ABgene 0800;8;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;35;;<volume>.0
-    D;1220099999705;;ABgene 0800;9;;<volume>.0
+    D;1630099999757;;ABgene 0800;9;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;43;;<volume>.0
-    D;1220099999705;;ABgene 0800;10;;<volume>.0
+    D;1630099999757;;ABgene 0800;10;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;51;;<volume>.0
-    D;1220099999705;;ABgene 0800;11;;<volume>.0
+    D;1630099999757;;ABgene 0800;11;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;59;;<volume>.0
-    D;1220099999705;;ABgene 0800;12;;<volume>.0
+    D;1630099999757;;ABgene 0800;12;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;4;;<volume>.0
-    D;1220099999705;;ABgene 0800;13;;<volume>.0
+    D;1630099999757;;ABgene 0800;13;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;12;;<volume>.0
-    D;1220099999705;;ABgene 0800;14;;<volume>.0
+    D;1630099999757;;ABgene 0800;14;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;20;;<volume>.0
-    D;1220099999705;;ABgene 0800;15;;<volume>.0
+    D;1630099999757;;ABgene 0800;15;;<volume>.0
     W;
     A;1220000333802;;ABgene 0765;28;;<volume>.0
-    D;1220099999705;;ABgene 0800;16;;<volume>.0
+    D;1630099999757;;ABgene 0800;16;;<volume>.0
     W;
     C;
     C; SCRC1 = 1220000222748
     C; SCRC2 = 1220000333802
     C;
-    C; DEST1 = 1220099999705
+    C; DEST1 = 1630099999757
     """
     When I follow "Print worksheet for Plate 99999"
     Then I should see the cherrypick worksheet table:

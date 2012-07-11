@@ -6,7 +6,7 @@ Feature: Upload Pico Green concentration results from the Pico Green application
     And the "96 Well Plate" barcode printer "xyz" exists
     And the plate barcode webservice returns "1234567"
     Given all of this is happening at exactly "14-Feb-2011 23:00:00+01:00"
-    Given a plate with purpose "Pico Standard" and barcode "1234567" exists
+    Given a plate with purpose "Pico Standard" and barcode "1221234568855" exists
   
   @qc_event @study_report @qc_study_report 
   Scenario: upload concentration results from the pico application
@@ -15,7 +15,8 @@ Feature: Upload Pico Green concentration results from the Pico Green application
     # Create pico standard, dilution and pico assay plates.
     # NOTE: We have to create the "Pico Standard" in this manner as it relies on the barcode service being
     # up and running, which appears not to be the case for backgrounds (oddly).
-    And the "Dilution Plates" plate is created from the plate with barcode "1221234567841"
+    And the "Working dilution" plate is created from the plate with barcode "1221234567841"
+    And the "Pico dilution" plate is created from the plate with barcode "6251234567836"
     And the "Pico Assay Plates" plate is created from the plate with barcode "4361234567667"
   
     When I post the JSON below to update the plate:
@@ -39,6 +40,7 @@ Feature: Upload Pico Green concentration results from the Pico Green application
           }
       }
       """
+
     Then well "A1" on plate "1221234567841" should have a concentration of 43.9496
     And well "H12" on plate "1221234567841" should have a concentration of 23.4
     Then the plate "1221234567841" should have a 'pico_analysed' event
@@ -161,7 +163,8 @@ Feature: Upload Pico Green concentration results from the Pico Green application
     # Create pico standard, dilution and pico assay plates.
     # NOTE: We have to create the "Pico Standard" in this manner as it relies on the barcode service being
     # up and running, which appears not to be the case for backgrounds (oddly).
-    And the "Dilution Plates" plate is created from the plate with barcode "1221234567841"
+    And the "Working dilution" plate is created from the plate with barcode "1221234567841"
+    And the "Pico dilution" plate is created from the plate with barcode "6251234567836"
     And the "Pico Assay Plates" plate is created from the plate with barcode "4361234567667"
     Given the Stock Plate's Pico pass state is set to "<INITIAL_STOCK_STATE>"
     When I post the JSON below to update the plate:

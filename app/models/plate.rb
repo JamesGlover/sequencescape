@@ -437,9 +437,9 @@ WHERE c.container_id=?
     attributes = args.extract_options!
     barcode    = args.first || attributes[:barcode]
     barcode    = nil if barcode.present? and find_by_barcode(barcode).present?
+    barcode  ||= PlateBarcode.create.barcode
     create!(attributes.merge(:barcode => barcode), &block).tap do |plate|
       plate.size ||= plate.default_plate_size
-      plate.barcode  ||= PlateBarcode.create.barcode # Only generate a barcode if the plate is created
       plate.save!
     end
   end
