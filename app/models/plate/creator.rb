@@ -51,7 +51,6 @@ class Plate::Creator < ActiveRecord::Base
   def create_child_plates_from(plate, current_user)
     plate_purposes.map do |target_plate_purpose|
       target_plate_purpose.create!(:without_wells, :barcode => plate.barcode) do |child_plate|
-        #child_plate.plate_purpose = target_plate_purpose
         child_plate.size          = plate.size
         child_plate.location      = plate.location
         child_plate.name          = "#{target_plate_purpose.name} #{child_plate.barcode}"

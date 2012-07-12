@@ -23,7 +23,6 @@ class SequenomQcPlatesController < ApplicationController
     begin
       ActiveRecord::Base.transaction do
         new_plates = (1..number_of_barcodes).map do
-          puts "Crearing"
           PlatePurpose.find_by_name('Sequenom').create!(
             :without_wells,
             :input_plate_names   => input_plate_names,
