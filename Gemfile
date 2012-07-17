@@ -13,13 +13,14 @@ gem "aasm", "~>2.4.0"
 gem "acts_as_audited"
 gem "ar-extensions"
 gem "configatron"
-gem "curb"
+#gem "rurl" # curb substitute. 1.9+ only (Might just be a case of converting hashes)
 gem "fastercsv", "~>1.4.0"
 gem "formtastic", "~>1.2.0"
+gem "activerecord-jdbc-adapter" # Not sure I need all three here. Worked a bit without jdbc prefix in database config
+gem "activerecord-jdbcmysql-adapter"
 gem "jdbc-mysql"
-gem "activerecord-jdbc-adapter"
 gem "spreadsheet"
-gem "will_paginate"
+gem "will_paginate", "~>2.3.15"
 gem 'net-ldap'
 gem 'carrierwave', "~>0.4.0"
 
@@ -44,7 +45,7 @@ gem "ruby_walk",  ">= 0.0.3",:git => "git+ssh://git@github.com/sanger/ruby_walk"
 gem "uuidtools"
 gem "sinatra", "~>1.1.0"
 gem "rack-acceptable", :require => 'rack/acceptable'
-gem "yajl-ruby", :require => 'yajl'
+gem "json_pure" #gem "yajl-ruby", :require => 'yajl'
 gem "cancan"
 
 gem "bunny"
@@ -59,7 +60,7 @@ end
 
 group :development do
   # The fake services run better with Mongrel
-  gem "mongrel", "~>1.1.5"
+  # gem "mongrel"
 
   gem "flay"
   gem "flog"
@@ -98,7 +99,7 @@ group :cucumber do
 end
 
 group :deployment do
-  gem "mongrel_cluster"
+  #gem "mongrel_cluster"
   gem "psd_logger", :git => "git@github.com:sanger/psd_logger.git"
 end
 
