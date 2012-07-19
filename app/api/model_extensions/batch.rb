@@ -58,18 +58,21 @@ module ModelExtensions::Batch
       #request.start!
 
       # All links between the two assets as new, so we can bulk create them!
-      asset_links << AssetLink.build_edge(request.asset, request.target_asset)
+      AssetLink.build_edge(request.asset, request.target_asset).save!
 
     end
 
-    AssetLink.import(asset_links, :validate => false) unless asset_links.empty?
+    #AssetLink.import(asset_links, :validate => false) unless asset_links.empty?
 
-    Request.import(
-      [ :id, :asset_id ],
-      requests_to_update,
-      :on_duplicate_key_update => [ :asset_id ],
-      :validate => false
-    ) unless requests_to_update.empty?
+    requests_to_update.each do |request_details|
+      Request.find(request_details.first).update_attributes!(:asset_id => request_details.last)
+    end
+    # Request.import(
+    #   [ :id, :asset_id ],
+    #   requests_to_update,
+    #   :on_duplicate_key_update => [ :asset_id ],
+    #   :validate => false
+    # ) unless requests_to_update.empty?
   end
   private :generate_target_assets_for_requests
 
