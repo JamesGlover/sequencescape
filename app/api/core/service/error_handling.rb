@@ -30,11 +30,12 @@ module Core::Service::ErrorHandling
       end
 
       def each(&block)
-        Yajl::Encoder.new.encode(@error, &block)
+        yield JSON.generate(@error)
+        #Yajl::Encoder.new.encode(@error, &block)
       end
       def close
-        GC.enable
-        GC.start
+        #GC.enable
+        #GC.start
       end
 
     end

@@ -211,14 +211,14 @@ class Core::Service < Sinatra::Base
     def each(&block)
       benchmark('Streaming JSON') do
         options = { :response => self, :uuids_to_ids => {}, :target => object }
-
         io_handler         = ::Core::Io::Registry.instance.lookup_for_object(object)
         object_as_json     = io_handler.as_json(options.merge(:object => object))
         actions_for_object = handled_by.as_json(options)
         merge_actions_into_object_json(object_as_json, actions_for_object)
         io_handler.post_process(object_as_json)
 
-        Yajl::Encoder.encode(object_as_json, &block)
+        #Yajl::Encoder.encode(object_as_json, &block)
+        yield JSON.generate(object_as_json)
       end
     end
 
