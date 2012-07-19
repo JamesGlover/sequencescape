@@ -229,7 +229,8 @@ class Core::Service < Sinatra::Base
         merge_actions_into_object_json(object_as_json, actions_for_object)
         io_handler.post_process(object_as_json)
 
-        Yajl::Encoder.encode(object_as_json, &block)
+        #Yajl::Encoder.encode(object_as_json, &block)
+        yield JSON.generate(object_as_json)
       end
     end
 
