@@ -4,28 +4,28 @@
 module Core::Service::GarbageCollection
   module Request #:nodoc:
     def instance(action, endpoint)
-      Rails.logger.debug('Disabling GC')
-      GC.disable
+      #Rails.logger.debug('Disabling GC')
+      #GC.disable
       super
     end
 
     def model(action, endpoint)
-      Rails.logger.debug('Disabling GC')
-      GC.disable
+      #Rails.logger.debug('Disabling GC')
+      #GC.disable
       super
     end
   end
 
   module Response #:nodoc:
     def close
-      Rails.logger.debug('Re-enabling and running garbage collector')
+      #Rails.logger.debug('Re-enabling and running garbage collector')
 
-      start = Time.now
+      #start = Time.now
       begin
-        GC.enable
-        GC.start
+        #GC.enable
+        #GC.start
       ensure
-        Rails.logger.debug("Garbage collection completed in #{Time.now-start}s")
+        #Rails.logger.debug("Garbage collection completed in #{Time.now-start}s")
       end
     end
   end
