@@ -1,6 +1,6 @@
 class ABadMigration < ActiveRecord::Migration
   def self.up
-    if RAILS['ENV'] == 'PRODUCTION'
+    if RAILS_ENV == 'PRODUCTION'
       say %Q{
         This migration is intentionally bad, and is not intended for a production environment.
         If you are seeing this message then the branch 'deliberately_muck_up_migrations' has
