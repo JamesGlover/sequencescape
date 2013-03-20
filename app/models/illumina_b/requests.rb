@@ -26,6 +26,12 @@ module IlluminaB::Requests
     fragment_size_details(:no_default, :no_default)
   end
 
+  class SharedLibraryPrep < StdLibraryRequest
+  end
+
+  class LibraryCompletion < StdLibraryRequest
+  end
+
   class CovarisToSheared < TransferRequest
     redefine_state_machine do
       aasm_column :state
