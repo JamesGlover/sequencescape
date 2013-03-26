@@ -29,8 +29,10 @@ module IlluminaB::PlatePurposes
     ],
     [
       'Lib Pool',
-      'Lib Pool Pippin',
       'Lib Pool Norm',
+    ],
+    [
+      'Lib Pool Pippin',
       'Lib Pool Conc',
       'Lib Pool SS',
       'Lib Pool SS-XP',
@@ -53,23 +55,24 @@ module IlluminaB::PlatePurposes
   ]
 
   PLATE_PURPOSES_TO_REQUEST_CLASS_NAMES = [
-    [ 'ILB_STD_COVARIS', 'ILB_STD_SH',      'IlluminaB::Requests::CovarisToSheared' ],
-    [ 'ILB_STD_PREPCR',  'ILB_STD_PCR',     'IlluminaB::Requests::PrePcrToPcr'      ],
-    [ 'ILB_STD_PREPCR',  'ILB_STD_PCRR',    'IlluminaB::Requests::PrePcrToPcr'      ],
-    [ 'ILB_STD_PCR',     'ILB_STD_PCRXP',   'IlluminaB::Requests::PcrToPcrXp'       ],
-    [ 'ILB_STD_PCRR',    'ILB_STD_PCRRXP',  'IlluminaB::Requests::PcrToPcrXp'       ],
-    [ 'ILB_STD_PCRXP',   'ILB_STD_STOCK',   'IlluminaB::Requests::PcrXpToStock'     ],
-    [ 'ILB_STD_PCRRXP',  'ILB_STD_STOCK',   'IlluminaB::Requests::PcrXpToStock'     ],
+    [ 'ILB_STD_COVARIS', 'ILB_STD_SH',      'IlluminaB::Requests::CovarisToSheared'  ],
+    [ 'ILB_STD_PREPCR',  'ILB_STD_PCR',     'IlluminaB::Requests::PrePcrToPcr'       ],
+    [ 'ILB_STD_PREPCR',  'ILB_STD_PCRR',    'IlluminaB::Requests::PrePcrToPcr'       ],
+    [ 'ILB_STD_PCR',     'ILB_STD_PCRXP',   'IlluminaB::Requests::PcrToPcrXp'        ],
+    [ 'ILB_STD_PCRR',    'ILB_STD_PCRRXP',  'IlluminaB::Requests::PcrToPcrXp'        ],
+    [ 'ILB_STD_PCRXP',   'ILB_STD_STOCK',   'IlluminaB::Requests::PcrXpToStock'      ],
+    [ 'ILB_STD_PCRRXP',  'ILB_STD_STOCK',   'IlluminaB::Requests::PcrXpToStock'      ],
 
-    [ 'Shear',           'Post Shear',      'IlluminaB::Requests::CovarisToSheared' ],
-    [ 'AL Libs',         'Lib PCR',         'IlluminaB::Requests::PrePcrToPcr'      ],
-    [ 'AL Libs',         'Lib PCRR',        'IlluminaB::Requests::PrePcrToPcr'      ],
-    [ 'Lib PCR',         'Lib PCR-XP',      'IlluminaB::Requests::PcrToPcrXp'       ],
-    [ 'Lib PCRR',        'Lib PCRR-XP',     'IlluminaB::Requests::PcrToPcrXp'       ],
-    [ 'Lib PCR-XP',      'Lib Pool',        'IlluminaB::Requests::PcrXpToStock'     ],
-    [ 'Lib PCRR-XP',     'Lib Pool',        'IlluminaB::Requests::PcrXpToStock'     ],
-    [ 'Lib PCR-XP',      'Lib Pool Pippin', 'IlluminaB::Requests::PcrXpToStock'     ],
-    [ 'Lib PCRR-XP',     'Lib Pool Pippin', 'IlluminaB::Requests::PcrXpToStock'     ]
+    [ 'Shear',           'Post Shear',      'IlluminaB::Requests::CovarisToSheared'  ],
+    [ 'AL Libs',         'Lib PCR',         'IlluminaB::Requests::PrePcrToPcr'       ],
+    [ 'AL Libs',         'Lib PCRR',        'IlluminaB::Requests::PrePcrToPcr'       ],
+    [ 'Lib PCR',         'Lib PCR-XP',      'IlluminaB::Requests::PcrToPcrXp'        ],
+    [ 'Lib PCRR',        'Lib PCRR-XP',     'IlluminaB::Requests::PcrToPcrXp'        ],
+    [ 'Lib PCR-XP',      'Lib Pool',        'IlluminaB::Requests::PcrXpToPool'       ],
+    [ 'Lib PCRR-XP',     'Lib Pool',        'IlluminaB::Requests::PcrXpToPool'       ],
+    [ 'Lib Pool SS',     'Lib Pool SS-XP',  'IlluminaB::Requests::LibPoolSsToLibPoolSsXp'],
+    [ 'Lib PCR-XP',      'Lib Pool Pippin', 'IlluminaB::Requests::PcrXpToPoolPippin' ],
+    [ 'Lib PCRR-XP',     'Lib Pool Pippin', 'IlluminaB::Requests::PcrXpToPoolPippin' ]
   ]
 
   PLATE_PURPOSE_TYPE = {
@@ -92,8 +95,8 @@ module IlluminaB::PlatePurposes
     'Lib PCRR'            => PlatePurpose,
     'Lib PCR-XP'          => IlluminaB::TransferablePlatePurpose,
     'Lib PCRR-XP'         => IlluminaB::TransferablePlatePurpose,
-    'Lib Pool'            => IlluminaB::StockTubePurpose,
-    'Lib Pool Pippin'     => IlluminaB::StockTubePurpose,
+    'Lib Pool'            => IlluminaB::InitialStockTubePurpose,
+    'Lib Pool Pippin'     => IlluminaB::InitialStockTubePurpose,
     'Lib Pool Norm'       => IlluminaB::MxTubePurpose,
     'Lib Pool Conc'       => IlluminaB::StockTubePurpose,
     'Lib Pool SS'         => IlluminaB::StockTubePurpose,
