@@ -1094,6 +1094,13 @@ ActiveRecord::Schema.define(:version => 20130312165452) do
     t.string   "model_name"
   end
 
+  create_table "specific_tube_creation_purposes", :force => true do |t|
+    t.integer  "specific_tube_creation_id"
+    t.integer  "tube_purpose_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "state_changes", :force => true do |t|
     t.integer  "user_id"
     t.integer  "target_id"
