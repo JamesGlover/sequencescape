@@ -10,6 +10,7 @@ class Io::Plate < Io::Asset
                                           state  => state
                                       iteration  => iteration
                                           pools  => pools
+                                      label_text => label_text
 
                                stock_plate.uuid  => stock_plate.uuid
                             stock_plate.barcode  => stock_plate.barcode.number

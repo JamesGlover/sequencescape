@@ -433,4 +433,8 @@ class Request < ActiveRecord::Base
   def update_pool_information(pool_information)
     # Does not need anything here
   end
+
+  def role
+    nil
+  end
 end
