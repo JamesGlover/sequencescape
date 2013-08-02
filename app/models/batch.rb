@@ -282,10 +282,10 @@ class Batch < ActiveRecord::Base
 
   def verify_tube_layout(barcodes, user = nil)
     self.requests.each do |request|
-      barcode = barcodes["#{request.position(self)}"]
+      barcode = barcodes["#{request.position}"]
       unless barcode.blank? || barcode == "0"
         unless barcode.to_i == request.asset.barcode.to_i
-          self.errors.add_to_base("The tube at position #{request.position(self)} is incorrect.")
+          self.errors.add_to_base("The tube at position #{request.position} is incorrect.")
         end
       end
     end
@@ -325,7 +325,7 @@ class Batch < ActiveRecord::Base
   end
 
   def remove_link(request)
-    request.batches-=[self]
+    batch_requests.detect {|br| br.request == request }.destroy
   end
 
   def reset!(current_user)

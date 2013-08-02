@@ -11,9 +11,9 @@
         <th class='label' width="7%"><%= link_to 'Sample', "javascript:void(0);" %></th>
         <th class='label' width="7%"><%= link_to 'Request', "javascript:void(0);" %></th>
         <th class='label' width="15%"><%= link_to 'Source', "javascript:void(0);" %></th>
-        <th class='label' width="15%"><%= link_to 'Source barcode', "javascript:void(0);" %></th>  
-        <th class='label' width="15%"><%= link_to 'Target Type', "javascript:void(0);" %></th>  
-        <th class='label' width="15%"><%= link_to 'Target barcode', "javascript:void(0);" %></th>  
+        <th class='label' width="15%"><%= link_to 'Source barcode', "javascript:void(0);" %></th>
+        <th class='label' width="15%"><%= link_to 'Target Type', "javascript:void(0);" %></th>
+        <th class='label' width="15%"><%= link_to 'Target barcode', "javascript:void(0);" %></th>
         <% if @batch.display_tags? %>
           <th class='label' width="15%"><%= link_to 'Tag #', "javascript:void(0);" %></th>
         <% end %>
@@ -35,7 +35,7 @@
           <% elsif stage %>
               <td class="7%"><input name='request[<%= request.id %>]' id="sample <%= i+1  %> checkbox" class='sample_check' value="on" type='checkbox' checked></td>
           <% end -%>
-          <td width="5%"><%= request.position(@batch) %></td>
+          <td width="5%"><%= request.position %></td>
 
           <% if request.asset %>
             <td width="7%"><%= h(request.asset.display_name) %></td>

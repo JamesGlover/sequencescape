@@ -1,8 +1,8 @@
 module Batch::RequestBehaviour
   def self.included(base)
     base.class_eval do
-      has_many :batch_requests
-      has_many :batches, :through => :batch_requests
+      has_one :batch_request
+      has_one :batches, :through => :batch_request
 
       # Identifies all requests that are not part of a batch.
       named_scope :unbatched, {
@@ -14,17 +14,17 @@ module Batch::RequestBehaviour
   end
 
   def batch_ids
-    batch_requests.map(&:batch_id)
+    [batch_requests.batch_id]
   end
 
-  def position(batch)
-    batch.batch_requests.detect { |br| br.request_id == self.id }.try(:position) || 0
+  def position
+    batch_request.try(:position) || 0
   end
 
   def recycle_from_batch!(batch)
     ActiveRecord::Base.transaction do
       self.return_for_inbox!
-      self.batches.delete(batch)
+      self.batch_request.destroy
     end
     #self.detach
     #self.batches -= [ batch ]
@@ -38,10 +38,7 @@ module Batch::RequestBehaviour
   end
 
   def create_batch_request!(attributes)
-    batch_requests.create!(attributes)
+    batch_request.create!(attributes)
   end
 
-  def batch_request
-    batch_requests.first
-  end
 end

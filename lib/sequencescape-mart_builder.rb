@@ -178,7 +178,7 @@ class Script < ActiveRecord::Migration
           :name => request.asset.name,
           :batch_id => batch.id,
           :pipeline_id => batch.pipeline_id,
-          :position => request.position(batch),
+          :position => request.position,
           :batch_state => batch.state,
           :state_date => batch.updated_at,
           :qc_state => batch.qc_state,
