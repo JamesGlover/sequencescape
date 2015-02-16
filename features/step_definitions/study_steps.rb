@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 Given /^study "([^\"]*)" has property "([^\"]*)" set to "([^\"]*)"$/ do |study_name,property_name,value|
   study = Study.first(:conditions => { :name => study_name }) or raise StandardError, "Study '#{ study_name }' does not exist"
   study.properties.set(property_name.downcase.gsub(/[^a-z0-9]+/, '_'), value)
@@ -7,12 +10,6 @@ Given /^I have a study called "([^\"]*)"$/ do |study|
   proj = Factory :study, :name => study
 end
 
-#Given /^study "([^\"]*)" approval is "([^\"]*)"$/ do |study, approval|
-#  proj = Study.find_by_name(study)
-#  approval == "approved" ? proj.approved = true : proj.approved = false
-#  proj.save
-#end
-
 Given /^study "([^\"]*)" status is "([^\"]*)"$/ do |study, status|
   proj = Study.find_by_name(study)
   status == "active" ? proj.activate! : proj.deactivate!
@@ -20,17 +17,9 @@ Given /^study "([^\"]*)" status is "([^\"]*)"$/ do |study, status|
 end
 
 Given /^I have an "([^\"]*)" study called "([^\"]*)"$/ do |status, study|
-  Given 'I have a study called "'+ study +'"'
-  Given 'study "' + study + '" status is "' + status + '"'
+  step %Q{I have a study called "#{study}"}
+  step %Q{study "#{study}" status is "#{status}"}
 end
-
-#Given /^study "([^\"]*)" has enough quotas$/ do |study|
-#  proj = Study.find_by_name(study)
-#  req_types = {}
-#  RequestType.all.each {|rt| req_types["#{rt.id}"] = 500}
-#  proj.add_quotas(req_types)
-#  proj.save
-#end
 
 Given /^study "([^\"]*)" has samples registered$/ do |study|
   proj = Study.find_by_name(study)
@@ -92,8 +81,8 @@ Given /^user "([^\"]*)" is an? "([^\"]*)" of study "([^\"]*)"$/ do |login, role_
 end
 
 Given /^I have an active study called "([^\"]*)"$/ do |study_name|
-  Given 'I have a study called "'+study_name+'"'
-  Given 'study "'+study_name+'" status is "active"'
+  step %Q{I have a study called "#{study_name}"}
+  step %Q{study "#{study_name}" status is "active"}
 end
 
 Given /^I am visiting "([^\"]*)" page with ID "([^\"]*)" homepage$/ do |page, id|
@@ -109,29 +98,6 @@ And /^the study have a workflow$/ do
   Factory :submission_workflow
 end
 
-#And /^the study "([^\"]*)" has quotas and quotas are enforced$/ do |study_id|
-#  proj = Study.find_by_name study_id.to_s
-#  @request= RequestType.find(:all)
-#  @request.each do |rt|
-#      Factory :study_quota, :study_id => proj.id, :request_type_id => rt.id, :limit => 500
-#  end
-#
-#  proj.save
-#end
-
-#Given /^the study "([^\"]*)" has quotas filled$/ do |study_id|
-#  proj = Study.find_by_name study_id.to_s
-#  request_types = []
-#  request_types << RequestType.find_by_name("Receive sample")
-#  request_types << RequestType.find_by_name("Library creation")
-#  request_types << RequestType.find_by_name("Single ended sequencing")
-#  request_types << RequestType.find_by_name("Paired end sequencing")
-#  request_types.each do |rt|
-#    Factory :study_quota, :study => proj, :request_type => rt, :limit => 500
-#  end
-#  proj.save
-#end
-
 def GivenFixedStudyMetadata(attribute, value, regexp)
   Given(regexp) do |name|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
@@ -142,6 +108,8 @@ end
 
 GivenFixedStudyMetadata(:contaminated_human_dna,  Study::YES, /^the study "([^\"]+)" has samples contaminated with human DNA$/)
 GivenFixedStudyMetadata(:contaminated_human_dna,  Study::NO,  /^the study "([^\"]+)" does not have any samples contaminated with human DNA$/)
+GivenFixedStudyMetadata(:remove_x_and_autosomes,  Study::YES, /^the study "([^\"]+)" has samples which need x and autosome data removed$/)
+GivenFixedStudyMetadata(:remove_x_and_autosomes,  Study::NO,  /^the study "([^\"]+)" does not have any samples which need x and autosome data removed$/)
 GivenFixedStudyMetadata(:contains_human_dna,      Study::YES, /^the study "([^\"]+)" contains human DNA$/)
 GivenFixedStudyMetadata(:contains_human_dna,      Study::NO,  /^the study "([^\"]+)" does not contain human DNA$/)
 GivenFixedStudyMetadata(:commercially_available,  Study::YES, /^the study "([^\"]+)" contains samples commercially available$/)
@@ -161,7 +129,7 @@ GivenStudyMetadata(:data_release_timing,        /^the study "([^\"]+)" data rele
 GivenStudyMetadata(:study_ebi_accession_number, /^the study "([^\"]+)" has the accession number "([^\"]+)"$/)
 
 def GivenStudyTypeStudyMetadata(attribute, regexp)
-  Given(regexp) do |name,value|       
+  Given(regexp) do |name,value|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
     study_type = StudyType.find_by_name(value) or raise StandardError, "Study type not valid: '#{ value}'"
     study.study_metadata.send(:"#{ attribute }=", study_type)
@@ -169,10 +137,10 @@ def GivenStudyTypeStudyMetadata(attribute, regexp)
   end
 end
 
-GivenStudyTypeStudyMetadata(:study_type,              /^the study "([^\"]+)" is a "([^\"]*)" study$/) 
+GivenStudyTypeStudyMetadata(:study_type,              /^the study "([^\"]+)" is a "([^\"]*)" study$/)
 
 def GivenStudyDataReleaseTypeStudyMetadata(attribute, regexp)
-  Given(regexp) do |name,value|       
+  Given(regexp) do |name,value|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
     study_type_dr = DataReleaseStudyType.find_by_name(value) or raise StandardError, "Data Release Study type not valid: '#{ value}'"
     study.study_metadata.send(:"#{ attribute }=", study_type_dr)
@@ -183,7 +151,7 @@ end
 GivenStudyDataReleaseTypeStudyMetadata(:data_release_study_type, /^the study "([^\"]+)" is a "([^\"]+)" study for data release$/)
 
 def GivenReferenceGenomeStudyMetadata(attribute, regexp)
-  Given(regexp) do |name,value|       
+  Given(regexp) do |name,value|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
     ref_genome = ReferenceGenome.find_by_name(value) or raise StandardError, "Study type not valid: '#{ value}'"
     study.study_metadata.send(:"#{ attribute }=", ref_genome)
@@ -192,7 +160,7 @@ def GivenReferenceGenomeStudyMetadata(attribute, regexp)
 end
 
 def GivenFacultySponsor(attribute, regexp)
-  Given(regexp) do |name,value|       
+  Given(regexp) do |name,value|
     study = Study.find_by_name(name) or raise StandardError, "There appears to be no study named '#{ name }'"
     faculty_sponsor = FacultySponsor.create!({:name => value})
     study.study_metadata.send(:"#{ attribute }=", faculty_sponsor)
@@ -202,7 +170,7 @@ end
 
 GivenFacultySponsor(:faculty_sponsor,                /^the faculty sponsor for study "([^\"]+)" is "([^\"]+)"$/)
 
-GivenReferenceGenomeStudyMetadata(:reference_genome, /^the reference genome for study "([^\"]+)" is "([^\"]+)"$/) 
+GivenReferenceGenomeStudyMetadata(:reference_genome, /^the reference genome for study "([^\"]+)" is "([^\"]+)"$/)
 
 GivenStudyMetadata(:dac_policy, /^the policy for study "([^\"]+)" is "([^\"]+)"$/)
 GivenStudyMetadata(:ega_dac_accession_number, /^the dac accession number for study "([^\"]+)" is "([^\"]+)"$/)
@@ -237,7 +205,7 @@ end
 
 Given /^the study "([^\"]*)" has the following contacts$/ do |study, table|
   table.hashes.each do |hash|
-    Given 'user "'+hash['login']+'" is a "'+hash['role']+'" of study "'+study+'"'
+    step 'user "'+hash['login']+'" is a "'+hash['role']+'" of study "'+study+'"'
   end
 end
 
@@ -295,7 +263,7 @@ end
 ####################################################################################################################
 Given /^studies will appear in the following study lists:$/ do |table|
   table.raw.each do |study_list|
-    Given %Q{a study will appear in the study list "#{ study_list }"}
+    step(%Q{a study will appear in the study list "#{ study_list }"})
   end
 end
 
@@ -305,28 +273,37 @@ end
 
 Then /^I should see the studies for the following study lists:$/ do |table|
   table.raw.each do |study_list|
-    Then %Q{I should see the study for study list "#{ study_list }"}
+    step %Q{I should see the study for study list "#{ study_list }"}
   end
 end
 
 Then /^I should see the study for study list "([^\"]+)"$/ do |study_list|
-  Then %Q{I should see "Study: #{ study_list }"}
+  step %Q{I should see "Study: #{ study_list }"}
 end
 
 Given /^asset with barcode "([^"]*)" belongs to study "([^"]*)"$/ do |raw_barcode, study_name|
-  study = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
   asset = Asset.find_from_machine_barcode(raw_barcode) or raise StandardError, "Cannot find asset with machine barcode #{raw_barcode.inspect}"
-  asset_ids = [asset.id]
-  asset_ids += asset.well_ids if asset.respond_to?(:wells)
-  RequestFactory.create_assets_requests(asset_ids, study.id)
+  assign_asset_to_study(asset,study_name)
 end
 
 Given /^the asset "([^\"]+)" belongs to study "([^\"]+)"$/ do |asset_name, study_name|
-  study = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
   asset = Asset.find_by_name(asset_name) or raise StandardError, "Cannot find asset #{asset_name.inspect}"
+  assign_asset_to_study(asset,study_name)
+end
+
+def assign_asset_to_study(asset,study_name)
+  study = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
   asset_ids = [asset.id]
-  asset_ids += asset.well_ids if asset.respond_to?(:wells)
-  RequestFactory.create_assets_requests(asset_ids, study.id)
+  asset_ids = asset.well_ids if asset.respond_to?(:wells)
+  if asset.can_be_created? || (asset.respond_to?(:wells) && (asset.stock_plate?))
+    RequestFactory.create_assets_requests(Asset.find(asset_ids), study)
+  else
+    Asset.find(asset_ids).each do |asset|
+      asset.try(:aliquots).try(:each) do |aliquot|
+        aliquot.update_attributes!(:study_id => study.id)
+      end
+    end
+  end
 end
 
 Then /^abbreviation for Study "([^"]*)" should be "([^"]*)"$/ do |study_name, abbreviation_regex|
@@ -342,7 +319,7 @@ end
 Given /^the study "([^\"]+)" has a (library tube) called "([^\"]+)"$/ do |study_name, asset_model, asset_name|
   study = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
   asset = Factory(asset_model.gsub(/\s+/, '_').to_sym, :name => asset_name)
-  Then %Q(the asset "#{asset_name}" belongs to study "#{study_name}")
+  step %Q(the asset "#{asset_name}" belongs to study "#{study_name}")
 end
 
 Then /^the help text for "([^"]*)" should contain:$/ do |label_name, expected_tooltip_text|
@@ -360,28 +337,28 @@ end
 
 When /^I generate an? (dac|policy|array express) accession number for study "([^\"]+)"$/ do |type, study_name|
  type = {"dac" => "DAC", "policy" => "Policy", "array express" => ""}.fetch(type, type)
- Then %Q{I am on the workflow page for study "#{study_name}"}
- When %Q{I follow "Generate #{type} Accession Number"}.gsub(/  +/, " ")
+ step %Q{I am on the workflow page for study "#{study_name}"}
+ step %Q{I follow "Generate #{type} Accession Number"}.gsub(/  +/, " ")
 end
 
 When /^I generate an? accession number for study "([^\"]+)"$/ do |study_name|
- Then %Q{I am on the workflow page for study "#{study_name}"}
- When %Q{I follow "Generate Accession Number"}
+ step %Q{I am on the workflow page for study "#{study_name}"}
+ step(%Q{I follow "Generate Accession Number"})
 end
 
 When /^I update an? accession number for study "([^\"]+)"$/ do |study_name|
- Then %Q{I am on the workflow page for study "#{study_name}"}
- When %Q{I follow "Update EBI Study data"}
+ step %Q{I am on the workflow page for study "#{study_name}"}
+ step(%Q{I follow "Update EBI Study data"})
 end
 
 Given /^the study "([^\"]+)" has a valid policy$/ do |study_name|
-    Given %Q{the policy for study "#{study_name}" is "I am the 'managed study'  policy"}
-    And %Q{the dac accession number for study "#{study_name}" is "EGAC00000001"}
+    step(%Q{the policy for study "#{study_name}" is "http://www.example.com"})
+    step(%Q{the dac accession number for study "#{study_name}" is "EGAC00000001"})
 end
 
 Given /^the study "([^\"]+)" has a valid dac$/ do |study_name|
-  Given %Q{user "dac" exists}
-  And %Q{user "dac" is an "Data Access Contact" of study "#{study_name}"}
+  step(%Q{user "dac" exists})
+  step(%Q{user "dac" is an "Data Access Contact" of study "#{study_name}"})
 end
 
 Given /^the study "([^\"]+)" is "([^\"]+)" of study "([^\"]+)"/ do |related_study_name, relation_name, study_name|
@@ -391,16 +368,16 @@ Given /^the study "([^\"]+)" is "([^\"]+)" of study "([^\"]+)"/ do |related_stud
 end
 
 Given /^a study named "([^\"]+)" exists for accession/ do |study_name|
-    Given %Q{a study named "#{study_name}" exists}
-    Given %Q{an accession number is required for study "#{study_name}"}
-    And   %Q{the title of study "#{study_name}" is "Testing accession numbers"}
-    And   %Q{the description of study "#{study_name}" is "To find out if something is broken"}
-    And   %Q{the abstract of study "#{study_name}" is "Ok, not ok?"}
-  And   %Q{the study "#{study_name}" is a "Whole Genome Sequencing" study}
+    step(%Q{a study named "#{study_name}" exists})
+    step(%Q{an accession number is required for study "#{study_name}"})
+    step %Q{the title of study "#{study_name}" is "Testing accession numbers"}
+    step %Q{the description of study "#{study_name}" is "To find out if something is broken"}
+    step %Q{the abstract of study "#{study_name}" is "Ok, not ok?"}
+  step %Q{the study "#{study_name}" is a "Whole Genome Sequencing" study}
   end
 Given /^a study named "([^\"]+)" exists for array express/ do |study_name|
-  Given %Q{a study named "#{study_name}" exists for accession}
-  And   %Q{the study "#{study_name}" is a "Whole Genome Sequencing" study}
+  step(%Q{a study named "#{study_name}" exists for accession})
+  step %Q{the study "#{study_name}" is a "Whole Genome Sequencing" study}
 end
 
 
@@ -415,13 +392,13 @@ Given /^study "([^"]*)" has an ENA project ID of "([^"]*)"$/ do |study_name, ena
 end
 
 Given /^I create study "([^"]*)" with faculty sponsor "([^"]*)"$/ do |study_name, faculty_sponsor|
-  Given %Q{I am on the homepage}
-  When %Q{I follow "Create study"}
-  And %Q{I fill in "Study name" with "#{study_name}"}
-  And %Q{I select "Not suitable for alignment" from "Reference genome"}
-  And %Q{I fill in "Study description" with "some description"}
-  And %Q{I select "#{faculty_sponsor}" from "Faculty Sponsor"}
-  And %Q{I press "Create"}
+  step(%Q{I am on the homepage})
+  step(%Q{I follow "Create study"})
+  step(%Q{I fill in "Study name" with "#{study_name}"})
+  step(%Q{I select "Not suitable for alignment" from "Reference genome"})
+  step(%Q{I fill in "Study description" with "some description"})
+  step(%Q{I select "#{faculty_sponsor}" from "Faculty Sponsor"})
+  step(%Q{I press "Create"})
 end
 
 
@@ -432,3 +409,24 @@ end
 Then /^the faculty sponsor index page should look like:$/ do |expected_results_table|
   expected_results_table.diff!(table(tableish('table#faculty_sponsor_list tr', 'td,th')))
 end
+
+When /^I have an? (managed|open) study without a data release group called "(.*?)"$/ do |managed,study_name|
+  Study.create!(
+      :name => study_name,
+      :study_metadata_attributes => {
+        :faculty_sponsor => Factory(:faculty_sponsor),
+        :study_type => StudyType.last,
+        :data_release_strategy => managed,
+        :study_description => 'blah',
+        :data_release_study_type => DataReleaseStudyType.first,
+        :contaminated_human_dna => 'No',
+        :contains_human_dna => 'Yes',
+        :commercially_available => 'No'
+      }
+    )
+end
+
+Given /^the study "(.*?)" has a data access group of "(.*?)"$/ do |study_name, dag|
+  Study.find_by_name(study_name).study_metadata.update_attributes!(:data_access_group=>dag)
+end
+

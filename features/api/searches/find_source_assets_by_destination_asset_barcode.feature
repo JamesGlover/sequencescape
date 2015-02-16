@@ -4,6 +4,7 @@ Feature: Searching for assets by barcode
     Given all HTTP requests to the API have the cookie "WTSISignOn" set to "I-am-authenticated"
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
     Given the UUID for the search "Find source assets by destination asset barcode" is "00000000-1111-2222-3333-444444444444"
 
   @multiple @plate
@@ -15,11 +16,11 @@ Feature: Searching for assets by barcode
     Given a plate called "Testing the API 2" with ID 2
       And the plate "Testing the API 2" has a barcode of "1220000222748"
       And the UUID for the plate "Testing the API 2" is "11111111-2222-3333-4444-000000000002"
-      
+
     Given a plate called "Testing the API 3" with ID 3
       And the plate "Testing the API 3" has a barcode of "1220000333802"
       And the UUID for the plate "Testing the API 3" is "11111111-2222-3333-4444-000000000003"
-      
+
     Given plate "11111111-2222-3333-4444-000000000002" is a source plate of "11111111-2222-3333-4444-000000000001"
       And plate "11111111-2222-3333-4444-000000000003" is a source plate of "11111111-2222-3333-4444-000000000001"
 
@@ -50,10 +51,7 @@ Feature: Searching for assets by barcode
               "ean13": "1220000333802"
             }
           }
-        ],
-        "uuids_to_ids": {
-
-        }
+        ]
       }
       """
 
@@ -72,7 +70,6 @@ Feature: Searching for assets by barcode
       """
       {
         "size": 0,
-        "searches": [],
-        "uuids_to_ids": {}
+        "searches": []
       }
       """

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2012 Genome Research Ltd.
 Then /^the bait library index page should look like:$/ do |expected_results_table|
   expected_results_table.diff!(table(tableish('table#bait_library_list tr', 'td,th')))
 end
@@ -17,6 +20,10 @@ Given /^I have a bait library called "([^"]*)"$/ do |name|
     :bait_library_supplier => BaitLibrary::Supplier.find_by_visible(true),
     :target_species => 'Dragon'
     )
+end
+
+Then /^the supplier_identifier for "([^"]*)" should be nil$/ do |name|
+  assert BaitLibrary.find_by_name(name).supplier_identifier.nil?
 end
 
 Given /^I have a bait library type called "([^"]*)"$/ do |name|

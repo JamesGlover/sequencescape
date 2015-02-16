@@ -12,12 +12,13 @@ Feature: Access sample manifests through the API
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
     Given I have an "active" study called "Testing sample manifests"
     And the UUID for the study "Testing sample manifests" is "22222222-3333-4444-5555-000000000000"
 
     Given a supplier called "John's Genes" with ID 2
-    And the UUID for the supplier "John's Genes" is "33333333-1111-2222-3333-4444444444444"
+    And the UUID for the supplier "John's Genes" is "33333333-1111-2222-3333-444444444444"
 
   @read
   Scenario: Reading the JSON for a UUID
@@ -76,7 +77,7 @@ Feature: Access sample manifests through the API
   # NOTE: The 'container' element is not really empty here, I just can't guarantee the barcode inside it!
   @create
   Scenario: Creating a sample tube sample manifest through a study
-    Given the UUID of the next sample manifest created will be "00000000-1111-2222-3333-4444444444444"
+    Given the UUID of the next sample manifest created will be "00000000-1111-2222-3333-444444444444"
     And the Sanger sample IDs will be sequentially generated
 
     When I POST the following JSON to the API path "/22222222-3333-4444-5555-000000000000/sample_manifests/create_for_tubes":

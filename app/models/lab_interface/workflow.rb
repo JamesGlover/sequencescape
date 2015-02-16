@@ -1,5 +1,8 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2014 Genome Research Ltd.
 class LabInterface::Workflow < ActiveRecord::Base
-  
+
   has_many :tasks, :order => 'sorted', :dependent => :destroy, :foreign_key => :pipeline_workflow_id
   has_many :families
 
@@ -34,7 +37,7 @@ class LabInterface::Workflow < ActiveRecord::Base
     collection
   end
 
-  def deep_copy(suffix="_dup")
+  def deep_copy(suffix="_dup", skip_pipeline=false)
     self.clone.tap do |new_workflow|
       ActiveRecord::Base.transaction do
         new_workflow.name = new_workflow.name + suffix
@@ -49,10 +52,12 @@ class LabInterface::Workflow < ActiveRecord::Base
         new_workflow.save!
 
         #copy of the pipeline
-        new_workflow.build_pipeline(self.pipeline.attributes.merge(:workflow => new_workflow))
-        new_workflow.pipeline.request_types = self.pipeline.request_types
-        new_workflow.pipeline.name += suffix
-        new_workflow.pipeline.save!
+        unless skip_pipeline
+          new_workflow.build_pipeline(self.pipeline.attributes.merge(:workflow => new_workflow))
+          new_workflow.pipeline.request_types = self.pipeline.request_types
+          new_workflow.pipeline.name += suffix
+          new_workflow.pipeline.save!          
+        end
       end
     end
   end

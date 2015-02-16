@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 require "test_helper"
 
 class RequestTest < ActiveSupport::TestCase
@@ -13,10 +16,9 @@ class RequestTest < ActiveSupport::TestCase
 
         @genotyping_request_type = Factory :request_type, :name => "genotyping"
         @cherrypick_request_type = Factory :request_type, :name => "cherrypick", :target_asset_type => nil
-        #@submission  = Factory(:order_with_submission, :request_types => [@cherrypick_request_type, @genotyping_request_type].map(&:id)).submission
         @submission  = Factory::submission(:request_types => [@cherrypick_request_type, @genotyping_request_type].map(&:id), :asset_group_name => 'to avoid asset errors')
         @item = Factory :item, :submission => @submission
-        
+
         @genotype_pipeline = Factory :pipeline, :name =>"genotyping pipeline", :request_types => [ @genotyping_request_type ]
         @cherrypick_pipeline = Factory :pipeline, :name => "cherrypick pipeline", :request_types => [ @cherrypick_request_type ], :next_pipeline_id => @genotype_pipeline.id, :asset_type => 'LibraryTube'
 
@@ -76,8 +78,10 @@ class RequestTest < ActiveSupport::TestCase
        end
 
        should "return same properties" do
-         original_attributes = @request.request_metadata.attributes.merge('id' => nil, 'request_id' => nil)
-         copied_attributes   = @new_request.request_metadata.attributes.merge('id' => nil, 'request_id' => nil)
+         @request.reload
+         @new_request.reload
+         original_attributes = @request.request_metadata.attributes.merge('id' => nil, 'request_id' => nil, 'updated_at'=>nil)
+         copied_attributes   = @new_request.request_metadata.attributes.merge('id' => nil, 'request_id' => nil, 'updated_at'=>nil)
          assert_equal original_attributes, copied_attributes
        end
 
@@ -316,33 +320,85 @@ class RequestTest < ActiveSupport::TestCase
         end
       end
     end
-
-    context "#quota_counted and #quota_exempted" do
+    
+    context "#ready?" do
       setup do
-
-        @quota_counted_states = ["passed", "pending", "started"]
-        @cquota_exempted_states = ["failed", "cancelled", "aborted"]
-
-        @all_states = @quota_counted_states + @cquota_exempted_states
-
-        assert_equal 6, @all_states.size
-
-        @all_states.each do |state|
-          Factory :request, :state => state
-        end
-
-        assert_equal 6, Request.count
+        @library_creation_request = Factory(:library_creation_request_for_testing_sequencing_requests)
+        @library_creation_request.asset.aliquots.each { |a| a.update_attributes!(:project => Factory(:project)) }
+        @library_tube = @library_creation_request.target_asset
+        
+        @library_creation_request_2 = Factory(:library_creation_request_for_testing_sequencing_requests, :target_asset => @library_tube)
+        @library_creation_request_2.asset.aliquots.each { |a| a.update_attributes!(:project => Factory(:project)) }
+        
+        
+        # The sequencing request will be created with a 76 read length (Standard sequencing), so the request 
+        # type needs to include this value in its read_length validation list (for example, single_ended_sequencing) 
+        @request_type = RequestType.find_by_key("single_ended_sequencing")
+        
+        @sequencing_request = Factory(:sequencing_request, { :asset => @library_tube, :request_type => @request_type })
       end
-      context "quota_counted requests" do
-        should "total right number" do
-          assert_equal @quota_counted_states.size, Request.quota_counted.count
+
+      should "check any non-sequencing request is always ready" do
+        assert_equal true, @library_creation_request.ready?
+      end
+      
+      should "check a sequencing request is not ready if any of the library creation requests is not in a closed status type (passed, failed, aborted, cancelled)" do
+        assert_equal false, @sequencing_request.ready?
+      end
+      
+      should "check a sequencing request is ready if at least one library creation request is in passed status while the others are closed" do
+        @library_creation_request.start
+        @library_creation_request.pass
+        @library_creation_request.save!
+        
+        @library_creation_request_2.start
+        @library_creation_request_2.cancel
+        @library_creation_request_2.save!
+
+        assert_equal true, @sequencing_request.ready?
+      end
+      
+      should "check a sequencing request is not ready if any of the library creation requests is not closed, although one of them is in passed status" do
+        @library_creation_request.start
+        @library_creation_request.pass
+        @library_creation_request.save!
+
+        assert_equal false, @sequencing_request.ready?     
+      end
+      
+      should "check a sequencing request is not ready if none of the library creation requests are in passed status" do
+        @library_creation_request.start
+        @library_creation_request.fail
+        @library_creation_request.save!
+        
+        @library_creation_request_2.start
+        @library_creation_request_2.cancel
+        @library_creation_request_2.save!        
+
+        assert_equal false, @sequencing_request.ready?
+      end
+
+    end
+
+    context "#customer_responsible" do
+
+      setup do
+        @request = Factory :library_creation_request
+        @request.state = 'started'
+      end
+
+      should "update when request is started" do
+        @request.request_metadata.update_attributes!(:customer_accepts_responsibility=>true)
+        assert @request.request_metadata.customer_accepts_responsibility?
+      end
+
+      should "not update once a request is failed" do
+        @request.fail!
+        assert_raise ActiveRecord::RecordInvalid do
+          @request.request_metadata.update_attributes!(:customer_accepts_responsibility=>true)
         end
       end
-      context "quota_exempted requests" do
-        should "total right number" do
-          assert_equal @cquota_exempted_states.size, Request.quota_exempted.count
-        end
-      end
+
     end
   end
 end

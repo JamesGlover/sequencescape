@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2013 Genome Research Ltd.
 require "test_helper"
 
 class RobotVerificationsControllerTest < ActionController::TestCase
@@ -33,8 +36,8 @@ class RobotVerificationsControllerTest < ActionController::TestCase
         @expected_layout[1].each do |barcode,bed_number|
           @robot.robot_properties.create(:key => "SCRC#{bed_number}", :value => bed_number)
           @source_plate = Factory :plate, :barcode => barcode
-          well        = Factory :well, :map_id => Map.for_position_on_plate(count, 96).first.id
-          target_well = Factory :well, :map_id => Map.for_position_on_plate(count, 96).first.id
+          well        = Factory :well, :map_id => Map.for_position_on_plate(count, 96, @source_plate.asset_shape).first.id
+          target_well = Factory :well, :map_id => Map.for_position_on_plate(count, 96, @source_plate.asset_shape).first.id
           target_well.well_attribute = Factory :well_attribute
           @source_plate.add_and_save_well(well)
           @plate.add_and_save_well(target_well)
@@ -54,13 +57,14 @@ class RobotVerificationsControllerTest < ActionController::TestCase
           post :download,   :user_id  => @user.id,
                             :batch_id => @batch.id,
                             :robot_id => @robot.id,
+                            :source_plate_types => "ABgene_0765",
                             :barcodes => { :destination_plate_barcode => "1220142334774"},
                             :bed_barcodes => {"1" => "580000001806", "2" => "580000002810", "3" => "580000003824", "4" => "580000004838"},
-                            :plate_barcodes => {"127162" => "1220127162859", "127167" => "1220127167670", "127168" => "1220127168684", "134443" => "1220134443842"},
+                            :plate_barcodes => {"1220127162859" => "1220127162859", "1220127167670" => "1220127167670", "1220127168684" => "1220127168684", "1220134443842" => "1220134443842"},
                             :destination_bed_barcodes => {"1" => "580000005842"},
-                            :destination_plate_barcodes => {"142334" => "1220142334774"}
+                            :destination_plate_barcodes => {"1220142334774" => "1220142334774"}
         end
-        
+
         should "be successful" do
           assert_response :success
           assert_equal @before_event_count+ 1, Event.count
@@ -73,13 +77,14 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => "", "2" => "", "3" => "", "4" => ""},
-                              :plate_barcodes => {"127162" => "", "127167" => "", "127168" => "", "134443" => ""},
+                              :plate_barcodes => {"1220127162859" => "", "1220127167670" => "", "1220127168684" => "", "1220134443842" => ""},
                               :destination_bed_barcodes => {"1" => ""},
-                              :destination_plate_barcodes => {"142334" => ""}
+                              :destination_plate_barcodes => {"1220142334774" => ""}
           end
-          
+
           should "redirect and set the flash to error" do
             assert_response :redirect
             assert_not_nil @controller.session[:flash][:error].grep /Error/
@@ -92,11 +97,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => "580000001806", "2" => "580000002810", "3" => "580000003824", "4" => "580000004838"},
-                              :plate_barcodes => {"127162" => "", "127167" => "", "127168" => "", "134443" => ""},
+                              :plate_barcodes => {"1220127162859" => "", "1220127167670" => "", "1220127168684" => "", "1220134443842" => ""},
                               :destination_bed_barcodes => {"1" => "580000005842"},
-                              :destination_plate_barcodes => {"142334" => "1220142334774"}
+                              :destination_plate_barcodes => {"1220142334774" => "1220142334774"}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect
@@ -110,11 +116,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => "", "2" => "", "3" => "", "4" => ""},
-                              :plate_barcodes => {"127162" => "1220127162859", "127167" => "1220127167670", "127168" => "1220127168684", "134443" => "1220134443842"},
+                              :plate_barcodes => {"1220127162859" => "1220127162859", "1220127167670" => "1220127167670", "1220127168684" => "1220127168684", "1220134443842" => "1220134443842"},
                               :destination_bed_barcodes => {"1" => "580000005842"},
-                              :destination_plate_barcodes => {"142334" => "1220142334774"}
+                              :destination_plate_barcodes => {"1220142334774" => "1220142334774"}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect
@@ -127,11 +134,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => "580000001806", "2" => "580000002810", "3" => "580000003824", "4" => "580000004838"},
-                              :plate_barcodes => {"127167" => "1220127162859", "127162" => "1220127167670", "134443" => "1220127168684", "127168" => "1220134443842"},
+                              :plate_barcodes => {"1220127167670" => "1220127162859", "1220127162859" => "1220127167670", "1220134443842" => "1220127168684", "1220127168684" => "1220134443842"},
                               :destination_bed_barcodes => {"1" => "580000005842"},
-                              :destination_plate_barcodes => {"142334" => "1220142334774"}
+                              :destination_plate_barcodes => {"1220142334774" => "1220142334774"}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect
@@ -144,11 +152,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"4" => "580000001806", "3" => "580000002810", "1" => "580000003824", "2" => "580000004838"},
-                              :plate_barcodes => {"127162" => "1220127162859", "127167" => "1220127167670", "127168" => "1220127168684", "134443" => "1220134443842"},
+                              :plate_barcodes => {"1220127162859" => "1220127162859", "1220127167670" => "1220127167670", "1220127168684" => "1220127168684", "1220134443842" => "1220134443842"},
                               :destination_bed_barcodes => {"1" => "580000005842"},
-                              :destination_plate_barcodes => {"142334" => "1220142334774"}
+                              :destination_plate_barcodes => {"1220142334774" => "1220142334774"}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect
@@ -161,11 +170,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => "1220127162859", "2" => "580000002810", "3" => "580000003824", "4" => "580000004838"},
-                              :plate_barcodes => {"127162" => "580000001806", "127167" => "1220127167670", "127168" => "1220127168684", "134443" => "1220134443842"},
+                              :plate_barcodes => {"1220127162859" => "580000001806", "1220127167670" => "1220127167670", "1220127168684" => "1220127168684", "1220134443842" => "1220134443842"},
                               :destination_bed_barcodes => {"1" => "580000005842"},
-                              :destination_plate_barcodes => {"142334" => "1220142334774"}
+                              :destination_plate_barcodes => {"1220142334774" => "1220142334774"}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect
@@ -178,11 +188,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => "580000001806", "2" => "580000002810", "3" => "580000003824", "4" => "580000004838"},
-                              :plate_barcodes => {"127162" => "1220127162859", "127167" => "1220127167670", "127168" => "1220127168684", "134443" => "1220134443842"},
+                              :plate_barcodes => {"1220127162859" => "1220127162859", "1220127167670" => "1220127167670", "1220127168684" => "1220127168684", "1220134443842" => "1220134443842"},
                               :destination_bed_barcodes => {"1" => "580000005842"},
-                              :destination_plate_barcodes => {"142334" => ""}
+                              :destination_plate_barcodes => {"1220142334774" => ""}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect
@@ -195,11 +206,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => "580000001806", "2" => "580000002810", "3" => "580000003824", "4" => "580000004838"},
-                              :plate_barcodes => {"127162" => "1220127162859", "127167" => "1220127167670", "127168" => "1220127168684", "134443" => "1220134443842"},
+                              :plate_barcodes => {"1220127162859" => "1220127162859", "1220127167670" => "1220127167670", "1220127168684" => "1220127168684", "1220134443842" => "1220134443842"},
                               :destination_bed_barcodes => {"1" => ""},
-                              :destination_plate_barcodes => {"142334" => "1220142334774"}
+                              :destination_plate_barcodes => {"1220142334774" => "1220142334774"}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect
@@ -212,11 +224,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => "580000001806", "2" => "580000002810", "3" => "580000003824", "4" => "580000004838"},
-                              :plate_barcodes => {"127162" => "1220127162859", "127167" => "1220127167670", "127168" => "1220127168684", "134443" => "1220134443842"},
+                              :plate_barcodes => {"1220127162859" => "1220127162859", "1220127167670" => "1220127167670", "1220127168684" => "1220127168684", "1220134443842" => "1220134443842"},
                               :destination_bed_barcodes => {"1" => "1220142334774"},
-                              :destination_plate_barcodes => {"142334" => "580000005842"}
+                              :destination_plate_barcodes => {"1220142334774" => "580000005842"}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect
@@ -229,11 +242,12 @@ class RobotVerificationsControllerTest < ActionController::TestCase
             post :download,   :user_id  => @user.id,
                               :batch_id => @batch.id,
                               :robot_id => @robot.id,
+                              :source_plate_types => "ABgene_0765",
                               :barcodes => { :destination_plate_barcode => "1220142334774"},
                               :bed_barcodes => {"1" => " 580000001806", "2" => "580000002810    ", "3" => "  580000003824", "4" => "580000004838"},
-                              :plate_barcodes => {"127162" => "1220127162859     ", "127167" => "1220127167670 ", "127168" => "1220127168684", "134443" => "1220134443842"},
+                              :plate_barcodes => {"1220127162859" => "1220127162859     ", "1220127167670" => "1220127167670 ", "1220127168684" => "1220127168684", "1220134443842" => "1220134443842"},
                               :destination_bed_barcodes => {"1" => "580000005842"},
-                              :destination_plate_barcodes => {"142334" => "1220142334774"}
+                              :destination_plate_barcodes => {"1220142334774" => "1220142334774"}
           end
           should "redirect and set the flash to error" do
             assert_response :redirect

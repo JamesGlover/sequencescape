@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2014 Genome Research Ltd.
 module Asset::Stock
   # Extending this module will allow an asset to have a stock asset and be able to
   # create it.
@@ -26,7 +29,8 @@ module Asset::Stock
           self.class.stock_asset_type.#{ctor}(attributes.reverse_merge(
             :name     => "(s) \#{self.name}",
             :barcode  => AssetBarcode.new_barcode,
-            :aliquots => self.aliquots.map(&:clone)
+            :aliquots => self.aliquots.map(&:clone),
+            :purpose  => self.class.stock_asset_purpose
           ), &block)
         end
       }, __FILE__, line)

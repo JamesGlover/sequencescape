@@ -12,6 +12,7 @@ Feature: Access requests through the API
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
     Given I have a project called "My project"
     And the UUID for the project "My project" is "11111111-1111-2222-3333-444444444444"
@@ -60,17 +61,14 @@ Feature: Access requests through the API
               "name": "Testing the requests API - Target asset 1"
             }
           }
-        ],
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
-        }
+        ]
       }
       """
 
     Examples:
-      | request type                 | request type name            | asset type    | fragment size from | fragment size to |
-      | library creation             | Library creation             | sample_tubes  | 1                  | 20               |
-      | multiplexed library creation | Multiplexed library creation | sample_tubes  | 1                  | 20               |
-      | sequencing                   | Paired end sequencing        | library_tubes | 1                  | 21               |
-      | sequencing                   | Single ended sequencing      | library_tubes | 1                  | 21               |
+      | request type                 | request type name                  | asset type    | fragment size from | fragment size to |
+      | library creation             | Library creation                   | sample_tubes  | 1                  | 20               |
+      | multiplexed library creation | Multiplexed library creation       | sample_tubes  | 1                  | 20               |
+      | sequencing                   | Illumina-C Paired end sequencing   | library_tubes | 1                  | 21               |
+      | sequencing                   | Illumina-C Single ended sequencing | library_tubes | 1                  | 21               |
 

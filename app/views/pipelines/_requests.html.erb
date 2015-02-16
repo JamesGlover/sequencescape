@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.%>
 <% unless @information_types.find_by_key("read_length").nil? %>
   <%= label_tag 'filter', 'Filter by '+@information_types.find_by_key("read_length").name %>
   <input type="text" value="" id="filter-for-pipeline_inbox" rel="pipeline_inbox">
@@ -7,8 +10,8 @@
     <div class='label'>
       <tr>
         <th class='{sorter: false}'>&nbsp;</th>
+        <th id="priority_flag"  style='text-align: center'><%= link_to image_tag("icon_0_flag.png", :size=>"16x16"), "javascript:void(0);" %></th>
         <% if current_user.is_lab_manager? %>
-          <th id="priority_flag"  style='text-align: center'><%= link_to image_tag("icon_0_flag.png", :size=>"16x16"), "javascript:void(0);" %></th>
           <th><%= link_to "Previous requests", "javascript:void(0);" %></th>
         <% end %>
         <th><%= link_to 'Product Line', 'javascript:void(0);' %></th>
@@ -20,7 +23,7 @@
         <th><%= link_to "Asset ID", "javascript:void(0);" %></th>
         <th><%= link_to "Asset comments", "javascript:void(0);" %></th>
         <th><%= link_to "Conc", "javascript:void(0);" %></th>
-        <th><%= link_to "Scanned in (Y-M-D)", "javascript:void(0);" %></th>        
+        <th><%= link_to "Scanned in (Y-M-D)", "javascript:void(0);" %></th>
         <% @information_types.each do |information_type| %>
           <% next if information_type.hide_in_inbox %>
           <th><%= link_to "#{information_type.label}", "javascript:void(0);" %></th>
@@ -37,12 +40,16 @@
         <tr>
           <td class="request center">
             <%= hidden_label_tag_for_testing("request_#{request.id}", "Select #{request.asset.sti_type} #{request.asset.barcode} for batch") %>
-            <%= check_box :request, request.id, :value => request.id, :class => 'grouped_checkbox request_checkbox', :'data-count' => 1 %>
+            <% if request.ready? %>
+              <%= check_box :request, request.id, :value => request.id, :class => 'grouped_checkbox request_checkbox', :'data-count' => 1 %>
+            <% else %>
+              <%= image_tag "error.png", 'title' => I18n.t("requests.status.not_ready"), :size => '16x16' %>
+            <% end %>
+          </td>
+          <td  style='text-align: center'>
+            <%= image_tag "icon_#{request.priority}_flag.png", 'alt' => request.priority, :size => '16x16', :class =>  "flag_image #{current_user.is_lab_manager? ? 'as_manager' : ''}", "data-priority" => request.priority, 'data-request-id' => request.id %>
           </td>
           <% if current_user.is_lab_manager? %>
-            <td  style='text-align: center'>
-              <%= image_tag "icon_#{request.priority}_flag.png", 'alt' => request.priority, :size => '16x16', :class => 'flag_image', "data-priority" => request.priority, 'data-request-id' => request.id %>
-            </td>
             <td>
               <%= render :partial => "previous_failed_requests", :locals => { :request => request } %>
             </td>
@@ -57,7 +64,7 @@
             <%= link_to request.id, request_path(request) %>
           </td>
           <td><%= link_to request.asset.try(:name), asset_path(request.asset) %></td>
-          
+
           <% unless request_comments.empty? -%>
             <%= render :partial => "request_comments", :locals => { :request => request, :comments => request_comments } %>
           <% else -%>
@@ -84,7 +91,7 @@
               <%= h(request.request_metadata[information_type.key]) %>
             </td>
           <% end %>
-          <td width=100px><%= truncate(request.try(:submission).try(:name), :separator => ' ') %></td>
+          <td width=100px><%= truncate(request.try(:submission).try(:study_names), :separator => ' ') %></td>
         </tr>
       <%- end -%>
       </div>
@@ -116,7 +123,7 @@
   });
 
   $(document).ready(function() {
-    $("#pipeline_inbox").tablesorter({ 
+    $("#pipeline_inbox").tablesorter({
       sortList: [[1,1], [2,0]],
       widgets: ['zebra', 'jFilter'],
 

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 module LabInterface::WorkflowsHelper
 
   # Returns descriptor from params, if it's not there try the @study.
@@ -5,7 +8,7 @@ module LabInterface::WorkflowsHelper
   # blank string...
   def descriptor_value(descriptor)
     # Refactored to remove reliance on @values
-    params[:values].try(:[], descriptor.name) or 
+    params[:values].try(:[], descriptor.name) or
       @study.try(:descriptor_value,descriptor.name) or ""
   end
 
@@ -42,11 +45,6 @@ module LabInterface::WorkflowsHelper
   end
 
   def request_types_sorted_by_total(workflow, project)
-    request_types          = workflow.request_types.to_a.sort {|a,b| a.name <=> b.name}
-
-    active_request_types   = request_types.reject {|rt| project.total_quota(rt).zero? }
-    inactive_request_types = request_types.select {|rt| project.total_quota(rt).zero? }
-
-    (active_request_types + inactive_request_types)
+    workflow.request_types.to_a.sort {|a,b| a.name <=> b.name}
   end
 end

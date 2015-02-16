@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 def set_uuid_for(object, uuid_value)
   uuid   = object.uuid_object
   uuid ||= object.build_uuid_object
@@ -13,6 +16,7 @@ ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_NAME = [
   'library tube',
   'pulldown multiplexed library tube',
   'multiplexed library tube',
+  'stock multiplexed library tube',
   'PacBio library tube',
   'well',
   'plate',
@@ -29,6 +33,7 @@ ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_NAME = [
   'pico assay plate',
   'pico dilution plate',
   'plate purpose',
+  'purpose',
   'plate',
   'sequenom qc plate',
   'working dilution plate',
@@ -36,7 +41,11 @@ ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_NAME = [
   'supplier',
   'transfer template',
   'tag layout template',
-  'barcode printer'
+  'barcode printer',
+  'tube',
+  'tag group',
+  'robot',
+  'reference genome'
 ]
 
 SINGULAR_MODELS_BASED_ON_NAME_REGEXP = ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_NAME.join('|')
@@ -59,13 +68,13 @@ end
 
 Given /^(\d+) (#{PLURAL_MODELS_BASED_ON_NAME_REGEXP}) exist with names based on "([^\"]+)" and IDs starting at (\d+)$/ do |count, model, name, id|
   (0...count.to_i).each do |index|
-    Given %Q{a #{model.singularize} called "#{name}-#{index+1}" with ID #{id.to_i+index}}
+    step(%Q{a #{model.singularize} called "#{name}-#{index+1}" with ID #{id.to_i+index}})
   end
 end
 
 Given /^(\d+) (#{PLURAL_MODELS_BASED_ON_NAME_REGEXP}) exist with names based on "([^\"]+)"$/ do |count, model, name|
   (0...count.to_i).each do |index|
-    Given %Q{a #{model.singularize} called "#{name}-#{index+1}"}
+    step(%Q{a #{model.singularize} called "#{name}-#{index+1}"})
   end
 end
 
@@ -83,11 +92,14 @@ ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_ID = [
   'well',
   'pulldown multiplexed library tube',
   'multiplexed library tube',
+  'stock multiplexed library tube',
 
   'asset audit',
 
   'plate purpose',
+  'purpose',
   'dilution plate purpose',
+  'bulk transfer',
 
   'sample',
   'sample manifest',
@@ -99,11 +111,22 @@ ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_ID = [
 
   'tag layout',
   'plate creation',
+  'plate conversion',
+  'tube creation',
   'state change',
 
-  'aliquot'
-
-
+  'aliquot',
+  'qcable',
+  'stock',
+  'stamp',
+  'qcable creator',
+  'lot',
+  'lot type',
+  'robot',
+  'qc decision',
+  'robot',
+  'reference genome',
+  'transfer'
 ]
 
 SINGULAR_MODELS_BASED_ON_ID_REGEXP = ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_ID.join('|')
@@ -122,6 +145,7 @@ Given /^the UUID for the (#{SINGULAR_MODELS_BASED_ON_ID_REGEXP}) with ID (\d+) i
 end
 
 Given /^all (#{PLURAL_MODELS_BASED_ON_NAME_REGEXP}|#{PLURAL_MODELS_BASED_ON_ID_REGEXP}) have sequential UUIDs based on "([^\"]+)"$/ do |model,core_uuid|
+  core_uuid = core_uuid.dup  # Oh the irony of modifying a string that then alters Cucumber output!
   core_uuid << '-' if core_uuid.length == 23
   core_uuid << "%0#{36-core_uuid.length}d"
 
@@ -130,19 +154,15 @@ Given /^all (#{PLURAL_MODELS_BASED_ON_NAME_REGEXP}|#{PLURAL_MODELS_BASED_ON_ID_R
   end
 end
 
-# Superb hack that adds one to the previous primary key value for the model.  Basically MySQL allows you to retrieve
-# the last ID incremented, but that's from the last table updated.  So here we create an instance of the model we
-# want to retrieve the ID for and then destroy it.
 Given /^the UUID of the next (#{SINGULAR_MODELS_BASED_ON_ID_REGEXP}) created will be "([^\"]+)"$/ do |model,uuid_value|
   model_class = model.gsub(/\s+/, '_').classify.constantize
-  model_class.connection.update("INSERT INTO #{model_class.quoted_table_name} VALUES()")
-  last_id = ActiveRecord::Base.connection.select_all('SELECT LAST_INSERT_ID() AS last_id').first['last_id'].to_i
-  model_class.connection.update("DELETE FROM #{model_class.quoted_table_name} WHERE `id`=#{last_id}")
+
+  next_id = ActiveRecord::Base.connection.execute("SHOW TABLE STATUS WHERE `name` = '#{model_class.table_name}'").first['Auto_increment']
 
   # Unforunately we need to find the root of the tree
   root_class = model_class
   root_class = root_class.superclass until root_class.superclass == ActiveRecord::Base
-  Uuid.new(:resource_type => root_class.sti_name, :resource_id => last_id+1, :external_id => uuid_value).save(false)
+  Uuid.new(:resource_type => root_class.sti_name, :resource_id => next_id, :external_id => uuid_value).save(false)
 end
 
 Given /^the UUID of the last (#{SINGULAR_MODELS_BASED_ON_ID_REGEXP}) created is "([^\"]+)"$/ do |model,uuid_value|
@@ -152,7 +172,7 @@ end
 
 Given /^(\d+) (#{PLURAL_MODELS_BASED_ON_ID_REGEXP}) exist with IDs starting at (\d+)$/ do |count, model, id|
   (0...count.to_i).each do |index|
-    Given %Q{the #{model.singularize} exists with ID #{id.to_i+index}}
+    step(%Q{the #{model.singularize} exists with ID #{id.to_i+index}})
   end
 end
 
@@ -164,7 +184,7 @@ end
 
 Given /^I have a billing event with UUID "([^\"]+)"$/ do |uuid_value|
   project = Factory :project, :name => "Test Project"
-  Given %Q{the project "Test Project" a budget division "Human variation"}
+  step(%Q{the project "Test Project" a budget division "Human variation"})
   request = Request.create!(:request_type => RequestType.find_by_key('paired_end_sequencing'))
   request.request_metadata.update_attributes!(:read_length => 100, :library_type => "Standard" )
   billing_event = Factory :billing_event, :project => project, :request => request
@@ -194,13 +214,13 @@ end
 
 Given /^there are (\d+) "([^\"]+)" requests with IDs starting at (\d+)$/ do |count, type, id|
   (0...count.to_i).each do |index|
-    Given %Q{a "#{type}" request with ID #{id.to_i+index}}
+    step(%Q{a "#{type}" request with ID #{id.to_i+index}})
   end
 end
 
 Given /^a "([^\"]+)" request with ID (\d+)$/ do |type, id|
   request_type = RequestType.find_by_name(type) or raise StandardError, "Cannot find request type #{type.inspect}"
-  Request.create!(:request_type => request_type) { |r| r.id = id.to_i }
+  request_type.requests.create! { |r| r.id = id.to_i }
 end
 
 Given /^all of the requests have appropriate assets with samples$/ do
@@ -213,4 +233,9 @@ Given /^plate "([^"]*)" is a source plate of "([^"]*)"$/ do |source_plate_uuid, 
   source_plate = Plate.find(Uuid.find_id(source_plate_uuid))
   destination_plate = Plate.find(Uuid.find_id(destination_plate_uuid))
   source_plate.children << destination_plate
+end
+
+Given /^the UUID for well (\d+) on plate "(.*?)" is "(.*?)"$/ do |well_id, plate_name, uuid|
+  plate = Plate.find_by_name(plate_name) || Plate.find_by_barcode(plate_name)
+  set_uuid_for(plate.wells[well_id.to_i-1],uuid)
 end

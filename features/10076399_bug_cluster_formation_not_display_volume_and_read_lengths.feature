@@ -1,5 +1,5 @@
-@pipeline @batch @javascript
-Feature: 
+@pipeline @batch
+Feature:
   Background:
     Given I am logged in as "user"
     And I am using "local" to authenticate

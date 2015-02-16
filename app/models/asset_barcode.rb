@@ -1,13 +1,15 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2013 Genome Research Ltd.
 class AssetBarcode < ActiveRecord::Base
   # This class only a concurrency safe counter to generate asset barcode
   def self.new_barcode
-    offset = 200000
-    barcode = (AssetBarcode.create!).id + offset
+    barcode = (AssetBarcode.create!).id
 
-    while Asset.find_by_barcode(barcode.to_s) 
-      barcode = (AssetBarcode.create!).id + offset
+    while Asset.find_by_barcode(barcode.to_s)
+      barcode = (AssetBarcode.create!).id
     end
-    
+
     (barcode).to_s
   end
 end

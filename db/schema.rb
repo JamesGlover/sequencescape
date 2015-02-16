@@ -1,4 +1,4 @@
-# This file is auto-generated from the current state of the database. Instead of editing this file, 
+# This file is auto-generated from the current state of the database. Instead of editing this file,
 # please use the migrations feature of Active Record to incrementally modify your database, and
 # then regenerate this schema definition.
 #
@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120703183612) do
+ActiveRecord::Schema.define(:version => 20150128114159) do
 
   create_table "aliquots", :force => true do |t|
     t.integer  "receptacle_id",    :null => false
@@ -29,6 +29,17 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "aliquots", ["receptacle_id", "tag_id"], :name => "aliquot_tags_are_unique_within_receptacle", :unique => true
   add_index "aliquots", ["sample_id"], :name => "index_aliquots_on_sample_id"
   add_index "aliquots", ["study_id"], :name => "index_aliquots_on_study_id"
+  add_index "aliquots", ["tag_id"], :name => "tag_id_idx"
+
+  create_table "api_applications", :force => true do |t|
+    t.string "name",        :null => false
+    t.string "key",         :null => false
+    t.string "contact",     :null => false
+    t.text   "description"
+    t.string "privilege",   :null => false
+  end
+
+  add_index "api_applications", ["key"], :name => "index_api_applications_on_key"
 
   create_table "archived_properties", :force => true do |t|
     t.text    "value"
@@ -51,6 +62,23 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "asset_audits", ["asset_id"], :name => "index_asset_audits_on_asset_id"
 
   create_table "asset_barcodes", :force => true do |t|
+  end
+
+  create_table "asset_creation_parents", :force => true do |t|
+    t.integer  "asset_creation_id"
+    t.integer  "parent_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "asset_creations", :force => true do |t|
+    t.integer  "user_id"
+    t.integer  "parent_id"
+    t.integer  "child_purpose_id"
+    t.integer  "child_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "type",             :null => false
   end
 
   create_table "asset_group_assets", :force => true do |t|
@@ -81,9 +109,16 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   end
 
   add_index "asset_links", ["ancestor_id", "direct"], :name => "index_asset_links_on_ancestor_id_and_direct"
-  add_index "asset_links", ["ancestor_id"], :name => "index_asset_links_on_ancestor_id"
   add_index "asset_links", ["descendant_id", "direct"], :name => "index_asset_links_on_descendant_id_and_direct"
-  add_index "asset_links", ["descendant_id"], :name => "index_asset_links_on_descendant_id"
+
+  create_table "asset_shapes", :force => true do |t|
+    t.string   "name",                 :null => false
+    t.integer  "horizontal_ratio",     :null => false
+    t.integer  "vertical_ratio",       :null => false
+    t.string   "description_strategy", :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "assets", :force => true do |t|
     t.string   "name"
@@ -115,6 +150,7 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "assets", ["barcode_prefix_id"], :name => "index_assets_on_barcode_prefix_id"
   add_index "assets", ["legacy_sample_id"], :name => "index_assets_on_sample_id"
   add_index "assets", ["map_id"], :name => "index_assets_on_map_id"
+  add_index "assets", ["sti_type", "plate_purpose_id"], :name => "index_assets_on_plate_purpose_id_sti_type"
   add_index "assets", ["sti_type", "updated_at"], :name => "index_assets_on_sti_type_and_updated_at"
   add_index "assets", ["sti_type"], :name => "index_assets_on_sti_type"
   add_index "assets", ["updated_at"], :name => "index_assets_on_updated_at"
@@ -249,7 +285,7 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.float    "quantity",    :default => 1.0
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "request_id"
+    t.integer  "request_id",                             :null => false
   end
 
   add_index "billing_events", ["kind"], :name => "index_billing_events_on_kind"
@@ -259,6 +295,12 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.string   "name"
     t.datetime "created_at"
     t.datetime "updated_at"
+  end
+
+  create_table "bulk_transfers", :force => true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "user_id"
   end
 
   create_table "comments", :force => true do |t|
@@ -310,9 +352,13 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   end
 
   create_table "db_files", :force => true do |t|
-    t.binary  "data",        :limit => 2147483647
-    t.integer "document_id"
+    t.binary  "data",                :limit => 2147483647
+    t.integer "owner_id"
+    t.string  "owner_type",          :limit => 25,         :default => "Document", :null => false
+    t.string  "owner_type_extended"
   end
+
+  add_index "db_files", ["owner_type", "owner_id"], :name => "index_db_files_on_owner_type_and_owner_id"
 
   create_table "delayed_jobs", :force => true do |t|
     t.integer  "priority",   :default => 0
@@ -361,10 +407,27 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer "parent_id"
     t.string  "thumbnail"
     t.integer "db_file_id"
-    t.string  "documentable_type", :limit => 50
+    t.string  "documentable_type",     :limit => 50, :null => false
+    t.string  "documentable_extended", :limit => 50
   end
 
   add_index "documents", ["documentable_id", "documentable_type"], :name => "index_documents_on_documentable_id_and_documentable_type"
+  add_index "documents", ["documentable_type", "documentable_id"], :name => "index_documents_on_documentable_type_and_documentable_id"
+
+  create_table "documents_shadow", :force => true do |t|
+    t.integer "documentable_id"
+    t.integer "size"
+    t.string  "content_type"
+    t.string  "filename"
+    t.integer "height"
+    t.integer "width"
+    t.integer "parent_id"
+    t.string  "thumbnail"
+    t.integer "db_file_id"
+    t.string  "documentable_type", :limit => 50
+  end
+
+  add_index "documents_shadow", ["documentable_id", "documentable_type"], :name => "index_documents_on_documentable_id_and_documentable_type"
 
   create_table "events", :force => true do |t|
     t.integer  "eventful_id"
@@ -488,7 +551,7 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
 
   add_index "lab_events", ["batch_id"], :name => "index_lab_events_on_batch_id"
   add_index "lab_events", ["created_at"], :name => "index_lab_events_on_created_at"
-  add_index "lab_events", ["description", "eventful_type"], :name => "index_lab_events_find_flowcell", :length => {"eventful_type"=>nil, "description"=>"20"}
+  add_index "lab_events", ["description", "eventful_type"], :name => "index_lab_events_find_flowcell", :length => {"description"=>20, "eventful_type"=>nil}
   add_index "lab_events", ["eventful_id"], :name => "index_lab_events_on_eventful_id"
   add_index "lab_events", ["eventful_type"], :name => "index_lab_events_on_eventful_type"
 
@@ -502,32 +565,91 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "lab_interface_workflows", ["pipeline_id"], :name => "index_lab_interface_workflows_on_pipeline_id"
 
   create_table "lane_metadata", :force => true do |t|
-    t.integer "lane_id"
-    t.string  "release_reason"
+    t.integer  "lane_id"
+    t.string   "release_reason"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
+
+  create_table "library_types", :force => true do |t|
+    t.string   "name",       :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "library_types_request_types", :force => true do |t|
+    t.integer  "request_type_id",                    :null => false
+    t.integer  "library_type_id",                    :null => false
+    t.boolean  "is_default",      :default => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "library_types_request_types", ["library_type_id"], :name => "fk_library_types_request_types_to_library_types"
+  add_index "library_types_request_types", ["request_type_id"], :name => "fk_library_types_request_types_to_request_types"
 
   create_table "location_associations", :force => true do |t|
-    t.integer "locatable_id"
-    t.integer "location_id"
+    t.integer "locatable_id", :null => false
+    t.integer "location_id",  :null => false
   end
 
-  add_index "location_associations", ["locatable_id"], :name => "index_location_associations_on_locatable_id"
+  add_index "location_associations", ["locatable_id"], :name => "single_location_per_locatable_idx", :unique => true
   add_index "location_associations", ["location_id"], :name => "index_location_associations_on_location_id"
 
   create_table "locations", :force => true do |t|
     t.string "name"
   end
 
+  create_table "lot_types", :force => true do |t|
+    t.string   "name",              :null => false
+    t.string   "template_class",    :null => false
+    t.integer  "target_purpose_id", :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "lot_types", ["target_purpose_id"], :name => "fk_lot_types_to_plate_purposes"
+
+  create_table "lots", :force => true do |t|
+    t.string   "lot_number",    :null => false
+    t.integer  "lot_type_id",   :null => false
+    t.integer  "template_id",   :null => false
+    t.string   "template_type", :null => false
+    t.integer  "user_id",       :null => false
+    t.date     "received_at",   :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "lots", ["lot_number", "lot_type_id"], :name => "index_lot_number_lot_type_id", :unique => true
+  add_index "lots", ["lot_type_id"], :name => "fk_lots_to_lot_types"
+
   create_table "maps", :force => true do |t|
-    t.string  "description",  :limit => 4
+    t.string  "description",    :limit => 4
     t.integer "asset_size"
     t.integer "location_id"
     t.integer "row_order"
     t.integer "column_order"
+    t.integer "asset_shape_id",              :default => 1, :null => false
   end
 
   add_index "maps", ["description", "asset_size"], :name => "index_maps_on_description_and_asset_size"
   add_index "maps", ["description"], :name => "index_maps_on_description"
+
+  create_table "messengers", :force => true do |t|
+    t.integer  "target_id"
+    t.string   "target_type"
+    t.string   "root",        :null => false
+    t.string   "template",    :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "order_roles", :force => true do |t|
+    t.string   "role"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "orders", :force => true do |t|
     t.integer  "study_id"
@@ -547,18 +669,22 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer  "asset_group_id"
     t.string   "asset_group_name"
     t.integer  "submission_id"
+    t.integer  "pre_cap_group"
+    t.integer  "order_role_id"
   end
 
   add_index "orders", ["state_to_delete"], :name => "index_submissions_on_state"
   add_index "orders", ["study_id"], :name => "index_submissions_on_project_id"
 
   create_table "pac_bio_library_tube_metadata", :force => true do |t|
-    t.integer "smrt_cells_available"
-    t.string  "prep_kit_barcode"
-    t.string  "binding_kit_barcode"
-    t.string  "movie_length"
-    t.integer "pac_bio_library_tube_id"
-    t.string  "protocol"
+    t.integer  "smrt_cells_available"
+    t.string   "prep_kit_barcode"
+    t.string   "binding_kit_barcode"
+    t.string   "movie_length"
+    t.integer  "pac_bio_library_tube_id"
+    t.string   "protocol"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   add_index "pac_bio_library_tube_metadata", ["pac_bio_library_tube_id"], :name => "index_pac_bio_library_tube_metadata_on_pac_bio_library_tube_id"
@@ -604,6 +730,7 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.boolean  "externally_managed",                          :default => false
     t.string   "group_name"
     t.integer  "control_request_type_id",                                        :null => false
+    t.integer  "min_size"
   end
 
   add_index "pipelines", ["sorter"], :name => "index_pipelines_on_sorter"
@@ -616,11 +743,10 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "pipelines_request_types", ["pipeline_id"], :name => "fk_pipelines_request_types_to_pipelines"
   add_index "pipelines_request_types", ["request_type_id"], :name => "fk_pipelines_request_types_to_request_types"
 
-  create_table "plate_creations", :force => true do |t|
-    t.integer  "user_id"
-    t.integer  "parent_id"
-    t.integer  "child_plate_purpose_id"
-    t.integer  "child_id"
+  create_table "plate_conversions", :force => true do |t|
+    t.integer  "target_id",  :null => false
+    t.integer  "purpose_id", :null => false
+    t.integer  "user_id",    :null => false
     t.datetime "created_at"
     t.datetime "updated_at"
   end
@@ -642,30 +768,50 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "plate_creators", ["name"], :name => "index_plate_creators_on_name", :unique => true
 
   create_table "plate_metadata", :force => true do |t|
-    t.integer "plate_id"
-    t.string  "infinium_barcode"
+    t.integer  "plate_id"
+    t.string   "infinium_barcode"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "fluidigm_barcode", :limit => 10
   end
 
+  add_index "plate_metadata", ["fluidigm_barcode"], :name => "index_on_fluidigm_barcode", :unique => true
   add_index "plate_metadata", ["plate_id"], :name => "index_plate_metadata_on_plate_id"
+
+  create_table "plate_owners", :force => true do |t|
+    t.integer  "user_id",        :null => false
+    t.integer  "plate_id",       :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "eventable_id",   :null => false
+    t.string   "eventable_type", :null => false
+  end
 
   create_table "plate_purpose_relationships", :force => true do |t|
     t.integer "parent_id"
     t.integer "child_id"
+    t.integer "transfer_request_type_id", :null => false
   end
 
   create_table "plate_purposes", :force => true do |t|
-    t.string   "name",                                                                 :null => false
+    t.string   "name",                                                                       :null => false
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "type"
     t.string   "target_type",                     :limit => 30
     t.boolean  "qc_display",                                    :default => false
     t.boolean  "pulldown_display"
-    t.boolean  "can_be_considered_a_stock_plate",               :default => false,     :null => false
+    t.boolean  "can_be_considered_a_stock_plate",               :default => false,           :null => false
     t.string   "default_state",                                 :default => "pending"
     t.integer  "barcode_printer_type_id",                       :default => 2
-    t.boolean  "cherrypickable_target",                         :default => true,      :null => false
-    t.boolean  "cherrypickable_source",                         :default => false,     :null => false
+    t.boolean  "cherrypickable_target",                         :default => true,            :null => false
+    t.boolean  "cherrypickable_source",                         :default => false,           :null => false
+    t.string   "cherrypick_direction",                          :default => "column",        :null => false
+    t.integer  "default_location_id"
+    t.string   "cherrypick_filters"
+    t.integer  "size",                                          :default => 96
+    t.integer  "asset_shape_id",                                :default => 1,               :null => false
+    t.string   "barcode_for_tecan",                             :default => "ean13_barcode", :null => false
   end
 
   add_index "plate_purposes", ["qc_display"], :name => "index_plate_purposes_on_qc_display"
@@ -674,7 +820,6 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "plate_purposes", ["updated_at"], :name => "index_plate_purposes_on_updated_at"
 
   create_table "plate_volumes", :force => true do |t|
-    t.text     "uploaded_file"
     t.string   "barcode"
     t.string   "uploaded_file_name"
     t.string   "state"
@@ -683,6 +828,18 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   end
 
   add_index "plate_volumes", ["uploaded_file_name"], :name => "index_plate_volumes_on_uploaded_file_name"
+
+  create_table "pre_capture_pool_pooled_requests", :force => true do |t|
+    t.integer "pre_capture_pool_id", :null => false
+    t.integer "request_id",          :null => false
+  end
+
+  add_index "pre_capture_pool_pooled_requests", ["request_id"], :name => "request_id_should_be_unique", :unique => true
+
+  create_table "pre_capture_pools", :force => true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "product_lines", :force => true do |t|
     t.string "name", :null => false
@@ -695,16 +852,18 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   end
 
   create_table "project_metadata", :force => true do |t|
-    t.integer "project_id"
-    t.string  "project_cost_code"
-    t.string  "funding_comments"
-    t.string  "collaborators"
-    t.string  "external_funding_source"
-    t.string  "sequencing_budget_cost_centre"
-    t.string  "project_funding_model"
-    t.string  "gt_committee_tracking_id"
-    t.integer "project_manager_id",            :default => 1
-    t.integer "budget_division_id",            :default => 1
+    t.integer  "project_id"
+    t.string   "project_cost_code"
+    t.string   "funding_comments"
+    t.string   "collaborators"
+    t.string   "external_funding_source"
+    t.string   "sequencing_budget_cost_centre"
+    t.string   "project_funding_model"
+    t.string   "gt_committee_tracking_id"
+    t.integer  "project_manager_id",            :default => 1
+    t.integer  "budget_division_id",            :default => 1
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   add_index "project_metadata", ["project_id"], :name => "index_project_metadata_on_project_id"
@@ -723,7 +882,51 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "projects", ["state"], :name => "index_projects_on_state"
   add_index "projects", ["updated_at"], :name => "index_projects_on_updated_at"
 
-  create_table "quotas", :force => true do |t|
+  create_table "qc_decision_qcables", :force => true do |t|
+    t.integer  "qc_decision_id", :null => false
+    t.integer  "qcable_id",      :null => false
+    t.string   "decision",       :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "qc_decisions", :force => true do |t|
+    t.integer  "lot_id",     :null => false
+    t.integer  "user_id",    :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "qc_files", :force => true do |t|
+    t.integer  "asset_id"
+    t.string   "asset_type"
+    t.integer  "size"
+    t.string   "content_type"
+    t.string   "filename"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "qcable_creators", :force => true do |t|
+    t.integer  "lot_id",     :null => false
+    t.integer  "user_id",    :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "qcables", :force => true do |t|
+    t.integer  "lot_id",            :null => false
+    t.integer  "asset_id",          :null => false
+    t.string   "state",             :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "qcable_creator_id", :null => false
+  end
+
+  add_index "qcables", ["asset_id"], :name => "index_asset_id"
+  add_index "qcables", ["lot_id"], :name => "index_lot_id"
+
+  create_table "quotas_bkp", :force => true do |t|
     t.integer  "limit",            :default => 0
     t.integer  "project_id"
     t.datetime "created_at"
@@ -732,14 +935,25 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer  "preordered_count", :default => 0
   end
 
-  add_index "quotas", ["request_type_id", "project_id"], :name => "index_quotas_on_request_type_id_and_project_id"
-  add_index "quotas", ["updated_at"], :name => "index_quotas_on_updated_at"
+  add_index "quotas_bkp", ["request_type_id", "project_id"], :name => "index_quotas_on_request_type_id_and_project_id"
+  add_index "quotas_bkp", ["updated_at"], :name => "index_quotas_on_updated_at"
 
   create_table "reference_genomes", :force => true do |t|
     t.string   "name"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  create_table "request_events", :force => true do |t|
+    t.integer  "request_id",   :null => false
+    t.string   "event_name",   :null => false
+    t.string   "from_state"
+    t.string   "to_state"
+    t.datetime "current_from", :null => false
+    t.datetime "current_to"
+  end
+
+  add_index "request_events", ["request_id", "current_to"], :name => "index_request_events_on_request_id_and_current_to"
 
   create_table "request_information_types", :force => true do |t|
     t.string   "name"
@@ -763,32 +977,38 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "request_informations", ["request_id"], :name => "index_request_informations_on_request_id"
 
   create_table "request_metadata", :force => true do |t|
-    t.integer "request_id"
-    t.string  "name"
-    t.string  "tag"
-    t.string  "library_type"
-    t.string  "fragment_size_required_to"
-    t.string  "fragment_size_required_from"
-    t.integer "read_length"
-    t.integer "batch_id"
-    t.integer "pipeline_id"
-    t.string  "pass"
-    t.string  "failure"
-    t.string  "library_creation_complete"
-    t.string  "sequencing_type"
-    t.integer "insert_size"
-    t.integer "bait_library_id"
+    t.integer  "request_id"
+    t.string   "name"
+    t.string   "tag"
+    t.string   "library_type"
+    t.string   "fragment_size_required_to"
+    t.string   "fragment_size_required_from"
+    t.integer  "read_length"
+    t.integer  "batch_id"
+    t.integer  "pipeline_id"
+    t.string   "pass"
+    t.string   "failure"
+    t.string   "library_creation_complete"
+    t.string   "sequencing_type"
+    t.integer  "insert_size"
+    t.integer  "bait_library_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "pre_capture_plex_level"
+    t.float    "gigabases_expected"
+    t.integer  "target_purpose_id"
+    t.boolean  "customer_accepts_responsibility"
   end
 
   add_index "request_metadata", ["request_id"], :name => "index_request_metadata_on_request_id"
 
-  create_table "request_quotas", :force => true do |t|
+  create_table "request_quotas_bkp", :force => true do |t|
     t.integer "request_id", :null => false
     t.integer "quota_id",   :null => false
   end
 
-  add_index "request_quotas", ["quota_id", "request_id"], :name => "index_request_quotas_on_quota_id_and_request_id"
-  add_index "request_quotas", ["request_id"], :name => "fk_request_quotas_to_requests"
+  add_index "request_quotas_bkp", ["quota_id", "request_id"], :name => "index_request_quotas_on_quota_id_and_request_id"
+  add_index "request_quotas_bkp", ["request_id"], :name => "fk_request_quotas_to_requests"
 
   create_table "request_type_plate_purposes", :force => true do |t|
     t.integer "request_type_id",  :null => false
@@ -797,8 +1017,16 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
 
   add_index "request_type_plate_purposes", ["request_type_id", "plate_purpose_id"], :name => "plate_purposes_are_unique_within_request_type", :unique => true
 
+  create_table "request_type_validators", :force => true do |t|
+    t.integer  "request_type_id", :null => false
+    t.string   "request_option",  :null => false
+    t.text     "valid_options",   :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "request_types", :force => true do |t|
-    t.string   "key",                :limit => 50
+    t.string   "key",                :limit => 100
     t.string   "name"
     t.integer  "workflow_id"
     t.datetime "created_at"
@@ -807,14 +1035,16 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer  "order"
     t.string   "initial_state",      :limit => 20
     t.string   "target_asset_type"
-    t.boolean  "multiples_allowed",                :default => false
+    t.boolean  "multiples_allowed",                 :default => false
     t.string   "request_class_name"
     t.text     "request_parameters"
-    t.integer  "morphology",                       :default => 0
-    t.boolean  "for_multiplexing",                 :default => false
-    t.boolean  "billable",                         :default => false
+    t.integer  "morphology",                        :default => 0
+    t.boolean  "for_multiplexing",                  :default => false
+    t.boolean  "billable",                          :default => false
     t.integer  "product_line_id"
-    t.boolean  "deprecated",                       :default => false, :null => false
+    t.boolean  "deprecated",                        :default => false, :null => false
+    t.boolean  "no_target_asset",                   :default => false, :null => false
+    t.integer  "target_purpose_id"
   end
 
   create_table "requests", :force => true do |t|
@@ -835,6 +1065,7 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer  "initial_project_id"
     t.integer  "priority",                         :default => 0
     t.string   "sti_type"
+    t.integer  "order_id"
   end
 
   add_index "requests", ["asset_id"], :name => "index_requests_on_asset_id"
@@ -876,9 +1107,11 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "roles", ["authorizable_id"], :name => "index_roles_on_authorizable_id"
   add_index "roles", ["name"], :name => "index_roles_on_name"
 
-  create_table "roles_users", :id => false, :force => true do |t|
-    t.integer "role_id"
-    t.integer "user_id"
+  create_table "roles_users", :force => true do |t|
+    t.integer  "role_id"
+    t.integer  "user_id"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
   end
 
   add_index "roles_users", ["role_id"], :name => "index_roles_users_on_role_id"
@@ -899,8 +1132,6 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer  "project_id"
     t.integer  "supplier_id"
     t.integer  "count"
-    t.binary   "uploaded_file",  :limit => 2147483647
-    t.binary   "generated_file", :limit => 2147483647
     t.string   "asset_type"
     t.text     "last_errors"
     t.string   "state"
@@ -916,57 +1147,60 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "sample_manifests", ["user_id"], :name => "index_sample_manifests_on_user_id"
 
   create_table "sample_metadata", :force => true do |t|
-    t.integer "sample_id"
-    t.string  "organism"
-    t.string  "gc_content"
-    t.string  "cohort"
-    t.string  "gender"
-    t.string  "country_of_origin"
-    t.string  "geographical_region"
-    t.string  "ethnicity"
-    t.string  "dna_source"
-    t.string  "volume"
-    t.string  "supplier_plate_id"
-    t.string  "mother"
-    t.string  "father"
-    t.string  "replicate"
-    t.string  "sample_public_name"
-    t.string  "sample_common_name"
-    t.string  "sample_strain_att"
-    t.integer "sample_taxon_id"
-    t.string  "sample_ebi_accession_number"
-    t.string  "sample_sra_hold"
-    t.string  "sample_reference_genome_old"
-    t.text    "sample_description"
-    t.string  "sibling"
-    t.boolean "is_resubmitted"
-    t.string  "date_of_sample_collection"
-    t.string  "date_of_sample_extraction"
-    t.string  "sample_extraction_method"
-    t.string  "sample_purified"
-    t.string  "purification_method"
-    t.string  "concentration"
-    t.string  "concentration_determined_by"
-    t.string  "sample_type"
-    t.string  "sample_storage_conditions"
-    t.string  "supplier_name"
-    t.integer "reference_genome_id",         :default => 1
-    t.string  "genotype"
-    t.string  "phenotype"
-    t.string  "age"
-    t.string  "developmental_stage"
-    t.string  "cell_type"
-    t.string  "disease_state"
-    t.string  "compound"
-    t.string  "dose"
-    t.string  "immunoprecipitate"
-    t.string  "growth_condition"
-    t.string  "rnai"
-    t.string  "organism_part"
-    t.string  "time_point"
-    t.string  "disease"
-    t.string  "subject"
-    t.string  "treatment"
+    t.integer  "sample_id"
+    t.string   "organism"
+    t.string   "gc_content"
+    t.string   "cohort"
+    t.string   "gender"
+    t.string   "country_of_origin"
+    t.string   "geographical_region"
+    t.string   "ethnicity"
+    t.string   "dna_source"
+    t.string   "volume"
+    t.string   "supplier_plate_id"
+    t.string   "mother"
+    t.string   "father"
+    t.string   "replicate"
+    t.string   "sample_public_name"
+    t.string   "sample_common_name"
+    t.string   "sample_strain_att"
+    t.integer  "sample_taxon_id"
+    t.string   "sample_ebi_accession_number"
+    t.string   "sample_sra_hold"
+    t.string   "sample_reference_genome_old"
+    t.text     "sample_description"
+    t.string   "sibling"
+    t.boolean  "is_resubmitted"
+    t.string   "date_of_sample_collection"
+    t.string   "date_of_sample_extraction"
+    t.string   "sample_extraction_method"
+    t.string   "sample_purified"
+    t.string   "purification_method"
+    t.string   "concentration"
+    t.string   "concentration_determined_by"
+    t.string   "sample_type"
+    t.string   "sample_storage_conditions"
+    t.string   "supplier_name"
+    t.integer  "reference_genome_id",         :default => 1
+    t.string   "genotype"
+    t.string   "phenotype"
+    t.string   "age"
+    t.string   "developmental_stage"
+    t.string   "cell_type"
+    t.string   "disease_state"
+    t.string   "compound"
+    t.string   "dose"
+    t.string   "immunoprecipitate"
+    t.string   "growth_condition"
+    t.string   "rnai"
+    t.string   "organism_part"
+    t.string   "time_point"
+    t.string   "disease"
+    t.string   "subject"
+    t.string   "treatment"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "donor_id"
   end
 
   add_index "sample_metadata", ["sample_id"], :name => "index_sample_metadata_on_sample_id"
@@ -1010,6 +1244,38 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.string   "model_name"
   end
 
+  create_table "specific_tube_creation_purposes", :force => true do |t|
+    t.integer  "specific_tube_creation_id"
+    t.integer  "tube_purpose_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "stamp_qcables", :force => true do |t|
+    t.integer  "stamp_id",   :null => false
+    t.integer  "qcable_id",  :null => false
+    t.string   "bed",        :null => false
+    t.integer  "order",      :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "stamp_qcables", ["qcable_id"], :name => "fk_stamp_qcables_to_qcables"
+  add_index "stamp_qcables", ["stamp_id"], :name => "fk_stamp_qcables_to_stamps"
+
+  create_table "stamps", :force => true do |t|
+    t.integer  "lot_id",     :null => false
+    t.integer  "user_id",    :null => false
+    t.integer  "robot_id",   :null => false
+    t.string   "tip_lot",    :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "stamps", ["lot_id"], :name => "fk_stamps_to_lots"
+  add_index "stamps", ["robot_id"], :name => "fk_stamps_to_robots"
+  add_index "stamps", ["user_id"], :name => "fk_stamps_to_users"
+
   create_table "state_changes", :force => true do |t|
     t.integer  "user_id"
     t.integer  "target_id"
@@ -1018,6 +1284,7 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.string   "target_state"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "reason"
   end
 
   create_table "studies", :force => true do |t|
@@ -1039,43 +1306,49 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
   add_index "studies", ["user_id"], :name => "index_projects_on_user_id"
 
   create_table "study_metadata", :force => true do |t|
-    t.integer "study_id"
-    t.string  "old_sac_sponsor"
-    t.text    "study_description"
-    t.string  "contaminated_human_dna"
-    t.string  "study_project_id"
-    t.text    "study_abstract"
-    t.string  "study_study_title"
-    t.string  "study_ebi_accession_number"
-    t.string  "study_sra_hold"
-    t.string  "contains_human_dna"
-    t.string  "study_name_abbreviation"
-    t.string  "reference_genome_old"
-    t.string  "data_release_strategy"
-    t.string  "data_release_standard_agreement"
-    t.string  "data_release_timing"
-    t.string  "data_release_delay_reason"
-    t.string  "data_release_delay_other_comment"
-    t.string  "data_release_delay_period"
-    t.string  "data_release_delay_approval"
-    t.string  "data_release_delay_reason_comment"
-    t.string  "data_release_prevention_reason"
-    t.string  "data_release_prevention_approval"
-    t.string  "data_release_prevention_reason_comment"
-    t.integer "snp_study_id"
-    t.integer "snp_parent_study_id"
-    t.boolean "bam",                                    :default => true
-    t.integer "study_type_id"
-    t.integer "data_release_study_type_id"
-    t.integer "reference_genome_id",                    :default => 1
-    t.string  "array_express_accession_number"
-    t.text    "dac_policy"
-    t.string  "ega_policy_accession_number"
-    t.string  "ega_dac_accession_number"
-    t.string  "commercially_available",                 :default => "No"
-    t.integer "faculty_sponsor_id"
-    t.float   "number_of_gigabases_per_sample"
-    t.string  "hmdmc_approval_number"
+    t.integer  "study_id"
+    t.string   "old_sac_sponsor"
+    t.text     "study_description"
+    t.string   "contaminated_human_dna"
+    t.string   "study_project_id"
+    t.text     "study_abstract"
+    t.string   "study_study_title"
+    t.string   "study_ebi_accession_number"
+    t.string   "study_sra_hold"
+    t.string   "contains_human_dna"
+    t.string   "study_name_abbreviation"
+    t.string   "reference_genome_old"
+    t.string   "data_release_strategy"
+    t.string   "data_release_standard_agreement"
+    t.string   "data_release_timing"
+    t.string   "data_release_delay_reason"
+    t.string   "data_release_delay_other_comment"
+    t.string   "data_release_delay_period"
+    t.string   "data_release_delay_approval"
+    t.string   "data_release_delay_reason_comment"
+    t.string   "data_release_prevention_reason"
+    t.string   "data_release_prevention_approval"
+    t.string   "data_release_prevention_reason_comment"
+    t.integer  "snp_study_id"
+    t.integer  "snp_parent_study_id"
+    t.boolean  "bam",                                    :default => true
+    t.integer  "study_type_id"
+    t.integer  "data_release_study_type_id"
+    t.integer  "reference_genome_id",                    :default => 1
+    t.string   "array_express_accession_number"
+    t.text     "dac_policy"
+    t.string   "ega_policy_accession_number"
+    t.string   "ega_dac_accession_number"
+    t.string   "commercially_available",                 :default => "No"
+    t.integer  "faculty_sponsor_id"
+    t.float    "number_of_gigabases_per_sample"
+    t.string   "hmdmc_approval_number"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "remove_x_and_autosomes",                 :default => "No",  :null => false
+    t.string   "dac_policy_title"
+    t.boolean  "separate_y_chromosome_data",             :default => false, :null => false
+    t.string   "data_access_group"
   end
 
   add_index "study_metadata", ["faculty_sponsor_id"], :name => "index_study_metadata_on_faculty_sponsor_id"
@@ -1097,10 +1370,11 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
 
   create_table "study_reports", :force => true do |t|
     t.integer  "study_id"
-    t.binary   "report_file", :limit => 2147483647
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "user_id"
+    t.string   "report_filename"
+    t.string   "content_type",    :default => "text/csv"
   end
 
   add_index "study_reports", ["created_at"], :name => "index_study_reports_on_created_at"
@@ -1151,10 +1425,11 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "product_line_id"
-    t.boolean  "visible",               :default => true, :null => false
+    t.integer  "superceded_by_id",      :default => -1, :null => false
+    t.datetime "superceded_at"
   end
 
-  add_index "submission_templates", ["name"], :name => "index_submission_templates_on_name"
+  add_index "submission_templates", ["name", "superceded_by_id"], :name => "name_and_superceded_by_unique_idx", :unique => true
 
   create_table "submission_workflows", :force => true do |t|
     t.string   "key",        :limit => 50
@@ -1182,6 +1457,7 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer  "asset_group_id_to_delete"
     t.string   "asset_group_name_to_delete"
     t.string   "name"
+    t.integer  "priority",                   :limit => 1,  :default => 0, :null => false
   end
 
   add_index "submissions", ["state"], :name => "index_submissions_on_state"
@@ -1237,8 +1513,9 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer  "user_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "substitutions"
-    t.string   "walking_algorithm",   :default => "TagLayout::WalkWellsByPools"
+    t.string   "substitutions",       :limit => 1525
+    t.string   "walking_algorithm",                   :default => "TagLayout::WalkWellsByPools"
+    t.integer  "initial_tag",                         :default => 0,                             :null => false
   end
 
   create_table "tags", :force => true do |t|
@@ -1273,6 +1550,8 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.boolean "interactive"
     t.boolean "per_item"
     t.string  "sti_type",             :limit => 50
+    t.boolean "lab_activity"
+    t.integer "purpose_id"
   end
 
   add_index "tasks", ["name"], :name => "index_tasks_on_name"
@@ -1296,9 +1575,17 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.integer  "destination_id"
     t.string   "destination_type"
     t.string   "transfers",        :limit => 1024
+    t.integer  "bulk_transfer_id"
   end
 
   add_index "transfers", ["source_id"], :name => "source_id_idx"
+
+  create_table "tube_creation_children", :force => true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "tube_creation_id", :null => false
+    t.integer  "tube_id",          :null => false
+  end
 
   create_table "users", :force => true do |t|
     t.string   "login"
@@ -1350,9 +1637,18 @@ ActiveRecord::Schema.define(:version => 20120703183612) do
     t.string   "gender_markers"
     t.string   "gender"
     t.float    "measured_volume"
+    t.float    "initial_volume"
   end
 
   add_index "well_attributes", ["well_id"], :name => "index_well_attributes_on_well_id"
+
+  create_table "well_links", :force => true do |t|
+    t.integer "target_well_id", :null => false
+    t.integer "source_well_id", :null => false
+    t.string  "type",           :null => false
+  end
+
+  add_index "well_links", ["target_well_id"], :name => "target_well_idx"
 
   create_table "well_to_tube_transfers", :force => true do |t|
     t.integer "transfer_id",    :null => false

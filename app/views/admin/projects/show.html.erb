@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2013 Genome Research Ltd.%>
 <% add :title, "Sequencing projects can be edited, approved and managed from here." %>
 <% add :menu, "View all projects" => projects_path %>
 <% add :menu, "Billing history" => project_billing_events_path(@project) %>
@@ -7,6 +10,6 @@
 
 <%= tabulated_error_messages_for "project" -%>
 
-<p>You can update the quotas, billing information and approval status for a project here.</p>
+<p>You can update the billing information and approval status for a project here.</p>
 
 <%= render :partial => "manage_single_project", :locals => { :request_types => @request_types } %>

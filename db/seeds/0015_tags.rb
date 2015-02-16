@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2014,2015 Genome Research Ltd.
 # Create all of the TagGroups first.  These are in the order of the production environment.
 tag_group_names = [
   "Old 12 TagTubes - do not use",
@@ -18,7 +21,8 @@ tag_group_names = [
   "NEXTFLEX - 6 mer tags",
   "NEXTFLEX_48 - 6 mer tags",
   "Pulldown 8 tag set - 8 mer tags",
-  "TruSeq small RNA index tags - 6 mer tags"
+  "TruSeq small RNA index tags - 6 mer tags",
+  "Control Tag Group 888"
 ]
 
 # Now we can load the tag information from production in a much more controlled fashion
@@ -539,6 +543,8 @@ tags = {"TruSeq small RNA index tags - 6 mer tags"=>
    [54, "TGTTCTCC"],
    [140, "CGTTACTA"],
    [168, "ACAACGCAAT"]],
+ "Control Tag Group 888" =>
+ [[888,"ACAACGCAAT"]],
  "NEXTFLEX_48 - 6 mer tags"=>
   [[16, "CCGTCC"],
    [37, "CGGAAT"],

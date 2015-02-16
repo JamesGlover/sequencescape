@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 def GivenSampleMetadata(attribute, regexp)
   Given(regexp) do |name,value|
     sample = Sample.find_by_name(name) or raise StandardError, "There appears to be no sample named '#{ name }'"
@@ -42,9 +45,27 @@ Given /^the sample "([^\"]+)" has the Taxon ID "([^\"]+)"$/ do |name,id|
   sample.save!
 end
 
-Given /^the sample "([^\"]+)" has the common name "([^\"]+)"$/ do |name,common_name|
+Given /^the sample "([^\"]+)" has the common name "([^\"]*)"$/ do |name,common_name|
   sample = Sample.find_by_name(name) or raise StandardError, "Cannot find sample with name #{ name.inspect }"
   sample.sample_metadata.sample_common_name = common_name
+  sample.save!
+end
+
+Given /^the sample "([^\"]+)" has the gender "([^\"]*)"$/ do |name,gender|
+  sample = Sample.find_by_name(name) or raise StandardError, "Cannot find sample with name #{ name.inspect }"
+  sample.sample_metadata.gender = gender
+  sample.save!
+end
+
+Given /^the sample "([^\"]+)" has the donor id "([^\"]*)"$/ do |name,donor_id|
+  sample = Sample.find_by_name(name) or raise StandardError, "Cannot find sample with name #{ name.inspect }"
+  sample.sample_metadata.donor_id = donor_id
+  sample.save!
+end
+
+Given /^the sample "([^\"]+)" has the phenotype "([^\"]*)"$/ do |name,phenotype|
+  sample = Sample.find_by_name(name) or raise StandardError, "Cannot find sample with name #{ name.inspect }"
+  sample.sample_metadata.phenotype = phenotype
   sample.save!
 end
 
@@ -82,16 +103,21 @@ Given /^the sample "([^"]*)" has a supplier name of "([^"]*)"$/ do |sample_name,
   sample.sample_metadata.update_attributes!(:supplier_name => supplier_name)
 end
 
-Given /^the sample "([^\"]+)" is in the sample tube "([^\"]+)"$/ do |sample_name, tube_name|
+Given /^the sample "([^\"]+)" is in the (sample tube|well) "([^\"]+)"$/ do |sample_name, asset_type, asset_name|
   sample = Sample.find_by_name(sample_name) or raise StandardError, "Cannot find sample #{sample_name.inspect}"
-  tube   = SampleTube.find_by_name(tube_name) or raise StandardError, "Cannot find sample tube #{tube_name.inspect}"
-  tube.aliquots.clear
-  tube.aliquots.create!(:sample => sample)
+  asset   = Asset.find_by_name(asset_name) or raise StandardError, "Cannot find sample tube #{asset_name.inspect}"
+  asset.aliquots.clear
+  asset.aliquots.create!(:sample => sample)
 end
 
 Then /^sample "([^"]*)" should have an accession number of "([^"]*)"$/ do |sample_name, accession_number|
   sample = Sample.find_by_name(sample_name) or raise StandardError, "Cannot find sample #{sample_name.inspect}"
   assert_equal accession_number, sample.sample_metadata.sample_ebi_accession_number
+end
+
+Then /^sample "([^"]*)" should not have an accession number of "([^"]*)"$/ do |sample_name, accession_number|
+  sample = Sample.find_by_name(sample_name) or raise StandardError, "Cannot find sample #{sample_name.inspect}"
+  assert accession_number != sample.sample_metadata.sample_ebi_accession_number
 end
 
 Given /^the sample "([^"]*)" should not have an accession number$/ do |sample_name|
@@ -106,13 +132,13 @@ end
 GivenSampleMetadata(:sample_ebi_accession_number, /^the sample "([^\"]+)" has the accession number "([^\"]+)"$/)
 
 When /^I generate an? accession number for sample "([^\"]+)"$/ do |sample_name|
- Then %Q{I am on the show page for sample "#{sample_name}"}
- When %Q{I follow "Generate Accession Number"}
+ step %Q{I am on the show page for sample "#{sample_name}"}
+ step(%Q{I follow "Generate Accession Number"})
 end
 
 When /^I update an? accession number for sample "([^\"]+)"$/ do |sample_name|
- Then %Q{I am on the show page for sample "#{sample_name}"}
- When %Q{I follow "Update EBI Sample data"}
+ step %Q{I am on the show page for sample "#{sample_name}"}
+ step(%Q{I follow "Update EBI Sample data"})
 end
 
 
@@ -129,10 +155,10 @@ Given /^study "([^\"]+)" has the following samples in sample tubes:$/ do |study_
     sample_name = details['sample']
 
     sample = Sample.find_by_name(sample_name)
-    Given %Q{I have a sample called "#{sample_name}"} unless sample
-    Given %Q{sample "#{sample_name}" is in a sample tube named "#{sample_tube_name}"}
-    And %Q{the sample "#{sample_name}" belongs to the study "#{study_name}"}
-    And %Q{the asset "#{sample_tube_name}" belongs to study "#{study_name}"}
+    step %Q{I have a sample called "#{sample_name}"} unless sample
+    step(%Q{sample "#{sample_name}" is in a sample tube named "#{sample_tube_name}"})
+    step(%Q{the sample "#{sample_name}" belongs to the study "#{study_name}"})
+    step(%Q{the asset "#{sample_tube_name}" belongs to study "#{study_name}"})
 
   end
 end
@@ -150,12 +176,12 @@ end
 
 Given /^a sample named "([^\"]+)" exists for accession/ do |sample_name|
   study_name = "study for sample #{sample_name}"
-  Given %Q{a study named "#{study_name}" exists for accession}
-  Given %Q{a sample named "#{sample_name}" exists}
-  And %Q{I am the owner of sample "sample"}
-  And %Q{the sample "#{sample_name}" belongs to the study "#{study_name}"}
-  And %Q{the sample "#{sample_name}" has the Taxon ID "99999"}
-  And %Q{the sample "#{sample_name}" has the common name "Human"}
+  step(%Q{a study named "#{study_name}" exists for accession})
+  step(%Q{the sample named "#{sample_name}" exists with ID 200})
+  step(%Q{I am the owner of sample "sample"})
+  step(%Q{the sample "#{sample_name}" belongs to the study "#{study_name}"})
+  step(%Q{the sample "#{sample_name}" has the Taxon ID "99999"})
+  step(%Q{the sample "#{sample_name}" has the common name "Human"})
 end
 
 Given /^the Sanger sample ID of the last sample is "([^\"]+)"$/ do |id|
@@ -204,6 +230,26 @@ Given /^the dosage of the sample called "([^\"]+)" is (#{Sample::DOSE_REGEXP})/ 
   sample.update_attributes!(:sample_metadata_attributes => { :dose => dose })
 end
 
+Given /^the description of the sample called "([^\"]+)" contains quotes/ do |name|
+  sample = Sample.find_by_name(name) or raise StandardError, "Cannot find the sample #{name.inspect}"
+  sample.update_attributes!(:sample_metadata_attributes => { :sample_description => 'something "with" quotes' })
+end
+
 Given /^there are no samples$/ do
-  Sample.destroy_all
+  # Imagine there's no samples,
+  # it's easy if you try
+  # To bypass all the callbacks
+  # That trigger when they die
+  Sample.delete_all
+  Uuid.find(:all,:conditions=>{:resource_type=>'Sample'}).each(&:destroy)
+end
+
+Given /^the sample "(.*?)" should have an accesionable flag$/ do |name|
+  sample = Sample.find_by_name(name) or raise StandardError, "Cannot find the sample #{name.inspect}"
+  assert sample.accession_could_be_generated?
+end
+
+Given /^the sample "(.*?)" should not have an accesionable flag$/ do |name|
+  sample = Sample.find_by_name(name) or raise StandardError, "Cannot find the sample #{name.inspect}"
+  assert !sample.accession_could_be_generated?
 end

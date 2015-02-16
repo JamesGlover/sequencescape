@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class Accessionable::Dac < Accessionable::Base
 
   attr_reader :contacts
@@ -45,8 +48,8 @@ class Accessionable::Dac < Accessionable::Base
   end
 
   def update_accession_number!(user, accession_number)
-    add_updated_event(user, "DAC for Study #{@study.id}", @study) if @accession_number
     @accession_number = accession_number
+    add_updated_event(user, "DAC for Study #{@study.id}", @study) if @accession_number
     @study.study_metadata.ega_dac_accession_number = accession_number
     @study.save!
   end

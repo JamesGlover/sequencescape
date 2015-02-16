@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2014 Genome Research Ltd.
 require "test_helper"
 
 class SampleRegistrarTest < ActiveSupport::TestCase
@@ -30,9 +33,9 @@ class SampleRegistrarTest < ActiveSupport::TestCase
         assert_equal(Sample.last.name, SampleTube.last.name)
       end
 
-      should 'set the barcode on the sample tube based on the ID' do
+      should 'set the barcode on the sample tube based on the AssetBarcode service' do
         sample_tube = SampleTube.last
-        assert_equal(sample_tube.id.to_s, sample_tube.barcode)
+        assert_equal(AssetBarcode.last.id.to_s, sample_tube.barcode)
       end
 
       should 'put the sample into the study' do
@@ -49,7 +52,7 @@ class SampleRegistrarTest < ActiveSupport::TestCase
       context 'when the asset group does not exist' do
         setup do
           SampleRegistrar.create!(
-            :asset_group_helper => SampleRegistrar::AssetGroupHelper.new,           
+            :asset_group_helper => SampleRegistrar::AssetGroupHelper.new,
             :study => @study,
             :user  => @user,
             :sample_attributes => { :name => 'valid_sample' },
@@ -74,9 +77,9 @@ class SampleRegistrarTest < ActiveSupport::TestCase
         # construction!
         context 'the actual test should give you an error. No Samples inserted.' do
           setup do
-            assert_raise(ActiveRecord::RecordInvalid) do  
+            assert_raise(ActiveRecord::RecordInvalid) do
               SampleRegistrar.create!(
-                :asset_group_helper => SampleRegistrar::AssetGroupHelper.new,             
+                :asset_group_helper => SampleRegistrar::AssetGroupHelper.new,
                 :study => @study,
                 :user  => @user,
                 :sample_attributes => { :name => 'valid_sample' },
@@ -84,8 +87,8 @@ class SampleRegistrarTest < ActiveSupport::TestCase
               )
             end
           end
-          
-          should_not_change('Sample.count')     { Sample.count }  
+
+          should_not_change('Sample.count')     { Sample.count }
         end
       end
     end
@@ -93,7 +96,7 @@ class SampleRegistrarTest < ActiveSupport::TestCase
     context 'registering a sample within a sample tube' do
       setup do
         SampleRegistrar.create!(
-          :asset_group_helper => SampleRegistrar::AssetGroupHelper.new,         
+          :asset_group_helper => SampleRegistrar::AssetGroupHelper.new,
           :study => @study,
           :user  => @user,
           :sample_attributes => { :name => 'valid_sample' },
@@ -114,13 +117,13 @@ class SampleRegistrarTest < ActiveSupport::TestCase
     context '.register!' do
       context 'raises an error if no samples are specified' do
         should 'raise when there are no samples specified' do
-          assert_raise(SampleRegistrar::NoSamplesError) do 
+          assert_raise(SampleRegistrar::NoSamplesError) do
             SampleRegistrar.register!([])
           end
         end
 
         should 'raise when all samples are ignored' do
-          assert_raise(SampleRegistrar::NoSamplesError) do 
+          assert_raise(SampleRegistrar::NoSamplesError) do
             SampleRegistrar.register!([
               {
                 :ignore => '1',

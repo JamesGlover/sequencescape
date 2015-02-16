@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2013 Genome Research Ltd.%>
 <% add :title, I18n.t("studies.about") -%>
 <% add :menu, "Register without spreadsheet" => new_study_sample_registration_path -%>
 
@@ -15,7 +18,7 @@
   <p>An spreadsheet template in the format required is <%= link_to "available to download", root_path + "data/#{@workflow.key}/sample_information.xls" %></p>
 <% end %>
 
-<%= display_user_guide "Only #{UPLOADED_SPREADSHEET_MAX_NUMBER_OF_SAMPLES.to_s} samples in one spreadsheet are currently allowed" %>
+<%= display_user_guide "Only #{configatron.uploaded_spreadsheet.max_number_of_samples.to_s} samples in one spreadsheet are currently allowed" %>
 
 <p>
   <%= label_tag(:file, 'File to upload') %>:

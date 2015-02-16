@@ -1,11 +1,14 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class StudyReportsController < ApplicationController
   before_filter :login_required
 
   def index
-    @study_reports = StudyReport.without_files.paginate(:page => params[:page], :order => "id desc")
+    @study_reports = StudyReport.paginate(:page => params[:page], :order => "id desc")
     @studies = Study.all(:order => "name ASC")
   end
-  
+
   def new
     params[:study_report] = {:study => params[:study]}
     create
@@ -16,7 +19,7 @@ class StudyReportsController < ApplicationController
     study_report = StudyReport.create!(:study => study, :user => @current_user)
 
     study_report.perform
-    
+
     respond_to do |format|
       if study_report
         flash[:notice] = "Report being generated"
@@ -31,10 +34,10 @@ class StudyReportsController < ApplicationController
       end
     end
   end
-  
+
   def show
     study_report = StudyReport.find(params[:id])
-    send_data( study_report.report.data, :type => "text/plain",
+    send_data( study_report.report.read, :type => "text/plain",
     :filename=>"#{study_report.study.dehumanise_abbreviated_name}_progress_report.csv",
     :disposition => 'attachment')
   end

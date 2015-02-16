@@ -1,10 +1,13 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 require "test_helper"
 
 class LabInterface::WorkflowTest < ActiveSupport::TestCase
   context "A Workflow" do
     should_have_many :tasks
     should_belong_to :pipeline
-    
+
     setup do
       pipeline  = Factory :pipeline, :name => "Pipeline for LabInterface::WorkflowTest"
       @workflow = pipeline.workflow
@@ -16,7 +19,7 @@ class LabInterface::WorkflowTest < ActiveSupport::TestCase
     end
 
     subject { @workflow }
-    
+
     context "#deep_copy" do
       setup do
         @workflow.deep_copy

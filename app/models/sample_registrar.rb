@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 require 'rexml/text'
 # An instance of this class is responsible for the registration of a sample and its sample tube.
 # You can think of this as a binding between those two, within the context of a user, study and
@@ -5,7 +8,7 @@ require 'rexml/text'
 #
 #--
 # NOTE: This is very much a temporary object: after creation the instance will instantly destroy
-# itself.  This is primarily done because Rails 2.3 doesn't have the ActiveModel features of 
+# itself.  This is primarily done because Rails 2.3 doesn't have the ActiveModel features of
 # Rails 3, and we need some of those above-and-beyond just validation.  If required, the after_create
 # callback could be removed to keep track of sample registrations.
 #++
@@ -24,12 +27,12 @@ class SampleRegistrar < ActiveRecord::Base
       @sample_registrars = sample_registrars
     end
   end
-  
+
   class AssetGroupHelper
     def initialize
       @asset_groups = {}
     end
-    
+
     def existing_asset_group?(name)
       return @asset_groups[name] if @asset_groups.key?(name)
       @asset_groups[name] = !AssetGroup.find_by_name(name).nil?
@@ -80,7 +83,7 @@ class SampleRegistrar < ActiveRecord::Base
     # and send the request for the method!
     record.user.send(:is_owner_of, record.sample)
     record.study.samples.concat(record.sample)
-    RequestFactory.create_assets_requests([record.sample_tube.id], record.study.id)
+    RequestFactory.create_assets_requests([record.sample_tube], record.study)
   end
 
   # Samples always come in a SampleTube when coming through us
@@ -146,8 +149,8 @@ class SampleRegistrar < ActiveRecord::Base
     # Assume there is always 1 header row
     num_samples = worksheet.count - 1
 
-    if num_samples > UPLOADED_SPREADSHEET_MAX_NUMBER_OF_SAMPLES
-      raise TooManySamplesError, "You can only load #{UPLOADED_SPREADSHEET_MAX_NUMBER_OF_SAMPLES} samples at a time. Please split the file into smaller groups of samples."
+    if num_samples > configatron.uploaded_spreadsheet.max_number_of_samples
+      raise TooManySamplesError, "You can only load #{configatron.uploaded_spreadsheet.max_number_of_samples} samples at a time. Please split the file into smaller groups of samples."
     end
 
     # Map the header from the spreadsheet (the first row) to the attributes of the sample registrar.  Each column
@@ -174,8 +177,8 @@ class SampleRegistrar < ActiveRecord::Base
     # Map the headers to their attribute handlers.  Ensure that the required headers are present.
     used_definitions, headers = [], []
     column_index, column_name = 0, worksheet.cell(0, 0).to_s.gsub(/\000/,'').gsub(/\.0/,'').strip
-    until column_name.empty? 
-      column_name = REMAPPED_COLUMN_NAMES.fetch(column_name, column_name) 
+    until column_name.empty?
+      column_name = REMAPPED_COLUMN_NAMES.fetch(column_name, column_name)
       handler     = definitions[column_name]
       unless handler.nil?
         used_definitions[column_index] = handler

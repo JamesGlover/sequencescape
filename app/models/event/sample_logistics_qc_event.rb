@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 class Event::SampleLogisticsQcEvent < Event
   def self.create_gel_qc_for_asset!(asset, result, user)
     if asset.is_a?(Well)
@@ -6,26 +9,26 @@ class Event::SampleLogisticsQcEvent < Event
       gel_qc_message(asset, "Gel Analysed", "gel_analysed", user)
     end
   end
-  
+
   def self.gel_qc_message(asset, message, family, user)
     self.create!(
       :eventful => asset,
-      :message => message, 
+      :message => message,
       :content => Date.today.to_s,
       :family => family,
       :created_by => user ? user.login : nil
     )
   end
-  
+
   def self.pico_qc_message(asset, message, family)
     self.create!(
       :eventful => asset,
-      :message => message, 
+      :message => message,
       :content => Date.today.to_s,
       :family => family
     )
   end
-  
+
   def self.create_pico_result_for_asset!(asset, result)
     if asset.is_a?(Well)
       pico_qc_message(asset, "Pico result for well #{asset.id} with #{result}", "pico_analysed")

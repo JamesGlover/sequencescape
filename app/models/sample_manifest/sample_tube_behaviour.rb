@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013 Genome Research Ltd.
 module SampleManifest::SampleTubeBehaviour
   module ClassMethods
     def create_for_sample_tube!(attributes, *args, &block)
@@ -54,7 +57,7 @@ module SampleManifest::SampleTubeBehaviour
     end
 
     def validate_sample_container(sample, row, &block)
-      manifest_barcode, primary_barcode = row['SOMETHING'], sample.primary_receptacle.sanger_human_barcode
+      manifest_barcode, primary_barcode = row['SANGER TUBE ID'], sample.primary_receptacle.sanger_human_barcode
       return if primary_barcode == manifest_barcode
       yield("Tube info for #{sample.sanger_sample_id} mismatch: expected #{primary_barcode} but reported as #{manifest_barcode}")
     end
@@ -76,7 +79,7 @@ module SampleManifest::SampleTubeBehaviour
 
     tubes, samples_data = [], []
     (0...self.count).each do |_|
-      sample_tube = SampleTube.create!
+      sample_tube = Tube::Purpose.standard_sample_tube.create!
       sanger_sample_id = SangerSampleId.generate_sanger_sample_id!(study_abbreviation, sanger_ids.shift)
 
       tubes << sample_tube
@@ -91,20 +94,18 @@ module SampleManifest::SampleTubeBehaviour
   end
 
   def delayed_generate_asset_requests(asset_ids,study_id)
-    RequestFactory.create_assets_requests(asset_ids, study_id)
+    # TODO: Refactor?
+    RequestFactory.create_assets_requests(Asset.find(asset_ids), Study.find(study_id))
   end
   handle_asynchronously :delayed_generate_asset_requests
 
   def sample_tube_sample_creation(samples_data,study_id)
-    study_samples_data = []
-    samples_data.each do |barcode,sanger_sample_id,prefix|
-      sample      = create_sample(sanger_sample_id)
-      sample_tube = SampleTube.find_by_barcode(barcode) or raise ActiveRecord::RecordNotFound, "Cannot find sample tube with barcode #{barcode.inspect}"
-      sample_tube.aliquots.create!(:sample => sample)
-
-      study_samples_data << [study_id, sample.id]
+    study.samples << samples_data.map do |barcode, sanger_sample_id, prefix|
+      create_sample(sanger_sample_id).tap do |sample|
+        sample_tube = SampleTube.find_by_barcode(barcode) or raise ActiveRecord::RecordNotFound, "Cannot find sample tube with barcode #{barcode.inspect}"
+        sample_tube.aliquots.create!(:sample => sample)
+      end
     end
-    generate_study_samples(study_samples_data)
   end
   private :sample_tube_sample_creation
 end

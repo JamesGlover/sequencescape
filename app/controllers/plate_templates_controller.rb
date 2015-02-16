@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2013 Genome Research Ltd.
 class PlateTemplatesController < ApplicationController
   before_filter :slf_manager_login_required
   def index
@@ -8,10 +11,10 @@ class PlateTemplatesController < ApplicationController
     @plate_rows = params[:rows].to_i
     @plate_cols = params[:cols].to_i
     if @plate_rows == 0
-      @plate_rows = Map.plate_length(96)
+      @plate_rows = Map::Coordinate.plate_length(96)
     end
     if @plate_cols == 0
-      @plate_cols = Map.plate_width(96)
+      @plate_cols = Map::Coordinate.plate_width(96)
     end
 
     respond_to do |format|
@@ -34,8 +37,8 @@ class PlateTemplatesController < ApplicationController
 
   def edit
     @pattern = PlateTemplate.find(params[:id])
-    @plate_rows = Map.plate_length(@pattern.size)
-    @plate_cols = Map.plate_width(@pattern.size)
+    @plate_rows = Map::Coordinate.plate_length(@pattern.size)
+    @plate_cols = Map::Coordinate.plate_width(@pattern.size)
   end
 
   def update

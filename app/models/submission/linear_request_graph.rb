@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013 Genome Research Ltd.
 # This module can be included where the submission has a linear behaviour, with no branching.
 module Submission::LinearRequestGraph
   # TODO: When Item dies this code will not need to hand it around so much!
@@ -31,14 +34,24 @@ module Submission::LinearRequestGraph
   private :build_request_type_multiplier_pairs
 
   def create_target_asset_for!(request_type, source_asset = nil)
-    # TODO: What to do when the request type doesn't have an asset?  Returning nil might work!
-    return nil if request_type.target_asset_type.blank?
-    request_type.target_asset_type.constantize.create! do |asset|
+    request_type.create_target_asset! do |asset|
       asset.generate_barcode
       asset.generate_name(source_asset.try(:name) || asset.barcode.to_s)
     end
   end
   private :create_target_asset_for!
+
+  class MockedArray
+    def initialize(contents)
+      @contents = contents
+    end
+    def [](_)
+      @contents
+    end
+    def uniq
+      [@contents]
+    end
+  end
 
   # Creates the next step in the request graph, taking the first request type specified and building
   # enough requests for the source requests.  It will recursively call itself if there are more requests
@@ -52,7 +65,7 @@ module Submission::LinearRequestGraph
       # Otherwise there are the same number of target assets as source.
       target_assets =
         if request_type.for_multiplexing?
-          multiplexing_assets || ([ create_target_asset_for!(request_type) ] * assets.size)
+          multiplexing_assets || MockedArray.new(create_target_asset_for!(request_type))
         else
           source_asset_item_pairs.map { |source_asset, _| create_target_asset_for!(request_type, source_asset) }
         end
@@ -82,16 +95,35 @@ module Submission::LinearRequestGraph
       # We need to de-duplicate the multiplexed assets.  Note that we duplicate the pairs here so that
       # they don't get disrupted by the shift operation at the start of this method.
       next if request_type_and_multiplier_pairs.empty?
-      target_assets =
-        if request_type.for_multiplexing?   # May have many nil assets for non-multiplexing
-          target_assets.uniq.map { |asset| [ asset, nil ] }  # 'nil' is Item here and should go
+
+      target_assets_items =  if request_type.for_multiplexing?   # May have many nil assets for non-multiplexing
+        if multiplexing_assets.nil?
+          target_assets.uniq.map { |asset| [ asset, nil ] }
         else
-          target_assets.each_with_index.map { |asset,index| [ asset || source_asset_item_pairs[index].first, source_asset_item_pairs[index].last ] }
+          associate_built_requests(target_assets.uniq.compact); []
         end
-      create_request_chain!(request_type_and_multiplier_pairs.dup, target_assets, multiplexing_assets, &block)
+      else
+        target_assets.each_with_index.map do |asset,index|
+          source_asset = request_type.no_target_asset? ? source_asset_item_pairs[index].first : asset
+          [ source_asset, source_asset_item_pairs[index].last ]
+        end
+      end
+
+      create_request_chain!(request_type_and_multiplier_pairs.dup, target_assets_items, multiplexing_assets, &block)
     end
   end
   private :create_request_chain!
+
+  def associate_built_requests(assets)
+    assets.map(&:requests).flatten.each do |request|
+      request.update_attributes!(:initial_study => nil) if request.initial_study != study
+      request.update_attributes!(:initial_project => nil) if request.initial_project != project
+      comments.each do |comment|
+        request.comments.create!(:user => user, :description => comment)
+      end if comments.present?
+    end
+  end
+  private :associate_built_requests
 
   # TODO: Remove this it's not supposed to be being used!
   def create_item_for!(asset)
@@ -103,22 +135,4 @@ module Submission::LinearRequestGraph
   end
   private :create_item_for!
 
-  def quota_calculator(&block)
-    Order.transaction do
-      # If there are no assets then we do not need to check the quota as none will be used, regardless.
-      return if assets.empty?
-
-      # Not optimal but preserve the order of the request_types
-      request_type_records = self.request_types.map { |rt_id|  RequestType.find(rt_id) }
-      quota_required = assets.size
-
-      request_type_records.each do |request_type|
-        quota_required  *= multiplier_for(request_type)
-        yield(request_type, quota_required)
-        # should have the same behavior as the chain_request call
-        quota_required = 1 if request_type.for_multiplexing?
-      end
-    end
-  end
-  private :quota_calculator
 end

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 module Core::Service::ErrorHandling
   def self.registered(app)
     app.instance_eval do
@@ -7,14 +10,14 @@ module Core::Service::ErrorHandling
       @errors = HierarchicalExceptionMap.new(@errors)
 
       error([ ::IllegalOperation, ::Core::Service::Error, ActiveRecord::ActiveRecordError ]) do
-        Rails.logger.error(exception_thrown.message)
-        exception_thrown.backtrace.map(&Rails.logger.method(:error))
+        buffer = [ exception_thrown.message, exception_thrown.backtrace ].join("\n")
+        Rails.logger.error("API[error]: #{buffer}")
 
         exception_thrown.api_error(self)
       end
       error([ ::Exception ]) do
-        Rails.logger.error(exception_thrown.message)
-        exception_thrown.backtrace.map(&Rails.logger.method(:error))
+        buffer = [ exception_thrown.message, exception_thrown.backtrace ].join("\n")
+        Rails.logger.error("API[error]: #{buffer}")
 
         self.general_error(501)
       end
@@ -23,20 +26,14 @@ module Core::Service::ErrorHandling
 
   module Helpers
     class JsonError
-      include Core::Service::GarbageCollection::Response
-
       def initialize(error)
         @error = error
       end
 
       def each(&block)
-        Yajl::Encoder.new.encode(@error, &block)
+        yield JSON.generate(@error)
+        #Yajl::Encoder.new.encode(@error, &block)
       end
-      def close
-        GC.enable
-        GC.start
-      end
-
     end
 
     def exception_thrown

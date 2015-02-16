@@ -1,9 +1,12 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2013 Genome Research Ltd.
 Given /^I am using "(.*)" to authenticate$/ do |auth_method|
   configatron.authentication = auth_method
 end
 
 Given /^I am logged in as "(.*)"$/ do |login|
-  Given %Q{I am an "internal" user logged in as "#{ login }"}
+  step(%Q{I am an "internal" user logged in as "#{ login }"})
 end
 
 Given /^user "(.*)" has a workflow "(.*)"$/ do |login, workflow_name|
@@ -15,8 +18,8 @@ end
 
 Given /^I am an? "([^\"]*)" user logged in as "([^\"]*)"$/ do |type_of_user, login|
   wk = Submission::Workflow.first(:conditions => { :key => 'short_read_sequencing' }) or
-    raise 'Cannot find Next-gen sequencing workflow'  
-  
+    raise 'Cannot find Next-gen sequencing workflow'
+
   @current_user = User.create!(
     :login => login,
     :first_name => "John",
@@ -47,17 +50,6 @@ Given /^I am not logged in$/ do
   @current_user = nil
 end
 
-Given /^I have a single sign\-on token for "(.*)"$/ do |login|
-  user = User.create!(
-    :login => login,
-    :password => 'generic',
-    :password_confirmation => 'generic',
-    :email => "#{login}@example.com" 
-  )
-  cookies[:WTSISignOn] = "fnord"
-  User.stubs(:authenticate_by_sanger_cookie).returns(user)
-  @current_user = user
-end
 
 Then /^I should not be on the login page$/ do
   # assert_no_tag :tag => :title, :child => "Sequencescape : Login"

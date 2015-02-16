@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.%>
 <% add :title, "" -%>
 <% add :menu, "Back to batch" => batch_path(@batch) -%>
 <div class="info">
@@ -19,8 +22,8 @@
                 <td><%= request.target_asset.stock_asset.sti_type %></td>
                 <td><%= text_field_tag "assets[#{request.target_asset.stock_asset.id}][volume]", "#{request.target_asset.stock_asset.volume}" %></td>
                 <td><%= text_field_tag "assets[#{request.target_asset.stock_asset.id}][concentration]", "#{request.target_asset.stock_asset.concentration}" %></td>
-              </tr>     
-            <% end %>     
+              </tr>
+            <% end %>
             <tr>
               <td><%= link_to(h(request.target_asset.display_name), asset_path(request.target_asset)) %>
               <td><%= request.target_asset.sti_type %></td>

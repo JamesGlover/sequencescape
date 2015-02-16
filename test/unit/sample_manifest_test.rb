@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 require "test_helper"
 
 class SampleManifestTest < ActiveSupport::TestCase
@@ -23,6 +26,8 @@ class SampleManifestTest < ActiveSupport::TestCase
           should_change('Sample.count', :by => (count * 96)) { Sample.count }
           should_change('Plate.count',  :by => (count * 1))  { Plate.count  }
           should_change('Well.count',   :by => (count * 96)) { Well.count   }
+
+          should_change("Study.samples.count", :by => (count * 96)) { @study.samples.count }
         end
       end
     end
@@ -33,7 +38,7 @@ class SampleManifestTest < ActiveSupport::TestCase
         @manifest.generate
         SampleManifestTemplate.first.generate(@manifest)
 
-        @spreadsheet = Spreadsheet.open(StringIO.new(@manifest.generated.data))
+        @spreadsheet = Spreadsheet.open(StringIO.new(@manifest.generated_document.current_data))
         @worksheet   = @spreadsheet.worksheets.first
       end
 
@@ -76,7 +81,7 @@ class SampleManifestTest < ActiveSupport::TestCase
         assert_not_nil @well_with_sample_and_plate.plate.events.last
       end
     end
-    
+
   end
 
   # This is testing a specific case pulled from production where the size of the delayed job 'handler' column was

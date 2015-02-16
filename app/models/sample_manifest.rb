@@ -1,55 +1,6 @@
-class ColumnMap
-  # TODO: Make data driven?
-
-  @@fields = ['SANGER PLATE ID',
-       'WELL',
-       'SANGER SAMPLE ID',
-       'SUPPLIER SAMPLE NAME',
-       'COHORT',
-       "VOLUME (ul)",
-       "CONC. (ng/ul)",
-       'GENDER',
-       'COUNTRY OF ORIGIN',
-       'GEOGRAPHICAL REGION',
-       'ETHNICITY',
-       'DNA SOURCE',
-       'DATE OF SAMPLE COLLECTION (MM/YY or YYYY only)',
-       'DATE OF DNA EXTRACTION (MM/YY or YYYY only)',
-       'IS SAMPLE A CONTROL?',
-       'IS RE-SUBMITTED SAMPLE?',
-       'DNA EXTRACTION METHOD',
-       'SAMPLE PURIFIED?',
-       'PURIFICATION METHOD',
-       'CONCENTRATION DETERMINED BY',
-       'DNA STORAGE CONDITIONS',
-       'MOTHER (optional)',
-       'FATHER (optional)',
-       'SIBLING (optional)',
-       'GC CONTENT',
-       'PUBLIC NAME',
-       'TAXON ID',
-       'COMMON NAME',
-       'SAMPLE DESCRIPTION',
-       'STRAIN',
-       'SAMPLE VISIBILITY',
-       'SAMPLE TYPE',
-       'SAMPLE ACCESSION NUMBER (optional)']
-
-    def self.[](x)
-      @@fields.index(x)
-    end
-
-    def self.fields
-      @@fields
-    end
-    
-    def self.required_columns
-      ["VOLUME (ul)",
-      "CONC. (ng/ul)"]
-    end
-end
-
-
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class SampleManifest < ActiveRecord::Base
   include Uuid::Uuidable
   include ModelExtensions::SampleManifest
@@ -60,6 +11,7 @@ class SampleManifest < ActiveRecord::Base
   include SampleManifest::PlateBehaviour
   include SampleManifest::InputBehaviour
   extend SampleManifest::StateMachine
+  extend Document::Associations
 
   module Associations
     def self.included(base)
@@ -67,28 +19,14 @@ class SampleManifest < ActiveRecord::Base
     end
   end
 
-  has_attached_file :uploaded, :storage => :database
-  has_attached_file :generated, :storage => :database
-  default_scope select_without_file_columns_for(:uploaded, :generated)
+  has_uploaded_document :uploaded, {:differentiator => "uploaded"}
+  has_uploaded_document :generated, {:differentiator => "generated"}
 
   class_inheritable_accessor :spreadsheet_offset
   class_inheritable_accessor :spreadsheet_header_row
   self.spreadsheet_offset = 9
   self.spreadsheet_header_row = 8
-  
-  acts_as_audited :on => [:destroy, :update]
 
-  # Problem with paperclip
-  attr_accessor :uploaded_file_name
-  attr_accessor :uploaded_content_type
-  attr_accessor :uploaded_file_size
-  attr_accessor :uploaded_updated_at
-
-  attr_accessor :generated_file_name
-  attr_accessor :generated_content_type
-  attr_accessor :generated_file_size
-  attr_accessor :generated_updated_at
-  
   attr_accessor :override
   attr_reader :manifest_errors
 
@@ -106,9 +44,9 @@ class SampleManifest < ActiveRecord::Base
   validates_presence_of :supplier
   validates_presence_of :study
   validates_numericality_of :count, :only_integer => true, :greater_than => 0, :allow_blank => false
-  
+
   before_save :default_asset_type
-  
+
   def default_asset_type
     self.asset_type = "plate" if self.asset_type.blank?
   end
@@ -117,9 +55,18 @@ class SampleManifest < ActiveRecord::Base
     "Manifest_#{self.id}"
   end
 
-  named_scope :pending_manifests,   { :order => 'id DESC',         :conditions => 'uploaded_file IS NULL'     }
-  named_scope :completed_manifests, { :order => 'updated_at DESC', :conditions => 'uploaded_file IS NOT NULL' }
-  
+  #TODO[xxx] Consider index to make it faster
+  named_scope :pending_manifests, {
+   :order      => 'sample_manifests.id DESC',
+   :joins      => 'LEFT OUTER JOIN documents ON documentable_type="SampleManifest" AND documentable_id=sample_manifests.id AND documentable_extended="uploaded"',
+   :conditions => 'documents.id IS NULL'
+ }
+  named_scope :completed_manifests, {
+   :order      => 'sample_manifests.updated_at DESC',
+   :joins      => 'LEFT OUTER JOIN documents ON documentable_type="SampleManifest" AND documentable_id=sample_manifests.id AND documentable_extended="uploaded"',
+   :conditions => 'documents.id IS NOT NULL'
+ }
+
   def generate
     @manifest_errors = []
 
@@ -155,6 +102,9 @@ class SampleManifest < ActiveRecord::Base
 
   def generate_study_samples(study_samples_data)
     study_sample_fields = [:study_id, :sample_id]
-    StudySample.import study_sample_fields, study_samples_data
+    study_samples_data.each do |study_sample|
+      StudySample.create!(:study_id => study_sample.first, :sample_id=> study_sample.last)
+    end
+
   end
 end

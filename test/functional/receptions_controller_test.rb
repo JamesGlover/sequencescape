@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 require "test_helper"
 class ReceptionsControllerTest < ActionController::TestCase
   def self.view_page_with_no_updates
@@ -63,7 +66,7 @@ class ReceptionsControllerTest < ActionController::TestCase
         should_change("Asset.count", :by => 0) { Asset.count }
         should_set_the_flash_to /not found/
       end
-      
+
       context "create an event" do
         setup do
           post :confirm_reception, :asset_id => @sample_tube.id, :asset => { :location_id => @location.id }

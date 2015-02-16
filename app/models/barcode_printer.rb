@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class BarcodePrinter < ActiveRecord::Base
   include Uuid::Uuidable
 
@@ -20,7 +23,7 @@ class BarcodePrinter < ActiveRecord::Base
   def print_labels(labels, barcode_prefix=nil, barcode_type= "short",study_name=nil, user_login=nil)
     service.print_labels(labels, name, printer_type_id,
                          :prefix => barcode_prefix,
-                         :type => barcode_type, 
+                         :type => barcode_type,
                          :study_name => study_name,
                          :user_login => user_login)
   end

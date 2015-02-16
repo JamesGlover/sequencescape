@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 Then /^I should see qc reports table:$/ do |expected_results_table|
   expected_results_table.diff!(table(tableish('table#study_list tr', 'td,th')))
 end
@@ -25,7 +28,7 @@ end
 Then /^the last report for "([^"]*)" should be:$/ do |study_name, expected_results_table|
   study  = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
   report = study.study_reports.last or raise StandardError, "Study #{study_name.inspect} has no study reports"
-  expected_results_table.diff!(FasterCSV.parse(report.report.data))
+  expected_results_table.diff!(FasterCSV.parse(report.report.file.read))
 end
 
 Given /^study "([^"]*)" has a plate "([^"]*)"$/ do |study_name, plate_barcode|
@@ -35,16 +38,17 @@ Given /^study "([^"]*)" has a plate "([^"]*)"$/ do |study_name, plate_barcode|
     well = Well.create!(:plate => plate, :map_id => i)
     well.aliquots.create!(:sample => Sample.create!(:name => "Sample_#{plate_barcode}_#{i}"))
     well.well_attribute.update_attributes!(
-      :gender_markers => [ 'F', 'F', 'F', 'F' ],
-      :sequenom_count => 29,
-      :concentration  => 1,
-      :pico_pass      => "Pass",
-      :gel_pass       => "Pass"
+      :gender_markers  => [ 'F', 'F', 'F', 'F' ],
+      :sequenom_count  => 29,
+      :concentration   => 1,
+      :pico_pass       => "Pass",
+      :gel_pass        => "Pass",
+      :measured_volume => 500.0
     )
     samples << well.primary_aliquot.sample
   end
   study = Study.find_by_name(study_name)
-  RequestFactory.create_assets_requests(plate.wells.map(&:id), study.id)
+  RequestFactory.create_assets_requests(plate.wells, study)
 
   samples[0].external_properties.create!(:key => 'genotyping_done', :value => "DNAlab completed: 13")
   samples[1].external_properties.create!(:key => 'genotyping_done', :value => "Imported to Illumina: 123")
@@ -54,7 +58,7 @@ end
 
 
 Given /^study "([^"]*)" has a plate "([^"]*)" to be volume checked$/ do |study_name, plate_barcode|
-  
+
   plate = Plate.create!(:barcode => plate_barcode, :plate_purpose => PlatePurpose.find_by_name("Stock Plate"))
   1.upto(24) do |i|
     well = Well.create!(:plate => plate, :map_id => i)
@@ -62,13 +66,13 @@ Given /^study "([^"]*)" has a plate "([^"]*)" to be volume checked$/ do |study_n
   end
 
   study = Study.find_by_name(study_name)
-  RequestFactory.create_assets_requests(plate.wells.map(&:id), study.id)
+  RequestFactory.create_assets_requests(plate.wells, study)
 end
 
 Given /^a study report is generated for study "([^"]*)"$/ do |study_name|
   study_report = StudyReport.create!(:study => Study.find_by_name(study_name))
   study_report.perform
-  Given %Q{1 pending delayed jobs are processed}
+  step(%Q{2 pending delayed jobs are processed})
 end
 
 
@@ -76,7 +80,7 @@ Then /^each sample name and sanger ID exists in study "([^"]*)"$/ do |study_name
   study  = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
   report = study.study_reports.last or raise StandardError, "Study #{study_name.inspect} has no study reports"
 
-  FasterCSV.parse(report.report.data).each_with_index do |row, index|
+  FasterCSV.parse(report.report.file.read).each_with_index do |row, index|
     next if row[1].empty? || index == 0
     assert_not_nil study.samples.find_by_sanger_sample_id(row[3])
   end

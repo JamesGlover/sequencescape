@@ -1,4 +1,8 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class AssignTagsToWellsTask < Task
+  include Request::GroupingHelpers
 
   class AssignTagsToWellsData < Task::RenderElement
     alias_attribute :well, :asset
@@ -160,26 +164,13 @@ class AssignTagsToWellsTask < Task
   end
 
   def link_pulldown_indexed_libraries_to_multiplexed_library(requests)
-    CherrypickGroupBySubmissionTask.new.group_requests_by_submission_id(requests).each do |requests_with_same_submission|
+    group_requests_by_submission_id(requests).each do |requests_with_same_submission|
       sequencing_requests = find_sequencing_requests(requests_with_same_submission)
       raise 'Couldnt find sequencing request' if sequencing_requests.empty?
 
       # If the requests don't all end in the same tube!
       raise 'Borked!' unless requests_with_same_submission.map(&:target_asset).compact.uniq.size == 1
       sequencing_requests.each { |sequencing_request| sequencing_request.update_attributes!(:asset => requests_with_same_submission.first.target_asset) }
-
-
-#      initial_sequencing_request = sequencing_requests.pop
-#      initial_sequencing_request.create_assets_for_multiplexing if initial_sequencing_request.asset.nil? && initial_sequencing_request.target_asset.nil?
-#
-#      # allow for multiple lanes of the same library
-#      sequencing_requests.each do |sequencing_request|
-#        sequencing_request.update_attributes!(:asset => initial_sequencing_request.asset, :target_asset => initial_sequencing_request.target_asset)
-#      end
-#
-#      requests_with_same_submission.each do |request|
-#        request.update_attributes!(:target_asset => initial_sequencing_request.asset)
-#      end
     end
   end
 
@@ -203,7 +194,7 @@ class AssignTagsToWellsTask < Task
     current_well = wells.first
 
     1.upto(plate.size) do |index|
-      tags_to_wells[Map.vertical_plate_position_to_description(index, plate.size)] = sorted_tags[(index-1) % sorted_tags.size]
+      tags_to_wells[Map::Coordinate.vertical_plate_position_to_description(index, plate.size)] = sorted_tags[(index-1) % sorted_tags.size]
     end
 
     tags_to_wells

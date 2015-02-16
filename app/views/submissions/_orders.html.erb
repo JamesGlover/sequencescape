@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2012,2013,2014 Genome Research Ltd.%>
 <script type="text/javascript">
   (function(window, $, undefined){
    "use strict";
@@ -19,12 +22,20 @@
   <span class="invalid badge"   >&#10006;</span>
   <% form_for :submission, @presenter do |f| -%>
   <h2>Order Template</h2>
-    <%= f.collection_select :template_id,
-      @presenter.templates, :id, :name,
+    <%= f.grouped_collection_select :template_id,
+      @presenter.product_lines, :last, :first, :id, :name,
       :prompt => "Please select a template..."
     %>
 
-    
+  <%= label("submission[priority]", 'Priority') %>
+  <%= select_tag(
+      "submission[priority]",
+      options_for_select(
+        Submission::Priorities.options
+      )
+    )%>
+
+
     <div id="order-parameters" >
       <%= render :partial => 'order_fields' if @presenter.submission.present? %>
     </div>
@@ -47,7 +58,7 @@
     <%= submit_tag "&#10010; Add Order",
       :id       => "add-order",
       :class    => "button",
-      :disabled => true
+      :disabled => @presenter.orders.empty?
     %>
   </li>
 

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 module BatchesHelper
   def purpose_for_plate(plate)
     if plate.plate_purpose.nil? || plate.plate_purpose.name.blank?
@@ -5,6 +8,10 @@ module BatchesHelper
     else
       plate.plate_purpose.name
     end
+  end
+
+  def fluidigm_plate(plate)
+    plate.purpose.barcode_for_tecan == 'fluidigm_barcode'
   end
 
   # Used by both assets/show.xml.builder and batches/show.xml.builder
@@ -35,14 +42,6 @@ module BatchesHelper
 
   def workflow_name(batch)
     return unless batch and batch.workflow
-    wname = batch.workflow.name
-
-    name = ""
-    name = "HiSeq " if wname.include?("HiSeq")
-    case wname
-    when /PE/ then name += "PE"
-    when /SE/ then name += "SE"
-    end
-    name
+    batch.workflow.name.gsub(/Cluster formation | \([^\)]*\)/,'')
   end
 end

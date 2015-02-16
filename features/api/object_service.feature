@@ -14,6 +14,7 @@ Feature: Access objects through the API
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+    And I have a "full" authorised user with the key "cucumber"
 
     Given there are no samples
 
@@ -33,7 +34,7 @@ Feature: Access objects through the API
     And the JSON should be:
       """
       {
-        "general": [ "the 'Content-Type' can only be 'application/json'" ]
+        "general": [ "the 'Content-Type' can only be 'application/json' or a supported filetype eg.'sequencescape/qc_file'" ]
       }
       """
 
@@ -51,8 +52,7 @@ Feature: Access objects through the API
           "last": "http://www.example.com/api/1/samples/1"
         },
         "size": 0,
-        "samples": [ ],
-        "uuids_to_ids": { }
+        "samples": [ ]
       }
       """
 
@@ -108,10 +108,7 @@ Feature: Access objects through the API
               "name": "testing_the_object_service"
             }
           }
-        ],
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
-        }
+        ]
       }
       """
 
@@ -146,10 +143,7 @@ Feature: Access objects through the API
               "name": "testing_the_object_service-<index>"
             }
           }
-        ],
-        "uuids_to_ids": {
-          "11111111-2222-3333-4444-<uuid>": <id>
-        }
+        ]
       }
       """
 
@@ -216,9 +210,6 @@ Feature: Access objects through the API
           "taxonomy": {
             "organism": "weird green jelly like thing"
           }
-        },
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
         }
       }
       """
@@ -244,7 +235,7 @@ Feature: Access objects through the API
     And the JSON should be:
       """
       {
-        "general": [ "the 'Accept' header can only be 'application/json'" ]
+        "general": [ "the 'Accept' header can only be 'application/json' or a supported filetype eg.'sequencescape/qc_file'" ]
       }
       """
 
@@ -278,9 +269,6 @@ Feature: Access objects through the API
             },
             "size": <number of sample tubes>
           }
-        },
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
         }
       }
       """
@@ -290,7 +278,7 @@ Feature: Access objects through the API
       | 1                      |
       | 3                      |
 
-  @action @error 
+  @action @error
   Scenario: Performing an unknown action upon an object
     Given the sample named "testing_the_object_service" exists with ID 1
     And the UUID for the sample "testing_the_object_service" is "00000000-1111-2222-3333-444444444444"
@@ -364,11 +352,7 @@ Feature: Access objects through the API
               "size": 0
             }
           }
-        ],
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1,
-          "11111111-2222-3333-4444-000000000001": 1
-        }
+        ]
       }
       """
 
@@ -392,8 +376,7 @@ Feature: Access objects through the API
           "last": "http://www.example.com/api/1/samples/1"
         },
         "size": 0,
-        "samples": [ ],
-        "uuids_to_ids": { }
+        "samples": [ ]
       }
       """
 
@@ -413,8 +396,7 @@ Feature: Access objects through the API
           "create": "http://www.example.com/api/1/samples"
         },
         "size": 0,
-        "samples": [ ],
-        "uuids_to_ids": { }
+        "samples": [ ]
       }
       """
 
@@ -452,9 +434,6 @@ Feature: Access objects through the API
           "taxonomy": {
             "organism": "weird green jelly like thing"
           }
-        },
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
         }
       }
       """
@@ -471,7 +450,7 @@ Feature: Access objects through the API
       {
         "sample": {
           "taxonomy": {
-            "organism": "weird green jelly like thing" 
+            "organism": "weird green jelly like thing"
           }
         }
       }
@@ -484,27 +463,44 @@ Feature: Access objects through the API
       }
       """
 
-  @authentication
-  Scenario: Authentication checks are only made when they are unknown or not fresh.
-    Given the sample named "testing_the_object_service" exists with ID 1
-    And the UUID for the sample "testing_the_object_service" is "00000000-1111-2222-3333-444444444444"
+@authorisation @update @error
+  Scenario: The client has partial privileges and attempts to perform update action
+    Given the "create" action on samples requires tag_plates authorisation
+    Given the "update" action on a sample requires authorisation
 
-    # First we are authenticating, everything should go well ...
-    When I GET the API path "/00000000-1111-2222-3333-444444444444"
+    When I make an authorised GET the API path "/samples"
     Then the HTTP response should be "200 OK"
-
-    # Now we are no longer recognised but the check should be fresh, so it should still work ...
-    Given the WTSI single sign-on service does not recognise "I-am-authenticated"
-    When I GET the API path "/00000000-1111-2222-3333-444444444444"
-    Then the HTTP response should be "200 OK"
-
-    # Finally we travel a bit in time, making our check stale, and then we should find an authentication error ...
-    Given all of this is happening 2 hours from now
-    When I GET the API path "/00000000-1111-2222-3333-444444444444"
-    Then the HTTP response should be "401 Unauthorised"
     And the JSON should be:
       """
       {
-        "general": [ "the WTSISignOn cookie is invalid" ]
+        "actions": {
+          "first": "http://www.example.com/api/1/samples/1",
+          "read": "http://www.example.com/api/1/samples/1",
+          "last": "http://www.example.com/api/1/samples/1",
+          "create": "http://www.example.com/api/1/samples"
+        },
+        "size": 0,
+        "samples": []
+      }
+      """
+
+    Given the sample named "testing_the_object_service" exists with ID 1
+    And the UUID for the sample "testing_the_object_service" is "00000000-1111-2222-3333-444444444444"
+
+    When I PUT the following JSON to the API path "/00000000-1111-2222-3333-444444444444":
+      """
+      {
+        "sample": {
+          "taxonomy": {
+            "organism": "weird green jelly like thing"
+          }
+        }
+      }
+      """
+    Then the HTTP response should be "501 Internal Error"
+    And the JSON should be:
+      """
+      {
+        "general": [ "requested action is not supported on this resource" ]
       }
       """

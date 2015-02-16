@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 class Api::PlateIO < Api::Base
   module Extensions
     module ClassMethods
@@ -29,11 +32,12 @@ class Api::PlateIO < Api::Base
   map_attribute_to_json_attribute(:created_at)
   map_attribute_to_json_attribute(:updated_at)
 
-  with_association(:plate_metadata) do 
+  with_association(:plate_metadata) do
     map_attribute_to_json_attribute(:infinium_barcode)
+    map_attribute_to_json_attribute(:fluidigm_barcode)
   end
-  
-  with_association(:location) do 
+
+  with_association(:location) do
     map_attribute_to_json_attribute(:name, 'location')
   end
 

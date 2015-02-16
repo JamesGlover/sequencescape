@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 # This module can be included into ActiveRecord::Base classes to get the ability to specify the attributes
 # that are present.  You can think of this as metadata being stored about the column in the table: it's
 # default value, whether it's required, if it has a set of values that are acceptable, or if it's numeric.
@@ -26,6 +29,12 @@ module Attributable
     self.class.attribute_details_for(*args)
   end
 
+  def instance_defaults
+    self.class.attribute_details.inject({}) do |hash, attribute|
+      hash.tap { hash[ attribute.name ] = attribute.default_from(self) if attribute.validator? }
+    end
+  end
+
   def attribute_value_pairs
     self.class.attribute_details.inject({}) do |hash, attribute|
       hash.tap { hash[attribute] = attribute.from(self) }
@@ -39,7 +48,9 @@ module Attributable
    end
 
   def field_infos
-    self.class.attribute_details.map(&:to_field_info)
+    self.class.attribute_details.map do |detail|
+      detail.to_field_info(nil,self)
+    end
   end
 
   def required?(field)
@@ -129,12 +140,32 @@ module Attributable
       record.send(@name).send(@method)
     end
 
+    def display_name
+      Attribute::find_display_name(@owner,  name)
+    end
+
+    def kind
+      FieldInfo::SELECTION
+    end
+
+    def find_default(*args)
+      nil
+    end
+
+    def selection?
+      true
+    end
+
+    def selection_options(_)
+      get_scoped_selection.all.map(&@method.to_sym).sort
+    end
+
     def to_field_info(*args)
       FieldInfo.new(
-        :display_name  => Attribute::find_display_name(@owner,  name),
+        :display_name  => display_name,
         :key           => assignable_attribute_name,
-        :kind          => FieldInfo::SELECTION,
-        :selection     => get_scoped_selection.all.map(&@method.to_sym).sort
+        :kind          => kind,
+        :selection     => selection_options(nil)
       )
     end
 
@@ -162,6 +193,8 @@ module Attributable
     attr_reader :name
     attr_reader :default
 
+    alias_method :assignable_attribute_name, :name
+
     def initialize(owner, name, options = {})
       @owner, @name, @options = owner, name.to_sym, options
       @default  = options.delete(:default)
@@ -170,6 +203,15 @@ module Attributable
 
     def from(record)
       record[self.name]
+    end
+
+    def default_from(origin=nil)
+      return nil if origin.nil?
+      return origin.validator_for(name).default if validator?
+    end
+
+    def validator?
+      @options.key?(:validator)
     end
 
     def required?
@@ -184,8 +226,28 @@ module Attributable
       @options.key?(:integer)
     end
 
-    def selection?
+    def float?
+      @options.key?(:positive_float)
+    end
+
+    def boolean?
+      @options.key?(:boolean)
+    end
+
+    def fixed_selection?
       @options.key?(:in)
+    end
+
+    def selection?
+      fixed_selection?||@options.key?(:selection)
+    end
+
+    def method?
+      @options.key?(:with_method)
+    end
+
+    def validate_method
+      @options[:with_method]
     end
 
     def selection_values
@@ -206,11 +268,20 @@ module Attributable
       allow_blank = save_blank_value
 
       model.with_options(conditions) do |object|
-        object.validates_presence_of(name) if self.required?
+        # false.blank? == true, so we exclude booleans here, they handle themselves further down.
+        object.validates_presence_of(name) if self.required? && ! self.boolean?
         object.with_options(:allow_nil => self.optional?, :allow_blank => allow_blank) do |required|
+          required.validates_inclusion_of(name, :in => [true, false]) if self.boolean?
           required.validates_numericality_of(name, :only_integer => true) if self.numeric?
-          required.validates_inclusion_of(name, :in => self.selection_values, :allow_false => true) if self.selection?
+          required.validates_numericality_of(name, :greater_than => 0) if self.float?
+          required.validates_inclusion_of(name, :in => self.selection_values, :allow_false => true) if self.fixed_selection?
           required.validates_format_of(name, :with => self.valid_format) if self.valid_format?
+          required.validate do |record|
+            valid = record.validator_for(name).valid_options.to_a.include?(record.send(name))
+            record.errors.add(name,"is not in the list") unless valid
+            valid
+          end if self.validator?
+          required.validate(self.validate_method) if self.method?
         end
       end
 
@@ -242,15 +313,38 @@ module Attributable
       end
     end
 
-    def to_field_info(object = nil)
+    def display_name
+      Attribute::find_display_name(@owner,  name)
+    end
+
+    def find_default(object = nil, metadata = nil)
+      default_from(metadata) || object.try(self.name) || self.default
+    end
+
+    def kind
+      return FieldInfo::SELECTION if self.selection?
+      return FieldInfo::BOOLEAN if self.boolean?
+      FieldInfo::TEXT
+    end
+
+    def selection_from_metadata(metadata)
+      return nil unless metadata.present?
+      return metadata.validator_for(name).valid_options.to_a if validator?
+    end
+
+    def selection_options(metadata)
+      self.selection_values||selection_from_metadata(metadata)||[]
+    end
+
+    def to_field_info(object = nil, metadata = nil)
       options = {
         # TODO[xxx]: currently only working for metadata, the only place attributes are used
-        :display_name  => Attribute::find_display_name(@owner,  name),
-        :key           => self.name,
-        :default_value => object.try(self.name) || self.default,
-        :kind          => FieldInfo::TEXT
+        :display_name  => display_name,
+        :key           => assignable_attribute_name,
+        :default_value => find_default(object,metadata),
+        :kind          => kind
       }
-      options.update(:kind => FieldInfo::SELECTION, :selection => self.selection_values) if self.selection?
+      options.update(:selection => selection_options(metadata)) if self.selection?
       FieldInfo.new(options)
     end
   end

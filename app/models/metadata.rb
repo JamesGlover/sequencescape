@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2013,2014 Genome Research Ltd.
 module Metadata
   def has_metadata(options = {}, &block)
     as_class = options.delete(:as) || self
@@ -7,11 +10,11 @@ module Metadata
   end
 
 private
-  
+
   def build_association(as_class, options)
     # First we build the association into the current ActiveRecord::Base class
     as_name = as_class.name.demodulize.underscore
-    association_name = "#{ as_name }_metadata".underscore.to_sym 
+    association_name = "#{ as_name }_metadata".underscore.to_sym
     class_name = "#{ self.name}::Metadata"
 
     has_one(association_name, { :class_name => class_name, :dependent => :destroy, :validate => true, :autosave => true }.merge(options).merge(:foreign_key => "#{as_name}_id", :inverse_of => :owner))
@@ -40,7 +43,47 @@ private
         @validating_ena_required_fields = !!state
         self.#{ association_name }.validating_ena_required_fields = state
       end
+
+      def tags
+        self.class.tags.select{|tag| tag.for?(accession_service.provider)}
+      end
+
+      def required_tags
+        self.class.required_tags[accession_service.try(:provider)]+self.class.required_tags[:all]
+      end
+
+      def self.tags
+        @tags ||= []
+      end
+
+      def self.required_tags
+        @required_tags ||= Hash.new {|h,k| h[k] = Array.new }
+      end
     VALIDATING_METADATA_ATTRIBUTE_GROUPS
+  end
+
+  def include_tag(tag,options=Hash.new)
+    tags << AccessionedTag.new(tag,options[:as],options[:services])
+  end
+
+  def require_tag(tag,services=:all)
+    [services].flatten.each do |service|
+      required_tags[service] << tag
+    end
+  end
+
+
+  class AccessionedTag
+    attr_reader :tag, :name
+    def initialize(tag, as=nil, services=[])
+      @tag = tag
+      @name = as||tag
+      @services = [services].flatten.compact
+    end
+
+    def for?(service)
+      @services.empty? || @services.include?(service)
+    end
   end
 
   def construct_metadata_class(table_name, as_class, &block)
@@ -69,8 +112,15 @@ private
     # This ensures that the default values are stored within the DB, meaning that this information will be
     # preserved for the future, unlike the original properties information which didn't store values when
     # nil which lead to us having to guess.
-    def initialize(attributes = nil, &block)
+    def initialize(attributes = {}, &block)
       super(self.class.defaults.merge(attributes.try(:symbolize_keys) || {}), &block)
+    end
+
+    before_validation_on_create :merge_instance_defaults
+
+    def merge_instance_defaults
+      # Replace attributes with the default if the value is nil
+      self.attributes = instance_defaults.merge(self.attributes.symbolize_keys) {|key, default, attribute| attribute.nil? ? default : attribute}
     end
 
     include Attributable
@@ -81,6 +131,15 @@ private
 
     def validating_ena_required_fields=(state)
       @validating_ena_required_fields = !!state
+    end
+
+    delegate :validator_for, :to => :owner
+
+
+    def service_specific_fields
+      owner.required_tags.uniq.select do |tag|
+        owner.errors.add_to_base("#{tag} is required") if send(tag).blank?
+      end.empty?
     end
 
     class << self

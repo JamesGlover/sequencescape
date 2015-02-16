@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 Transform /^submitted to "([^\"]+)"$/ do |name|
   SubmissionTemplate.find_by_name(name) or raise StandardError, "Cannot find submission template #{name.inspect}"
 end
@@ -16,29 +19,29 @@ class WellRange
   end
 
   def include?(well)
-		include_well_location?(well.map.description)
+    include_well_location?(well.map.description)
   end
 
-	def include_well_location?(location)
+  def include_well_location?(location)
     well_match = WELL_REGEXP.match(location)
     @rows.include?(well_match[1]) and @columns.include?(well_match[2].to_i)
-	end
-	private :include_well_location?
+  end
+  private :include_well_location?
 
-	def to_a(&block)
-		[].tap do |wells|
-			(1..12).each do |column|
-				('A'..'H').each do |row|
-					well = "#{row}#{column}"
-					wells << well if include_well_location?(well)
-				end
-			end
-		end
-	end
+  def to_a(&block)
+    [].tap do |wells|
+      (1..12).each do |column|
+        ('A'..'H').each do |row|
+          well = "#{row}#{column}"
+          wells << well if include_well_location?(well)
+        end
+      end
+    end
+  end
 
-	def size
-		to_a.size
-	end
+  def size
+    to_a.size
+  end
 end
 
 Transform /^([A-H]\d+)-([A-H]\d+)$/ do |start, finish|
@@ -46,19 +49,18 @@ Transform /^([A-H]\d+)-([A-H]\d+)$/ do |start, finish|
 end
 
 def create_submission_of_assets(template, assets, request_options = {})
-      template.create_and_build_submission!(
-        :user            => Factory(:user),
-        :study           => Factory(:study),
-        :project         => Factory(:project),
-        :assets          => assets,
-        :request_options => request_options
-      )
-
-  Given 'all pending delayed jobs are processed'
+  template.create_and_build_submission!(
+    :user            => Factory(:user),
+    :study           => Factory(:study),
+    :project         => Factory(:project),
+    :assets          => assets,
+    :request_options => request_options
+  )
+  step 'all pending delayed jobs are processed'
 end
 
 Given /^"([^\"]+)" of (the plate .+) have been (submitted to "[^"]+")$/ do |range, plate, template|
-  request_options = { :read_length => 100 }
+  request_options = { :read_length => 100, :fragment_size_required_from => 100, :fragment_size_required_to => 200 }
   request_options[:bait_library_name] = 'Human all exon 50MB' if template.name =~ /Pulldown I?SC/
 
   create_submission_of_assets(
@@ -84,27 +86,42 @@ Given /^"([^\"]+)" of (the plate .+) have been (submitted to "[^\"]+") with the 
 end
 
 Given /^the plate (.+) has been submitted to "([^"]+)"$/ do |info, template|
-  Given %Q{"A1-H12" of the plate #{info} have been submitted to "#{template}"}
+  step(%Q{"A1-H12" of the plate #{info} have been submitted to "#{template}"})
 end
 
 Given /^H12 on (the plate .+) is empty$/ do |plate|
   plate.wells.located_at('H12').first.aliquots.clear
 end
 
-def work_pipeline_for(submissions, name)
+def work_pipeline_for(submissions, name, template=nil)
   final_plate_type = PlatePurpose.find_by_name(name) or raise StandardError, "Cannot find #{name.inspect} plate type"
-  template         = TransferTemplate.find_by_name('Pool wells based on submission') or raise StandardError, 'Cannot find pooling transfer template'
+  template       ||= TransferTemplate.find_by_name('Pool wells based on submission') or raise StandardError, 'Cannot find pooling transfer template'
 
   source_plates = submissions.map { |submission| submission.requests.first.asset.plate }.uniq
   raise StandardError, "Submissions appear to come from non-unique plates: #{source_plates.inspect}" unless source_plates.size == 1
 
   source_plate = source_plates.first
   source_plate.wells.each do |w|
+    next if w.aliquots.empty?
     Factory(:tag).tag!(w) unless w.primary_aliquot.tag.present? # Ensure wells are tagged
     w.requests_as_source.first.start!                           # Ensure request is considered started
   end
-  template.create!(:source => source_plate, :destination => final_plate_type.create!, :user => Factory(:user))
+
+  source_plate.plate_purpose.child_relationships.create!(:child => final_plate_type, :transfer_request_type => RequestType.transfer)
+
+  final_plate_type.create!.tap do |final_plate|
+    AssetLink.create!(:ancestor => source_plate, :descendant => final_plate)
+    template.create!(:source => source_plate, :destination => final_plate, :user => Factory(:user))
+  end
 end
+
+def finalise_pipeline_for(plate)
+  plate.purpose.connect_requests(plate,'qc_complete')
+  plate.wells.each do |well|
+    well.requests_as_target.each {|r| r.update_attributes!(:state=>'qc_complete')}
+  end
+end
+
 
 # A bit of a fudge but it'll work for the moment.  We essentially link the last plate of the different
 # pipelines back to the stock plate directly.  Eventually these can grow into a proper work through of
@@ -117,6 +134,13 @@ Given /^(all submissions) have been worked until the last plate of the "Pulldown
 end
 Given /^(all submissions) have been worked until the last plate of the "Pulldown ISC" pipeline$/ do |submissions|
   work_pipeline_for(submissions, 'ISC cap lib pool')
+end
+Given /^(all submissions) have been worked until the last plate of the "Illumina-B STD" pipeline$/ do |submissions|
+  work_pipeline_for(submissions, 'ILB_STD_PCRXP')
+end
+Given /^(all submissions) have been worked until the last plate of the "Illumina-B HTP" pipeline$/ do |submissions|
+  plate = work_pipeline_for(submissions, 'Lib PCR-XP',TransferTemplate.find_by_name!('Transfer columns 1-1'))
+  finalise_pipeline_for(plate)
 end
 
 Transform /^the (sample|library) tube "([^\"]+)"$/ do |type, name|
@@ -175,7 +199,41 @@ Then /^all of the pulldown library creation requests to (the multiplexed library
   assert(requests.all? { |r| r.billing_events.empty? }, "There are requests that have billing events")
 end
 
-Given /^all requests are in the last submission$/ do
-	submission = Submission.last or raise StandardError, "There are no submissions!"
-	Request.update_all("submission_id=#{submission.id}")
+Then /^all of the illumina-b library creation requests to (the multiplexed library tube .+) should be billed to their project$/ do |tube|
+  requests = tube.requests_as_target.where_is_a?(IlluminaB::Requests::StdLibraryRequest).all
+  assert(!requests.empty?, "There are expected to be a number of pulldown requests")
+  assert(requests.all? { |r| not r.billing_events.charged_to_project.empty? }, "There are requests that have not billed the project")
 end
+
+Then /^all of the illumina-b library creation requests to (the multiplexed library tube .+) should not have billing$/ do |tube|
+  requests = tube.requests_as_target.where_is_a?(IlluminaB::Requests::StdLibraryRequest).all
+  assert(!requests.empty?, "There are expected to be a number of pulldown requests")
+  assert(requests.all? { |r| r.billing_events.empty? }, "There are requests that have billing events")
+end
+
+Given /^all requests are in the last submission$/ do
+  submission = Submission.last or raise StandardError, "There are no submissions!"
+  Request.update_all("submission_id=#{submission.id}")
+end
+
+Given /^(the plate .+) will pool into 1 tube$/ do |plate|
+  stock_plate = PlatePurpose.find(2).create!(:do_not_create_wells) { |p| p.wells = [Factory(:empty_well)] }
+  stock_well  = stock_plate.wells.first
+  submission  = Submission.create!(:user => Factory(:user))
+
+  AssetLink.create!(:ancestor => stock_plate, :descendant => plate)
+
+  plate.wells.in_column_major_order.each do |well|
+    RequestType.transfer.create!(:asset => stock_well, :target_asset => well, :submission => submission)
+    well.stock_wells.attach!([stock_well])
+    LibraryCreationRequest.create!(:request_type=>RequestType.find_by_request_class_name_and_deprecated('LibraryCreationRequest',false),:asset => stock_well, :target_asset => well, :submission => submission, :sti_type=>'Request', :request_metadata_attributes=>{:fragment_size_required_from=>20,:fragment_size_required_to=>30})
+  end
+end
+
+Then /^the user (should|should not) accept responsibility for pulldown library creation requests from the plate "(.*?)"$/ do |accept,plate_name|
+  Plate.find_by_name(plate_name).wells.each do |well|
+    well.requests.where_is_a?(Pulldown::Requests::LibraryCreation).each {|r| assert_equal accept=='should', r.request_metadata.customer_accepts_responsibility }
+  end
+end
+
+

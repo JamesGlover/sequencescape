@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 require "test_helper"
 
 # Re-raise errors caught by the controller.
@@ -42,37 +45,37 @@ class Studies::AssetGroupsControllerTest < ActionController::TestCase
         view_page_with_no_updates
       end
     end
-    
+
     context "#search" do
       context "should redirect if no query is passed in" do
         setup do
           get :search, :study_id => @study.id, :id => @asset_group.id
         end
-        
+
         should_respond_with :redirect
       end
-      
+
       context "should redirect if it is given a blank query" do
         setup do
           get :search, :study_id => @study.id, :id => @asset_group.id, :q => ""
         end
-        
+
         should_respond_with :redirect
       end
-      
+
       context "should redirect if too small a query is passed" do
         setup do
           get :search, :study_id => @study.id, :id => @asset_group.id, :q => "a"
         end
-        
+
         should_respond_with :redirect
       end
-      
+
       context "should suceed with a query longer than 1" do
         setup do
           get :search, :study_id => @study.id, :id => @asset_group.id, :q => "ab"
         end
-        
+
         should_respond_with :success
       end
     end

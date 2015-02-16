@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 require "test_helper"
 require 'studies/sample_registration_controller'
 
@@ -110,11 +113,11 @@ class Studies::SampleRegistrationControllerTest < ActionController::TestCase
             post :create, :study_id => @study,
               :sample_registrars => {
                 '1' => {
-                  :asset_group_name  => 'asset_group_0', 
+                  :asset_group_name  => 'asset_group_0',
                   :sample_attributes => { :name => 'Sam1' }
                 },
                 '2' => {
-                  :asset_group_name  => 'asset_group_0', 
+                  :asset_group_name  => 'asset_group_0',
                   :sample_attributes => { :name => 'Sam2' }
                 }
               }
@@ -168,7 +171,7 @@ class Studies::SampleRegistrationControllerTest < ActionController::TestCase
                   }
                 }
           end
-          
+
           should_respond_with :redirect
           should_change('@study.samples.count', :by => 2) { @study.samples.count }
           should_change('Asset.count', :by => 2) { Asset.count }

@@ -69,7 +69,7 @@ en:
   errors:
     occured: "Something has gone wrong!"
     single_sign_on_unavailable: "The Single Sign On server was unavailable and could not verify your request"
-  
+
   bed_verification:
     layout:
       invalid: Invalid bed layout for destination plate %{plate_barcode}
@@ -83,8 +83,6 @@ en:
       duplicate_refund_attempt: "You can not create a second refund for a charge!"
     status:
       not_approved: "This project has not been approved yet."
-    quotas:
-      no_quota_requested: "There are currently no quotas available for this project. Click here to request a quota increase."
     workflows:
       items:
         no_items_available: "There are no %{label} registered for this workflow."
@@ -116,12 +114,6 @@ en:
           failed: "Failed to create submission for plate %{barcode}"
         create: "Create plates submission"
 
-    sample_groups:
-      no_sample_groups: "There are no Sample Groups. Click to add a new Group Sample"
-      no_samples_in_group: "There are no samples in this sample group. Click to add registered samples"
-      no_samples_available: "No results were found"
-      comments:
-        no_comments: "There are no comments on this sample group"
     comments:
       no_comments: "There are no comments on this study"
     workflows:
@@ -133,6 +125,8 @@ en:
   requests:
     comments:
       no_comments: "There are no comments yet"
+    status:
+      not_ready: "The previous library creation requests haven't been completed still, so this request is not ready to use."
 
   assets:
     comments:
@@ -153,7 +147,7 @@ en:
 
   asset_audit:
     key_format: "Key can only contain letters, numbers or _"
-  
+
   sequenom:
     errors:
       plate:
@@ -175,6 +169,9 @@ en:
 
   formtastic:
     submit: "Submit"
-    
+
   submissions:
     no_submissions: "There are no submissions yet. Please create one."
+
+  cherrypick:
+    picking_by_row: "This cherrypick may take longer as it is picking by rows, rather than columns."

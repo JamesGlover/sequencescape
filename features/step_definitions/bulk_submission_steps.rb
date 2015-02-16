@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013 Genome Research Ltd.
 def upload_submission_spreadsheet(name)
   attach_file("bulk_submission_spreadsheet", File.join(RAILS_ROOT,'features', 'submission', 'csv', "#{name}.csv"))
   click_button "bulk_submission_submit"
@@ -35,5 +38,12 @@ Then /^there should be an order with the bait library name set to "([^\"]+)"$/ d
   assert_not_nil(
     Order.all.detect { |o| o.request_options[:bait_library_name] == name },
     "There is no order with the bait library name set to #{name.inspect}"
+  )
+end
+
+Then /^there should be an order with the gigabases expected set to "(.*?)"$/ do |gigabase|
+    assert_not_nil(
+    Order.all.detect { |o| o.request_options['gigabases_expected'] == gigabase },
+    "There is no order with the gigabases expected set to #{gigabase}"
   )
 end

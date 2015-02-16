@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 require 'factory_girl'
 require 'control_request_type_creation'
 
@@ -145,7 +148,21 @@ Factory.define :pipeline, :class => Pipeline do |p|
   p.next_pipeline_id      nil
   p.previous_pipeline_id  nil
   p.location              {|location| location.association(:location)}
-  p.after_build          do |pipeline| 
+  p.after_build          do |pipeline|
+    pipeline.request_types << Factory(:request_type )
+    pipeline.add_control_request_type
+    pipeline.build_workflow(:name => pipeline.name, :item_limit => 2, :locale => 'Internal') if pipeline.workflow.nil?
+  end
+end
+
+Factory.define :sequencing_pipeline, :class => SequencingPipeline do |p|
+  p.name                  {|a| Factory.next :pipeline_name }
+  p.automated             false
+  p.active                true
+  p.next_pipeline_id      nil
+  p.previous_pipeline_id  nil
+  p.location              {|location| location.association(:location)}
+  p.after_build          do |pipeline|
     pipeline.request_types << Factory(:request_type )
     pipeline.add_control_request_type
     pipeline.build_workflow(:name => pipeline.name, :item_limit => 2, :locale => 'Internal') if pipeline.workflow.nil?
@@ -177,7 +194,7 @@ Factory.define :library_creation_pipeline do |p|
 
   p.after_build do |pipeline|
     pipeline.request_types << Factory(:request_type )
-    pipeline.add_control_request_type    
+    pipeline.add_control_request_type
     pipeline.build_workflow(:name => pipeline.name, :locale => 'Internal')
   end
 end
@@ -192,7 +209,7 @@ Factory.define :pulldown_library_creation_pipeline do |p|
 
   p.after_build do |pipeline|
     pipeline.request_types << Factory(:request_type )
-    pipeline.add_control_request_type    
+    pipeline.add_control_request_type
     pipeline.build_workflow(:name => pipeline.name, :locale => 'Internal')
   end
 end
@@ -238,11 +255,11 @@ Factory.define :request_information_type do |w|
   w.name                   ""
   w.key                    ""
   w.label                  ""
-  w.hide_in_inbox          ""    
+  w.hide_in_inbox          ""
 end
 
 Factory.define :pipeline_request_information_type do |prit|
-  prit.pipeline                  {|pipeline| pipeline.association(:pipeline)}   
+  prit.pipeline                  {|pipeline| pipeline.association(:pipeline)}
   prit.request_information_type  {|request_information_type| request_information_type.association(:request_information_type)}
 end
 
@@ -320,6 +337,10 @@ end
 Factory.define :gel_qc_task do |t|
 end
 
+Factory.define :plate_transfer_task do |t|
+  t.purpose_id Purpose.find_by_name('PacBio Sheared').id
+end
+
 Factory.define :empty_sample_tube, :class => SampleTube do |sample_tube|
   sample_tube.name                {|a| Factory.next :asset_name }
   sample_tube.value               ""
@@ -328,6 +349,7 @@ Factory.define :empty_sample_tube, :class => SampleTube do |sample_tube|
   sample_tube.qc_state            ""
   sample_tube.resource            nil
   sample_tube.barcode             {|a| Factory.next :barcode_number }
+  sample_tube.purpose             Tube::Purpose.standard_sample_tube
 end
 Factory.define :sample_tube, :parent => :empty_sample_tube do |sample_tube|
   sample_tube.after_create do |sample_tube|
@@ -351,6 +373,11 @@ end
 
 Factory.define :plate_purpose do |plate_purpose|
   plate_purpose.name    "Frag"
+end
+
+Factory.define(:tube_purpose, :class => Tube::Purpose) do |purpose|
+  purpose.name        'Tube purpose'
+  purpose.target_type 'MultiplexedLibraryTube'
 end
 
 Factory.define :dilution_plate_purpose do |plate_purpose|

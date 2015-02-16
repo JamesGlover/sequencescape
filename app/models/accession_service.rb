@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 class AccessionService
   AccessionServiceError = Class.new(StandardError)
   NumberNotRequired     = Class.new(AccessionServiceError)
@@ -6,66 +9,76 @@ class AccessionService
   CenterName = 'SC'.freeze # TODO [xxx] use confing file
   Protect = "protect".freeze
   Hold = "hold".freeze
-  
+
+  def provider; end
+
+  class AccessionedFile < File
+    # This class provides an original_filename method
+    # which RestClient can use to define the remote filename
+    attr_accessor :original_filename
+  end
+
   def submit(user, *accessionables)
-    submission = Accessionable::Submission.new(self, user, *accessionables)
+    ActiveRecord::Base.transaction do
+      submission = Accessionable::Submission.new(self, user, *accessionables)
 
-    errors = submission.all_accessionables.map(&:errors).flatten
+      errors = submission.all_accessionables.map(&:errors).flatten
 
-    raise AccessionServiceError, errors.join("\n") unless errors.empty?
+      raise AccessionServiceError, errors.join("\n") unless errors.empty?
 
-    files = [] # maybe not necessary, but just to be sure that the tempfile still exists when they are sent
-    begin
-      xml_result = post_files(submission.all_accessionables.map do |acc|
-          file = Tempfile.open("#{acc.schema_type}_file")
-          files << file
-          file.puts(acc.xml)
-          file.open # reopen for read
+      files = [] # maybe not necessary, but just to be sure that the tempfile still exists when they are sent
+      begin
+        xml_result = post_files(submission.all_accessionables.map do |acc|
+            file = Tempfile.open("#{acc.schema_type}_file")
+            files << file
+            file.puts(acc.xml)
+            file.open # reopen for read
 
-          Rails::logger.debug { file.lines.to_a.join("\n") }
+            Rails::logger.debug { file.lines.to_a.join("\n") }
 
-          {:name => acc.schema_type.upcase, :local_name => file.path, :remote_name => acc.file_name }
-        end
-       )
-
-      Rails::logger.debug { xml_result }
-      raise AccessionServiceError, "EBI Server Error. Couldnt get accession number: #{xml_result}" if xml_result =~ /(Server error|Auth required|Login failed)/
-
-      xmldoc  = Document.new(xml_result)
-      success = xmldoc.root.attributes['success']
-      accession_numbers = []
-      # for some reasons, ebi doesn't give us back a accession number for the submission if it's a MODIFY action
-      # therefore, we should be ready to get one or not
-      number_generated = true
-      if success == 'true'
-        #extract and update accession numbers
-        accession_number = submission.all_accessionables.each do |acc|
-          accession_number       = acc.extract_accession_number(xmldoc)
-          if accession_number
-            acc.update_accession_number!(user, accession_number)
-            accession_numbers << accession_number
-          else
-            # error only, if one of the expected accessionable didn't get a AN
-            # We don't care about the submission
-            number_generated = false if accessionables.include?(acc)
+            {:name => acc.schema_type.upcase, :local_name => file.path, :remote_name => acc.file_name }
           end
-          ae_an = acc.extract_array_express_accession_number(xmldoc)
-          acc.update_array_express_accession_number!(ae_an) if ae_an
+         )
+
+        Rails::logger.debug { xml_result }
+        raise AccessionServiceError, "EBI Server Error. Couldnt get accession number: #{xml_result}" if xml_result =~ /(Server error|Auth required|Login failed)/
+
+        xmldoc  = Document.new(xml_result)
+        success = xmldoc.root.attributes['success']
+        accession_numbers = []
+        # for some reasons, ebi doesn't give us back a accession number for the submission if it's a MODIFY action
+        # therefore, we should be ready to get one or not
+        number_generated = true
+        if success == 'true'
+          #extract and update accession numbers
+          accession_number = submission.all_accessionables.each do |acc|
+            accession_number       = acc.extract_accession_number(xmldoc)
+            if accession_number
+              acc.update_accession_number!(user, accession_number)
+              accession_numbers << accession_number
+            else
+              # error only, if one of the expected accessionable didn't get a AN
+              # We don't care about the submission
+              number_generated = false if accessionables.include?(acc)
+            end
+            ae_an = acc.extract_array_express_accession_number(xmldoc)
+            acc.update_array_express_accession_number!(ae_an) if ae_an
+          end
+
+          raise NumberNotGenerated, 'Service gave no numbers back' unless number_generated
+
+        elsif success == 'false'
+          errors = xmldoc.root.elements.to_a("//ERROR").map(&:text)
+          raise AccessionServiceError, "Could not get accession number. Error in submitted data: #{$!} #{ errors.map { |e| "\n  - #{e}"} }"
+        else
+          raise AccessionServiceError,  "Could not get accession number. Error in submitted data: #{$!}"
         end
-
-        raise NumberNotGenerated, 'Service gave no numbers back' unless number_generated
-
-      elsif success == 'false'
-        errors = xmldoc.root.elements.to_a("//ERROR").map(&:text)
-        raise AccessionServiceError, "Could not get accession number. Error in submitted data: #{$!} #{ errors.map { |e| "\n  - #{e}"} }"
-      else
-        raise AccessionServiceError,  "Could not get accession number. Error in submitted data: #{$!}"
+      ensure
+        files.each { |f| f.close } # not really necessary but recommended
       end
-    ensure
-      files.each { |f| f.close } # not really necessary but recommended
-    end
 
-    return accessionables.map(&:accession_number)
+      return accessionables.map(&:accession_number)
+    end
   end
 
   def submit_sample_for_user(sample, user)
@@ -82,7 +95,7 @@ class AccessionService
 
     #TODO check error
     #raise AccessionServiceError, "Cannot generate accession number: #{ sampledata[:error] }" if sampledata[:error]
-    
+
 
     ebi_accession_number = study.study_metadata.study_ebi_accession_number
     #raise NumberNotGenerated, 'No need to' if not ebi_accession_number.blank? and not /ER/.match(ebi_accession_number)
@@ -114,7 +127,7 @@ class AccessionService
   def sample_visibility(sample)
     Protect
   end
-  
+
   def study_visibility(study)
     Protect
   end
@@ -189,14 +202,14 @@ private
     xml.instruct!
     xml.SUBMISSION(
       'xmlns:xsi'      => 'http://www.w3.org/2001/XMLSchema-instance',
-      :center_name     => submission[:center_name], 
-      :broker_name     => submission[:broker], 
-      :alias           => submission[:submission_id], 
-      :submission_date => submission[:submission_date] 
+      :center_name     => submission[:center_name],
+      :broker_name     => submission[:broker],
+      :alias           => submission[:submission_id],
+      :submission_date => submission[:submission_date]
     ) {
       xml.CONTACTS {
         xml.CONTACT(
-          :inform_on_error  => submission[:contact_inform_on_error], 
+          :inform_on_error  => submission[:contact_inform_on_error],
           :inform_on_status => submission[:contact_inform_on_status],
           :name             => submission[:name]
         )
@@ -222,7 +235,7 @@ private
   end
 
   require 'rexml/document'
-  require 'curb'
+  #require 'curb'
   include REXML
 
   def accession_login
@@ -233,25 +246,26 @@ private
     raise StandardError, "Cannot connect to EBI to get accession number. Please configure accession_url in config.yml" if configatron.accession_url.blank?
 
     begin
-      curl = Curl::Easy.new(URI.parse(configatron.accession_url+accession_login).to_s)
+      rc = RestClient::Resource.new(URI.parse(configatron.accession_url+accession_login).to_s)
       if configatron.disable_web_proxy == true
-        curl.proxy_url = ''
+        RestClient.proxy = ''
       elsif not configatron.proxy.blank?
-
-        curl.proxy_url= configatron.proxy
+        RestClient.proxy = configatron.proxy
         # UA required to get through Sanger proxy
-        curl.headers["User-Agent"] = "Sequencescape Accession Client (#{RAILS_ENV})"
-        curl.proxy_tunnel = true
-        curl.verbose = true
+        # Although currently this UA is actually being set elsewhere in the
+        # code as RestClient doesn't pass this header to the proxy.
+        rc.options[:headers]={:user_agent=>"Sequencescape Accession Client (#{RAILS_ENV})"}
       end
 
-      curl.multipart_form_post = true
-      curl.http_post(
-        *file_params.map { |p| Curl::PostField.file(p[:name], p[:local_name], p[:remote_name]) }
-      )
-      case curl.response_code
+      payload = {}
+      file_params.map { |p|
+        payload[p[:name]] = AccessionedFile.open(p[:local_name]).tap{|f| f.original_filename = p[:remote_name] }
+        }
+      #rc.multipart_form_post = true # RC handles automatically
+      response = rc.post(payload)
+      case response.code
       when (200...300) #success
-        return curl.body_str
+        return response.body.to_s
       when (400...600)
         Rails.logger.warn($!)
         $! = nil

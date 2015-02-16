@@ -1,10 +1,8 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2013 Genome Research Ltd.
 module Tasks::SetCharacterisationDescriptorsHandler
   def do_set_characterisation_descriptors_task(task, params)
-    unless @batch.started? || @batch.failed?
-      @batch.start!(current_user)
-    end
-
-
 
     @count = 0
     if params[:values].nil?
@@ -61,10 +59,6 @@ module Tasks::SetCharacterisationDescriptorsHandler
     @batch = Batch.find(params[:batch_id], :include => [:requests, :pipeline, :lab_events])
     @rits = @batch.pipeline.request_information_types
     @requests = @batch.ordered_requests
-
-    unless @batch.started? || @batch.failed?
-      @batch.start!(current_user)
-    end
 
     @workflow = LabInterface::Workflow.find(params[:workflow_id], :include => [:tasks])
     @task = @workflow.tasks[params[:id].to_i]

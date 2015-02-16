@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013 Genome Research Ltd.%>
 <span class="invalid badge">✘</span>
 <span class="completed badge">✔</span>
 
@@ -12,13 +15,14 @@
     <%= studies_select(form, @presenter.studies) %>
   </li>
 
-  <li class="assets">
+  <li class="assets asset_group_selector">
     <h3>Add Samples from Study asset group</h3>
     <div class="study-assets">First select a study for this order...</div>
-    <p><a class="asset-input-toggle" href="#">Switch to Sample selector...</a></p>
+    <p><a class="asset-input-toggle" href="#" data-selector=".sample_name_selector">Switch to Sample selector...</a></p>
+    <p><a class="asset-input-toggle" href="#" data-selector=".plate_wells_selector">Switch to plate wells selector...</a></p>
   </li>
 
-  <li class="assets" style="display:none;">
+  <li class="assets sample_name_selector" style="display:none;">
     <h3>Add Samples from Plate</h3>
     <table>
       <th>
@@ -26,7 +30,7 @@
       </th>
       <td>
         <%= form.collection_select :plate_purpose_id,
-          PlatePurpose.considered_stock_plate.all, :id, :name,
+          PlatePurpose.for_submissions.all, :id, :name,
           { :selected => PlatePurpose.stock_plate_purpose.id },
           :class => 'submission_plate_purpose_id'
         %>
@@ -42,7 +46,30 @@
         %>
       </td>
   </table>
-    <a class="asset-input-toggle" href="#">Switch to Study asset selector...</a>
+    <a class="asset-input-toggle" href="#" data-selector=".asset_group_selector">Switch to Study asset selector...</a><br/>
+    <a class="asset-input-toggle" href="#" data-selector=".plate_wells_selector">Switch to plate wells selector...</a>
+  </li>
+
+  <li class="assets plate_wells_selector" style="display:none;">
+    <h3>Add Samples from Plate and Wells</h3>
+    <table>
+      <th></th>
+      <td>
+        <p><em>Examples:</em>DN123456P:A1,A2,A3 (Wells A1,A2,A3)<br/>DN123456P:1,2,3 (Columns 1,2,3)<br/>DN123456P:A,B (Rows A,B)<br/>DN123456P (Entire Plate)<br/></p>
+      </td>
+      <th>
+        <%= form.label :barcodes_wells_text, 'Plates and wells:' %>
+      </th>
+      <td>
+        <%= form.text_area :barcodes_wells_text,
+          :cols  => 40,
+          :rows  => 4,
+          :class => "submission_barcodes_wells_text"
+        %>
+      </td>
+  </table>
+    <a class="asset-input-toggle" href="#" data-selector=".asset_group_selector">Switch to Study asset selector...</a><br/>
+    <a class="asset-input-toggle" href="#" data-selector=".sample_name_selector">Switch to Sample selector...</a>
   </li>
 
   <li class="project">
@@ -71,6 +98,21 @@
 <div class="lanes-of-sequencing">
   <%= form.label :lanes_of_sequencing, 'Lanes of sequencing required' %>
   <%= form.text_field :lanes_of_sequencing, :class => 'lanes_of_sequencing', :value => 1 %>
+</div>
+
+<div class="pre-capture-plex-level">
+  <%= form.label :pre_capture_plex_level, 'Pre-capture plex level' %>
+  <%= form.text_field :pre_capture_plex_level, :class => 'pre_capture_plex_level', :value => 8 %>
+</div>
+
+<div class="pre-capture-plex-group">
+  <%= form.label :pre_capture_plex_group, 'Pre-capture plex group' %>
+  <%= form.text_field :pre_capture_plex_group, :class => 'pre_capture_plex_group', :value => nil %>
+</div>
+
+<div class="gigabases-expected">
+  <%= form.label :gigabases_expected, 'Gigabases expected' %>
+  <%= form.text_field :gigabases_expected, :class => 'gigabases_expected', :value => nil %>
 </div>
 
 <div class="save-buttons">

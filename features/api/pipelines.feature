@@ -14,6 +14,7 @@ Feature: Access pipelines through the API
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
     Given the UUID for the pipeline "Cluster formation PE" is "00000000-1111-2222-3333-444444444444"
       And the UUID for the pipeline "PacBio Sequencing" is "00000000-1111-2222-3333-555555555555"
@@ -64,8 +65,7 @@ Feature: Access pipelines through the API
           "last": "http://www.example.com/api/1/00000000-1111-2222-3333-444444444444/requests/1"
         },
         "size": 0,
-        "requests": [ ],
-        "uuids_to_ids": { }
+        "requests": [ ]
       }
       """
 
@@ -267,7 +267,7 @@ Feature: Access pipelines through the API
       """
       {
         "batch": {
-          "requests": [ 
+          "requests": [
             "11111111-2222-3333-4444-000000000001",
             "11111111-2222-3333-4444-000000000002",
             "11111111-2222-3333-4444-000000000003"
@@ -293,7 +293,7 @@ Feature: Access pipelines through the API
           },
 
           "state": "pending",
-          "requests": [ 
+          "requests": [
             { "uuid": "11111111-2222-3333-4444-000000000001" },
             { "uuid": "11111111-2222-3333-4444-000000000002" },
             { "uuid": "11111111-2222-3333-4444-000000000003" }

@@ -1,9 +1,59 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class Barcode
   # Anything that has a barcode is considered barcodeable.
   module Barcodeable
+    def self.included(base)
+      base.class_eval do
+        before_create :set_default_prefix
+        class_inheritable_accessor :prefix
+        self.prefix = "NT"
+      end
+    end
+
     def generate_barcode
       self.barcode = AssetBarcode.new_barcode
     end
+
+    def set_default_prefix
+      self.barcode_prefix ||= BarcodePrefix.find_by_prefix(self.prefix)
+    end
+    private :set_default_prefix
+
+    def sanger_human_barcode
+      return nil if self.barcode.nil?
+      self.prefix + self.barcode.to_s + Barcode.calculate_checksum(self.prefix, self.barcode)
+    end
+
+    def ean13_barcode
+      return nil unless barcode.present? and prefix.present?
+      Barcode.calculate_barcode(self.prefix, self.barcode.to_i).to_s
+    end
+
+    def role
+      return nil if no_role?
+      stock_plate.wells.first.requests.first.role
+    end
+
+    def no_role?
+      case
+      when stock_plate.nil?
+        return true
+      when stock_plate.wells.first.nil?
+        return true
+      when stock_plate.wells.first.requests.first.nil?
+        return true
+      else
+        false
+      end
+    end
+
+    def external_identifier
+      sanger_human_barcode
+    end
+
+
   end
 
   InvalidBarcode = Class.new(StandardError)
@@ -70,7 +120,7 @@ class Barcode
     prefix, number, check = split_human_barcode(barcode)
     return number
   end
-  
+
   def self.prefix_from_barcode(code)
     barcode = barcode_to_human(code)
     prefix, number, check = split_human_barcode(barcode)
@@ -79,6 +129,15 @@ class Barcode
 
   def self.prefix_to_human(prefix)
     human_prefix = ((prefix.to_i/27)+64).chr + ((prefix.to_i%27)+64).chr
+  end
+
+  def self.human_to_machine_barcode(human_barcode)
+    human_prefix, bcode, human_suffix = split_human_barcode(human_barcode)
+    if Barcode.calculate_checksum(human_prefix, bcode) != human_suffix
+      raise InvalidBarcode, "The human readable barcode was invalid, perhaps it was mistyped?"
+    else
+      calculate_barcode(human_prefix,bcode.to_i)
+    end
   end
 
   def self.barcode_to_human(code)
@@ -91,13 +150,13 @@ class Barcode
     bcode
   end
 
-  # Returns the Human barcode or raises an InvalidBarcode exception if there is a problem.  The barcode is 
+  # Returns the Human barcode or raises an InvalidBarcode exception if there is a problem.  The barcode is
   # considered invalid if it does not translate to a Human barcode or, when the optional +prefix+ is specified,
   # its human equivalent does not match.
   def self.barcode_to_human!(code, prefix = nil)
     human_barcode = barcode_to_human(code) or raise InvalidBarcode, "Barcode #{ code } appears to be invalid"
     unless prefix.nil? or split_human_barcode(human_barcode).first == prefix
-      raise InvalidBarcode, "Barcode #{ code } (#{ human_barcode }) does not match prefix #{ prefix }" 
+      raise InvalidBarcode, "Barcode #{ code } (#{ human_barcode }) does not match prefix #{ prefix }"
     end
     human_barcode
   end

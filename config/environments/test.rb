@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2013 Genome Research Ltd.
 # Settings specified here will take precedence over those in config/environment.rb
 
 # The test environment is used exclusively to run your application's
@@ -28,4 +31,4 @@ config.reload_plugins = true
 # On MacOS X we've got a buggy LibXML version and Nokogiri complains!
 I_KNOW_I_AM_USING_AN_OLD_AND_BUGGY_VERSION_OF_LIBXML2 = true
 
-config.active_record.observers = [ :batch_cache_sweeper ]
+config.active_record.observers = [ :batch_cache_sweeper, :request_observer ]

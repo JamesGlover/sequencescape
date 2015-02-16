@@ -1,8 +1,12 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 require "rexml/document"
 
 class StudiesController < ApplicationController
   include REXML
   include Informatics::Globals
+  include XmlCacheHelper::ControllerHelper
 
   before_filter :login_required
   before_filter :admin_login_required, :only => [:new_plate_submission, :create_plate_submission, :settings, :administer, :manage, :managed_update, :grant_role, :remove_role]
@@ -14,7 +18,8 @@ class StudiesController < ApplicationController
     if logged_in? and not exclude_nested_resource
       @alternatives = [
         "interesting", "followed", "managed & active", "managed & inactive",
-        "pending", "pending ethical approval", "contaminated with human dna", "active", "inactive", "collaborations", "all"
+        "pending", "pending ethical approval", "contaminated with human dna",
+        "remove x and autosomes", "active", "inactive", "collaborations", "all"
       ]
       @studies = studies_from_scope(@alternatives[params[:scope].to_i])
     elsif params[:project_id] && !(project = Project.find(params[:project_id])).nil?
@@ -75,22 +80,27 @@ class StudiesController < ApplicationController
   def show
     @study = Study.find(params[:id])
 
+
     respond_to do |format|
       format.html do
         if current_user.workflow.nil?
           flash[:notice] = "Your profile is incomplete. Please select a workflow."
           redirect_to edit_profile_path(current_user)
         else
+          flash.keep
+          flash.merge!({:warning=>@study.warnings}) if @study.warnings.present?
           redirect_to study_workflow_path(@study, current_user.workflow)
         end
       end
-      format.xml
+      format.xml { cache_xml_response(@study) }
       format.json { render :json => @study.to_json }
     end
   end
 
   def edit
     @study = Study.find(params[:id])
+    flash.keep
+    flash.merge!({:warning=>@study.warnings}) if @study.warnings.present?
     @users   = User.all
     redirect_if_not_owner_or_admin
   end
@@ -110,6 +120,8 @@ class StudiesController < ApplicationController
       end
 
       flash[:notice] = "Your study has been updated"
+      flash.keep
+      flash.merge!({:warning=>@study.warnings}) if @study.warnings.present?
 
       redirect_to study_path(@study)
     end
@@ -117,16 +129,6 @@ class StudiesController < ApplicationController
     logger.warn "Failed to update attributes: #{@study.errors.map {|e| e.to_s }}"
     flash[:error] = "Failed to update attributes for study!"
     render :action => "edit", :id => @study.id
-  end
-
-  def destroy
-    study = Study.find(params[:id])
-    if study.destroy
-      flash[:notice] = "Study deleted."
-    else
-      flash[:error] = "Failed to destroy study!"
-    end
-    redirect_to studies_path
   end
 
   def study_status
@@ -178,7 +180,7 @@ class StudiesController < ApplicationController
 
     #TODO create a proper ReversedStudyRelation
     @relations = @study.study_relations.map { |r| [r.related_study, r.name ] } +
-      @study.reversed_study_relations.map { |r| [r.study, r.reversed_name ] } 
+      @study.reversed_study_relations.map { |r| [r.study, r.reversed_name ] }
 
   end
 
@@ -386,72 +388,51 @@ class StudiesController < ApplicationController
      end
    end
 
-   def grant_role
-     @user    = User.find(params[:role][:user])
-     @study = Study.find(params[:id])
-     @role    = Role.find_by_name(params[:role][:authorizable_type])
+   def self.role_helper(name, success_action, error_action, &block)
+     define_method("#{name}_role") do
+       ActiveRecord::Base.transaction do
+         @user, @study = User.find(params[:role][:user]), Study.find(params[:id])
 
-     if request.xhr?
-       if params[:role]
-         @user.has_role(params[:role][:authorizable_type].to_s, @study)
-         @roles   = Role.find(:all, :conditions => {:authorizable_id => @study.id, :authorizable_type => "Study"})
-         flash[:notice] = "Role added"
-         render :partial => "roles", :status => 200
-       else
-         @roles   = Role.find(:all, :conditions => {:authorizable_id => @study.id, :authorizable_type => "Study"})
-         flash[:error] = "A problem occurred while adding the role"
-         render :partial => "roles", :status => 500
+         if request.xhr?
+           if params[:role]
+             block.call(@user, @study, params[:role][:authorizable_type].to_s)
+             status, flash[:notice] = 200, "Role #{success_action}"
+           else
+             status, flash[:error] = 500, "A problem occurred while #{error_action} the role"
+           end
+         else
+           status, flash[:error] = 401, "A problem occurred while #{error_action} the role"
+         end
+
+         @roles = @study.roles(true).all
+         render :partial => "roles", :status => status
        end
-     else
-       @roles   = Role.find(:all, :conditions => {:authorizable_id => @study.id, :authorizable_type => "Study"})
-       flash[:error] = "A problem occurred while adding the role"
-       render :partial => "roles", :status => 401
      end
    end
 
-   def remove_role
-     @user    = User.find(params[:role][:user])
-     @study = Study.find(params[:id])
-     @role    = Role.find_by_name(params[:role][:authorizable_type])
-
-     if request.xhr?
-       if params[:role]
-         @user.has_no_role(params[:role][:authorizable_type].to_s, @study)
-         @roles   = Role.find(:all, :conditions => {:authorizable_id => @study.id, :authorizable_type => "Study"})
-         flash[:error] = "Role was removed"
-         render :partial => "roles", :status => 200
-       else
-         @roles   = Role.find(:all, :conditions => {:authorizable_id => @study.id, :authorizable_type => "Study"})
-         flash[:error] = "A problem occurred while removing the role"
-         render :partial => "roles", :status => 500
-       end
-     else
-       @roles   = Role.find(:all, :conditions => {:authorizable_id => @study.id, :authorizable_type => "Study"})
-       flash[:error] = "A problem occurred while removing the role"
-       render :partial => "roles", :status => 401
-     end
-   end
+   role_helper(:grant, "added", "adding")     { |user,study,name| user.has_role(name, study) }
+   role_helper(:remove, "remove", "removing") { |user,study,name| user.has_no_role(name, study) }
 
    def projects
      @study = Study.find(params[:id])
      @projects = @study.projects.paginate :page => params[:page]
    end
-   
+
    def sample_manifests
      @study = Study.find(params[:id])
      @sample_manifests = @study.sample_manifests.paginate(:page => params[:page])
    end
-   
+
    def suppliers
      @study = Study.find(params[:id])
      @suppliers = @study.suppliers.paginate(:page => params[:page])
    end
-     
+
    def study_reports
      @study = Study.find(params[:id])
-     @study_reports = StudyReport.without_files.for_study(@study).paginate(:page => params[:page], :order => 'id DESC')
+     @study_reports = StudyReport.for_study(@study).paginate(:page => params[:page], :order => 'id DESC')
    end
-   
+
 
   private
 
@@ -471,6 +452,7 @@ class StudiesController < ApplicationController
     when "pending"                     then Study.is_pending
     when "pending ethical approval"    then Study.all_awaiting_ethical_approval
     when "contaminated with human dna" then Study.all_contaminated_with_human_dna
+    when "remove x and autosomes"      then Study.all_with_remove_x_and_autosomes
     when "active"                      then Study.is_active
     when "inactive"                    then Study.is_inactive
     when "collaborations"              then Study.collaborated_with(current_user)

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class Metadata::FormBuilder < Metadata::BuilderBase
   def initialize(*args, &block)
     super
@@ -20,7 +23,7 @@ class Metadata::FormBuilder < Metadata::BuilderBase
       fields.file_field(:uploaded_data)
     end
   end
-  
+
   def select_by_association(association, options={})
     association_target, options = association.to_s.classify.constantize, { }
     options[:selected] = association_target.default.for_select_dropdown.last if @object.send(association).nil? and association_target.default.present?
@@ -89,8 +92,8 @@ class Metadata::FormBuilder < Metadata::BuilderBase
   def finalize_related_fields(&block)
     related = @related_fields.compact.uniq.map(&:to_s)
     concat(render(
-      :partial => 'shared/metadata/related_fields', 
-      :locals => { 
+      :partial => 'shared/metadata/related_fields',
+      :locals => {
         :root            => sanitized_object_name,
         :related         => related,
         :changing_fields => @changing

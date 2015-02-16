@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class Request::ChangeDecision
   include Validateable
 
@@ -113,9 +116,14 @@ private
 
   def perform_decision_change_billing_kind!
     begin
-      BillingEvent.change_decision_refund( self.billing.first.reference, self.description_billing, self.user.login)
-      project = Project.find(self.billing.first.project_id)
-      EventFactory.project_refund_request(project, self.user, self.billing.first.reference)
+      ActiveRecord::Base.transaction do
+        self.billing.each do |bill|
+          next if bill.kind != 'charge' # We don't want to refund, eg. charge internal
+          BillingEvent.change_decision_refund( bill.reference, self.description_billing, self.user.login)
+          project = Project.find(bill.project_id)
+          EventFactory.project_refund_request(project, self.user, bill.reference)
+        end
+      end
     rescue BillingException::DuplicateRefund
           self.errors.add(I18n.t("projects.billing_events.duplicate_refund_attempt"))
           raise ActiveRecord::RecordInvalid, self

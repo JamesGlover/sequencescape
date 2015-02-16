@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2012,2013,2014 Genome Research Ltd.
 class PresenterSkeleton
   class_inheritable_reader :attributes
   write_inheritable_attribute :attributes,  []
@@ -28,9 +31,11 @@ class PresenterSkeleton
   end
 
   def lanes_from_request_options
-    library_request       = RequestType.find(order.request_types.first)
+    return order.request_options.fetch(:multiplier, {}) if order.request_types[-2].nil?
+    library_request       = RequestType.find(order.request_types[-2])
     sequencing_request    = RequestType.find(order.request_types.last)
-    sequencing_multiplier = order.request_options.fetch('multiplier', {}).fetch(sequencing_request.id.to_s, 1).to_i
+    multiplier_hash = order.request_options.fetch(:multiplier, {})
+    sequencing_multiplier = (multiplier_hash[sequencing_request.id.to_s]||multiplier_hash.fetch(sequencing_request.id, 1)).to_i
 
     if library_request.for_multiplexing?
       sequencing_multiplier
@@ -63,13 +68,11 @@ class SubmissionCreater < PresenterSkeleton
   IncorrectParamsException = Class.new(SubmissionsCreaterError)
   InvalidInputException    = Class.new(SubmissionsCreaterError)
 
-  # Remove this Exception if you enable multiple orders per submission
-  MultipleOrdersException = Class.new(Exception)
-
   write_inheritable_attribute :attributes,  [
     :id,
     :template_id,
     :sample_names_text,
+    :barcodes_wells_text,
     :study_id,
     :submission_id,
     :project_name,
@@ -78,19 +81,29 @@ class SubmissionCreater < PresenterSkeleton
     :comments,
     :orders,
     :order_params,
-    :asset_group_id
+    :asset_group_id,
+    :pre_capture_plex_group,
+    :gigabases_expected,
+	:priority
   ]
 
 
   def build_submission!
     begin
       submission.built!
-
+    rescue AASM::InvalidTransition
+      submission.errors.add_to_base("Submissions can not be edited once they are submitted for building.")
     rescue ActiveRecord::RecordInvalid => exception
       exception.record.errors.full_messages.each do |message|
         submission.errors.add_to_base(message)
       end
+    rescue Submission::ProjectValidation::Error => exception
+      submission.errors.add_to_base(exception.message)
     end
+  end
+
+  def per_order_settings
+    [:pre_capture_plex_level, :gigabases_expected, :customer_accepts_responsibility]
   end
 
   def find_asset_group
@@ -107,16 +120,18 @@ class SubmissionCreater < PresenterSkeleton
   end
 
   def create_order
+    order_role = Order::OrderRole.find_by_role(order_params.delete('order_role')) if order_params.present?
     new_order = template.new_order(
       :study           => study,
       :project         => project,
       :user            => @user,
       :request_options => order_params,
-      :comments        => comments
+      :comments        => comments,
+      :pre_cap_group   => pre_capture_plex_group,
+      :order_role      => order_role
     )
-
     new_order.request_type_multiplier do |sequencing_request_type_id|
-      new_order.request_options['multiplier'][sequencing_request_type_id] = (lanes_of_sequencing_required || 1)
+      new_order.request_options[:multiplier][sequencing_request_type_id] = (lanes_of_sequencing_required || 1)
     end if order_params
 
     new_order
@@ -124,7 +139,8 @@ class SubmissionCreater < PresenterSkeleton
   private :create_order
 
   def order_params
-    @order_params[:multiplier] = {} if @order_params && @order_params[:multiplier].nil?
+    @order_params = @order_params.to_hash if @order_params.class == HashWithIndifferentAccess
+    @order_params[:multiplier] = HashWithIndifferentAccess.new if @order_params && @order_params[:multiplier].nil?
     @order_params
   end
 
@@ -132,8 +148,7 @@ class SubmissionCreater < PresenterSkeleton
     if order.input_field_infos.flatten.empty?
       order.request_type_ids_list = order.request_types.map { |rt| [rt] }
     end
-
-    order.input_field_infos
+    order.input_field_infos.reject {|info| per_order_settings.include?(info.key)}
   end
 
   # Return the submission's orders or a blank array
@@ -155,30 +170,20 @@ class SubmissionCreater < PresenterSkeleton
         new_order = create_order.tap { |o| o.update_attributes!(order_assets) }
 
         if submission.present?
-          # This code shouldn't get run, as the client should stop this but...
-          # This exception is thrown if we try to add multiple orders to a submission.
           # The submission should be destroyed if we delete the last order on it so
           # we shouldn't see any empty submissions.
-          # Remove the raise and recue block to enable multiple submissions.
-          # You'll also need to renable them in the submission.js file.
-          raise MultipleOrdersException
 
-
-          # uncomment this line to enable multiple orders
-          # submission.orders << new_order
+          submission.orders << new_order
         else
-          @submission = new_order.create_submission(:user => order.user)
+          @submission = new_order.create_submission(:user => order.user, :priority=>priority)
         end
 
         new_order.save!
         @order = new_order
       end
 
-
-    rescue MultipleOrdersException => exception
-      order.errors.add_to_base('Sorry, multiple orders per submission are not supported at the current time.')
-    rescue Quota::Error => quota_exception
-      order.errors.add_to_base(quota_exception.message)
+    rescue Submission::ProjectValidation::Error => project_exception
+      order.errors.add_to_base(project_exception.message)
     rescue InvalidInputException => input_exception
       order.errors.add_to_base(input_exception.message)
     rescue IncorrectParamsException => exception
@@ -194,7 +199,7 @@ class SubmissionCreater < PresenterSkeleton
   end
 
   def order_assets
-    input_methods = [ :asset_group_id, :sample_names_text ].select { |input_method| send(input_method).present? }
+    input_methods = [ :asset_group_id, :sample_names_text, :barcodes_wells_text ].select { |input_method| send(input_method).present? }
 
     raise InvalidInputException, "No Samples found" if input_methods.empty?
     raise InvalidInputException, "Samples cannot be added from multiple sources at the same time." unless input_methods.size == 1
@@ -209,8 +214,12 @@ class SubmissionCreater < PresenterSkeleton
             find_samples_from_text(sample_names_text)
           )
         }
+      when :barcodes_wells_text then
+        {
+          :assets => find_assets_from_text(barcodes_wells_text)
+        }
 
-      else raise StandardError, "No way to determine assets for input choice #{input_choice.first}"
+      else raise StandardError, "No way to determine assets for input choice #{input_methods.first}"
     end
   end
 
@@ -244,6 +253,46 @@ class SubmissionCreater < PresenterSkeleton
   end
   private :find_samples_from_text
 
+  def find_assets_from_text(assets_text)
+    plates_wells = assets_text.lines.map(&:chomp).reject(&:blank?).map(&:strip)
+
+    plates_wells.map do |plate_wells|
+      plate_barcode, well_locations = plate_wells.split(':')
+      begin
+        plate = Plate.find_from_machine_barcode(Barcode.human_to_machine_barcode(plate_barcode))
+      rescue Barcode::InvalidBarcode => exception
+        raise InvalidInputException, "Invalid Barcode #{plate_barcode}: #{exception}"
+      end
+      raise InvalidInputException, "No plate found for barcode #{plate_barcode}." if plate.nil?
+      well_array = (well_locations||'').split(',').reject(&:blank?).map(&:strip)
+
+      find_wells_in_array(plate,well_array)
+    end.flatten
+  end
+  private :find_assets_from_text
+
+  def find_wells_in_array(plate,well_array)
+    return plate.wells.with_aliquots if well_array.empty?
+    well_array.map do |map_description|
+      case map_description
+      when /^[a-z,A-Z][0-9]+$/ # A well
+        well = plate.find_well_by_name(map_description)
+        if well.nil? or well.aliquots.empty?
+          raise InvalidInputException, "Well #{map_description} on #{plate.sanger_human_barcode} does not exist or is empty."
+        else
+          well
+        end
+      when /^[a-z,A-Z]$/ # A row
+        plate.wells.with_aliquots.in_plate_row(map_description,plate.size)
+      when /^[0-9]+$/ # A column
+        plate.wells.with_aliquots.in_plate_column(map_description,plate.size)
+      else
+        raise InvalidInputException, "#{map_description} is not a valid well location"
+      end
+    end
+  end
+  private :find_wells_in_array
+
   def study
     @study ||= (Study.find(@study_id) if @study_id.present?)
   end
@@ -269,6 +318,10 @@ class SubmissionCreater < PresenterSkeleton
     @templates ||= SubmissionTemplate.visible
   end
 
+  def product_lines
+    templates.group_by {|t| t.product_line.try(:name)||'General' }
+  end
+
   def template_id
     submission.try(:orders).try(:first).try(:id)
   end
@@ -282,6 +335,11 @@ class SubmissionCreater < PresenterSkeleton
   def url(view)
     view.send(:submission_path, submission.present? ? submission : { :id => 'DUMMY_ID' })
   end
+
+  def template_name
+    submission.orders.first.template_name
+  end
+
 end
 
 class SubmissionPresenter < PresenterSkeleton
@@ -289,6 +347,10 @@ class SubmissionPresenter < PresenterSkeleton
 
   def submission
     @submission ||= Submission.find(id)
+  end
+
+  def priority
+    submission.priority
   end
 
   def template_name

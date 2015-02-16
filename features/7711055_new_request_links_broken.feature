@@ -4,6 +4,7 @@ Feature: Creating new requests from an asset
     Given a sample tube called "Sample tube for testing new request" exists
       And a properly created library tube called "Library tube for testing new request" exists
       And a properly created multiplexed library tube called "Multiplexed library tube for testing new request" exists
+      And an improperly created multiplexed library tube called "Faulty Multiplexed library tube for testing new request" exists
       And I have an "active" study called "Study testing new request"
       And I have an "approved" project called "Project testing new request"
 
@@ -23,13 +24,6 @@ Feature: Creating new requests from an asset
       | workflow              |
       | Next-gen sequencing   |
       | Microarray genotyping |
-
-  @wip
-  Scenario: New request link from complete move to 2D page
-    # app/views/assets/complete_move_to_2D.html.erb
-
-  @wip
-  Scenario: New request link from an individual asset page, via a sample, as an administrator
 
   @study @administrator
   Scenario Outline: New request link from an individual asset page, via a study, as an administrator
@@ -55,9 +49,10 @@ Feature: Creating new requests from an asset
 
     @multiplexed_library_tube
     Scenarios:
-      | asset type               | link to follow                | page                                     |
-      | Multiplexed library tube | Request additional sequencing | show page                                |
-      | Multiplexed library tube | Request additional sequencing | "Next-gen sequencing" workflow show page |
+      | asset type                      | link to follow                | page                                     |
+      | Multiplexed library tube        | Request additional sequencing | show page                                |
+      | Faulty Multiplexed library tube | Request additional sequencing | show page                                |
+      | Multiplexed library tube        | Request additional sequencing | "Next-gen sequencing" workflow show page |
 
   @manager
   Scenario Outline: Request more sequencing as the manager of a study for the asset
@@ -118,11 +113,10 @@ Feature: Creating new requests from an asset
      Then the source asset of the last "<request type>" request should be a "Sample tube"
 
     Scenarios:
-      | request type                   |
-      | Library creation               |
-      | Multiplexed library creation   |
-      | Pulldown library creation      |
-      | PacBio Sample Prep             |
+      | request type                               |
+      | Illumina-C Library creation                |
+      | Multiplexed library creation               |
+      | Pulldown library creation                  |
 
   @foo
   Scenario Outline: Requesting more sequencing of an library
@@ -145,19 +139,19 @@ Feature: Creating new requests from an asset
 
     @library_tube
     Scenarios:
-      | asset type   | request type                   | fragment size required from | fragment size required to |
-      | Library tube | Single ended sequencing        | 100                         | 200                       |
-      | Library tube | Single ended hi seq sequencing | 100                         | 200                       |
-      | Library tube | Paired end sequencing          | 100                         | 200                       |
-      | Library tube | HiSeq Paired end sequencing    | 100                         | 200                       |
+      | asset type   | request type                              | fragment size required from | fragment size required to |
+      | Library tube | Illumina-B Single ended sequencing        | 100                         | 200                       |
+      | Library tube | Illumina-B Single ended hi seq sequencing | 100                         | 200                       |
+      | Library tube | Illumina-B Paired end sequencing          | 100                         | 200                       |
+      | Library tube | Illumina-B HiSeq Paired end sequencing    | 100                         | 200                       |
 
     @multiplexed_library_tube
     Scenarios:
-      | asset type               | request type                   | fragment size required from | fragment size required to |
-      | Multiplexed library tube | Single ended sequencing        | 150                         | 400                       |
-      | Multiplexed library tube | Single ended hi seq sequencing | 150                         | 400                       |
-      | Multiplexed library tube | Paired end sequencing          | 150                         | 400                       |
-      | Multiplexed library tube | HiSeq Paired end sequencing    | 150                         | 400                       |
+      | asset type               | request type                              | fragment size required from | fragment size required to |
+      | Multiplexed library tube | Illumina-B Single ended sequencing        | 150                         | 400                       |
+      | Multiplexed library tube | Illumina-B Single ended hi seq sequencing | 150                         | 400                       |
+      | Multiplexed library tube | Illumina-B Paired end sequencing          | 150                         | 400                       |
+      | Multiplexed library tube | Illumina-B HiSeq Paired end sequencing    | 150                         | 400                       |
 
   @library_tube @multiplexed_library_tube @accession @foo
   Scenario Outline: Requesting more sequencing of a library where the study needs accession numbers
@@ -168,8 +162,8 @@ Feature: Creating new requests from an asset
 
     Given I am on the new request page for "<asset type> for testing new request"
 
-    When I select "HiSeq Paired end sequencing" from "Request type"
-     And I fill in the request fields with sensible values for "HiSeq Paired end sequencing"
+    When I select "Illumina-B HiSeq Paired end sequencing" from "Request type"
+     And I fill in the request fields with sensible values for "Illumina-B HiSeq Paired end sequencing"
      And I select "Study testing new request" from "Study"
      And I select "Project testing new request" from "Project"
      And I press "Create"
@@ -186,13 +180,13 @@ Feature: Creating new requests from an asset
       And the asset "Sample tube for testing new request" belongs to study "Study testing new request"
 
     Given I am on the new request page for "Sample tube for testing new request"
-    When I select "Library creation" from "Request type"
+    When I select "Illumina-C Library creation" from "Request type"
      And I fill in "Fragment size required (from)" with "Small"
      And I fill in "Fragment size required (to)" with "Large"
      And I select "Study testing new request" from "Study"
      And I select "Project testing new request" from "Project"
      And I press "Create"
     Then I should see "Validation failed"
-     And "Library creation" should be selected from "Request type"
+     And "Illumina-C Library creation" should be selected from "Request type"
      And "Study testing new request" should be selected from "Study"
      And "Project testing new request" should be selected from "Project"

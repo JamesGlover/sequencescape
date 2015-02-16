@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2014 Genome Research Ltd.%>
 <%- add :title, "Update your user profile." %>
 <%- add :menu, "Back to all users" => users_path %>
 
@@ -41,7 +44,7 @@
       <tr>
         <td class="item" width="20%"><label for="role_lab_manager">Lab manager</label>?</td>
         <td><%= check_box_tag "role[lab_manager]", "checked", @user.has_role?("lab_manager") %></td>
-      </tr
+      </tr>
       <tr>
         <td class="item" width="20%"><label for="role_owner">Owner</label>?</td>
         <td><%= check_box_tag "role[owner]", "checked", @user.has_role?("owner") %></td>

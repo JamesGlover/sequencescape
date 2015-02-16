@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013 Genome Research Ltd.
 require "test_helper"
 
 class AssetsControllerTest < ActionController::TestCase
@@ -39,7 +42,6 @@ class AssetsControllerTest < ActionController::TestCase
       @project = Factory :project, :enforce_quotas => true
       @request_type = Factory :request_type
       @workflow = Factory :submission_workflow
-      @quota = Factory :project_quota, :project_id => @project.id, :request_type_id => @request_type.id, :limit => 10
       @json_data = valid_json_create_request(@asset,@request_type,@study, @project)
 
       @request.accept = @request.env['CONTENT_TYPE'] = 'application/json'
@@ -47,6 +49,9 @@ class AssetsControllerTest < ActionController::TestCase
     end
 
     should_change("Submission.count", :by => 1) { Submission.count }
+    should "set a priority" do
+      assert_equal(3,Submission.last.priority)
+    end
   end
 
   def valid_json_create_request(asset,request_type,study, project)
@@ -58,6 +63,7 @@ class AssetsControllerTest < ActionController::TestCase
         "project_id": "#{project.id}",
         "request_type_id": "#{request_type.id}",
         "count": 3,
+        "priority": 3,
         "comments": "This is a request",
         "id": "#{asset.id}",
         "request": {

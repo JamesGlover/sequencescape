@@ -1,16 +1,19 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 Given /^sequencescape is setup for 4759010$/ do
   # Number of tags here needs to be the same as the number of requests below.
   group = Factory(:tag_group, :name => 'Tag group for 4759010')
   (1..10).each { |i| group.tags.create!(:map_id => i, :oligo => 'Tag for 4759010') }
 end
 
-Given /^a batch in "Cluster formation PE" has been setup for feature 4759010$/ do         
+Given /^a batch in "Cluster formation PE" has been setup for feature 4759010$/ do
   pending
 end
 
 Given /^a batch in "Illumina-B MX Library Preparation" has been setup for feature 4759010$/ do
   pipeline    = Pipeline.find_by_name("Illumina-B MX Library Preparation") or raise StandardError, "Cannot find pipeline 'Illumina-B MX Library Preparation'"
-  batch       = Factory :batch, :pipeline => pipeline, :state => :started
+  batch       = Factory :batch, :pipeline => pipeline, :state => 'pending'
   asset_group = Factory(:asset_group)
 
   submission = Factory::submission(
@@ -34,22 +37,22 @@ Given /^a batch in "Illumina-B MX Library Preparation" has been setup for featur
     source      = Factory(pipeline.request_types.last.asset_type.underscore, :location => pipeline.location)
     destination = Factory("empty_#{pipeline.asset_type.underscore}")
 
-    request  = Factory :request, :request_type => pipeline.request_types.last, :submission_id => submission.id, :asset => source, :target_asset => destination
+    request  = Factory :request, :request_type => RequestType.find_by_key('illumina_b_multiplexed_library_creation'), :submission_id => submission.id, :asset => source, :target_asset => destination
 
-    batch.requests << request 
+    batch.requests << request
     asset_group.assets << source
   end
 
-                                                     
+
   pipeline = Pipeline.find_by_name("Cluster formation PE") or raise StandardError, "Cannot find pipeline '#{ name }'"
-  
+
   request  = Factory :request, :request_type => pipeline.request_types.last, :submission_id => submission.id, :asset => Factory(asset_type)
   request.asset.location    = pipeline.location
   request.asset.save!
-  batch.requests << request
+  # batch.requests << request
   asset_group.assets << request.asset
-end    
- 
-When /^I select all requests$/ do 
+end
+
+When /^I select all requests$/ do
  page.all('.request_checkbox').each { |checkbox| checkbox.set(true) }
 end

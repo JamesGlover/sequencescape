@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 class Accessionable::Base
   InvalidData = Class.new(AccessionService::AccessionServiceError)
   attr_reader :accession_number, :name, :date, :date_short
@@ -28,12 +31,11 @@ class Accessionable::Base
   end
 
   def alias
-    #TODO move date from alias to filename
-    "#{name.gsub(/[^a-z\d]/i, '_')}-sc-#{date}-#{object_id}"
+    "#{name.gsub(/[^a-z\d]/i, '_')}-sc-#{object_id}"
   end
 
   def file_name
-    "#{self.alias}.#{schema_type}.xml"
+    "#{self.alias}-#{date}.#{schema_type}.xml"
   end
 
   def extract_accession_number(xmldoc)
@@ -55,6 +57,11 @@ class Accessionable::Base
 
   def object_id
     raise NotImplementError, "abstract method"
+  end
+
+  def released?
+    # Return false by default. Overidden by sample.
+    false
   end
 
   def add_updated_event(user, classname,  eventable)

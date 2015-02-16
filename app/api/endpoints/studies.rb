@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class Endpoints::Studies < Core::Endpoint::Base
   model do
 
@@ -12,7 +15,7 @@ class Endpoints::Studies < Core::Endpoint::Base
       def self.constructor(name, method)
         line = __LINE__ + 1
         instance_eval(%Q{
-          bind_action(:create, :as => #{name.to_sym.inspect}, :to => #{name.to_s.inspect}) do |request, response|
+          bind_action(:create, :as => #{name.to_sym.inspect}, :to => #{name.to_s.inspect}) do |_, request, response|
             ActiveRecord::Base.transaction do
               manifest = request.target.#{method}(request.attributes)
               request.io.eager_loading_for(manifest.class).include_uuid.find(manifest.id)

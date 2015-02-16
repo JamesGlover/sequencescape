@@ -1,5 +1,8 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014,2015 Genome Research Ltd.
 class AssetGroup < ActiveRecord::Base
-  acts_as_audited :on => [:destroy, :update]
+
   include Uuid::Uuidable
   include ModelExtensions::AssetGroup
 
@@ -12,15 +15,23 @@ class AssetGroup < ActiveRecord::Base
 
   validates_presence_of :name, :study
   validates_uniqueness_of :name
-  
-  
 
-  named_scope :for_search_query, lambda { |query| { :conditions => [ 'name LIKE ?', "%#{query}%" ] } }
+
+
+  named_scope :for_search_query, lambda { |query,with_includes| { :conditions => [ 'name LIKE ?', "%#{query}%" ] } }
 
   def all_samples_have_accession_numbers?
-    assets.all? do |asset|
-      asset.aliquots.all? { |aliquot| aliquot.sample.accession_number? }
-    end
+    unaccessioned_samples.count == 0
+  end
+
+  def unaccessioned_samples
+    Sample.find(:all,
+      :joins => [
+        'INNER JOIN aliquots ON aliquots.sample_id = samples.id',
+        'INNER JOIN sample_metadata ON sample_metadata.sample_id = samples.id'
+        ],
+        :conditions => ['aliquots.receptacle_id IN (?) AND sample_ebi_accession_number IS NULL',assets.map(&:id)]
+    )
   end
 
   def self.find_or_create_asset_group(new_assets_name, study)
@@ -35,6 +46,14 @@ class AssetGroup < ActiveRecord::Base
       end
     end
     return asset_group
+  end
+
+  def automatic_move?
+    asset_types.one? && assets.first.automatic_move?
+  end
+
+  def asset_types
+    assets.map(&:sti_type).uniq
   end
 
   def duplicate(project)

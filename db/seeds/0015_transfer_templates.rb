@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 COLUMN_RANGES = [
   (1..1),
   (1..2),
@@ -33,5 +36,44 @@ ActiveRecord::Base.transaction do
   TransferTemplate.create!(
     :name                => "Transfer wells to MX library tubes by submission",
     :transfer_class_name => Transfer::FromPlateToTubeBySubmission.name
+  )
+  TransferTemplate.create!(
+    :name                => "Transfer wells to specific tubes by submission",
+    :transfer_class_name => Transfer::FromPlateToSpecificTubes.name
+  )
+
+  # Tube-to-tube transfers
+  TransferTemplate.create!(
+    :name                => "Transfer from tube to tube by submission",
+    :transfer_class_name => Transfer::BetweenTubesBySubmission.name
+  )
+
+  TransferTemplate.create!(
+    :name                => 'Transfer wells to specific tubes defined by submission',
+    :transfer_class_name => 'Transfer::FromPlateToSpecificTubesByPool'
+  )
+
+  TransferTemplate.create!(
+    :name => 'Transfer between specific tubes',
+    :transfer_class_name => 'Transfer::BetweenSpecificTubes'
+  )
+
+  TransferTemplate.create!(
+    :name => 'Whole plate to tube',
+    :transfer_class_name => 'Transfer::FromPlateToTube',
+    :transfers => locations_for(('A'..'H'), (1..12))
+  )
+
+  wells = locations_for(('A'..'H'), (1..12))
+
+  TransferTemplate.create!(
+    :name => 'Flip Plate',
+    :transfer_class_name => 'Transfer::BetweenPlates',
+    :transfers => Hash[wells.zip(wells.reverse)]
+  )
+
+  TransferTemplate.create!(
+    :name=>'Transfer wells to MX library tubes by multiplex',
+    :transfer_class_name => 'Transfer::FromPlateToTubeByMultiplex'
   )
 end

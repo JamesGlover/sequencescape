@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013 Genome Research Ltd.
 require "test_helper"
 
 class ApiRoutingTest < ActionController::TestCase
@@ -18,7 +21,7 @@ class ApiRoutingTest < ActionController::TestCase
 
       resources.each do |resource|
         with_options(:controller => "api/#{resource}") do |check|
-          yield(check, "/0_5/#{resource}") 
+          yield(check, "/0_5/#{resource}")
 
           # We absolutely, never, ever expose :destroy
           check.should_not_route :delete, "/0_5/#{resource}/12345", :action => :destroy
@@ -72,7 +75,6 @@ class ApiRoutingTest < ActionController::TestCase
       :multiplexed_library_tubes,
       :plate_purposes,
       :plates,
-      :quotas,
       :sample_tubes,
       :study_samples,
       :tags,

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 class ::Io::AssetAudit < ::Core::Io::Base
   # This module adds the behaviour we require from the AssetAudit module.
   module ApiIoSupport
@@ -7,11 +10,11 @@ class ::Io::AssetAudit < ::Core::Io::Base
         # TODO: add any associations
       end
     end
-    
+
     def asset_uuid
       self.asset.try(:uuid)
     end
-    
+
     def asset_uuid=(uuid)
       self.asset =  Uuid.with_external_id(uuid).include_resource.map(&:resource).first
     end
@@ -22,7 +25,7 @@ class ::Io::AssetAudit < ::Core::Io::Base
   set_model_for_input(::AssetAudit)
   set_json_root(:asset_audit)
   # set_eager_loading { |model| model }   # TODO: uncomment and add any named_scopes that do includes you need
-  
+
   # TODO: define the mapping from the model attributes to the JSON attributes
   #
   # The rules are relatively straight forward with each line looking like '<attibute> <access> <json>', and blank lines or
@@ -35,9 +38,9 @@ class ::Io::AssetAudit < ::Core::Io::Base
   #
   # The 'attribute' is the attribute to write, i.e. 'name' would be the 'name' attribute, and 'parent.name' would be the 'name'
   # attribute of whatever 'parent' is.
-  
 
-  
+
+
   define_attribute_and_json_mapping(%Q{
        message  <=> message
            key  <=> key

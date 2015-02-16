@@ -1,8 +1,15 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2014 Genome Research Ltd.
 class LibraryTube < Tube
   include Api::LibraryTubeIO::Extensions
   include ModelExtensions::LibraryTube
 
   def is_sequenceable?
+    true
+  end
+
+  def library_prep?
     true
   end
 
@@ -19,6 +26,10 @@ class LibraryTube < Tube
 
   def self.stock_asset_type
     StockLibraryTube
+  end
+
+  def self.stock_asset_purpose
+    Tube::Purpose.stock_library_tube
   end
 
   extend Asset::Stock::CanCreateStockAsset

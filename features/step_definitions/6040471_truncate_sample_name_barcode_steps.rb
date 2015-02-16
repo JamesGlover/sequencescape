@@ -1,7 +1,10 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 When /^I print the labels in the asset group$/ do
-  When %Q{I follow "Print labels"}
-  When %Q{I select "xyz" from "Barcode Printer"}
-  When %Q{I press "Print"}
+  step(%Q{I follow "Print labels"})
+  step(%Q{I select "xyz" from "Barcode Printer"})
+  step(%Q{I press "Print"})
 end
 
 Given /^I have an asset group "([^"]*)" which is part of "([^"]*)"$/ do |asset_group_name, study_name|

@@ -9,7 +9,7 @@ Feature: Interacting with requests through the API
     And the UUID for the project "Project testing the JSON API" is "11111111-2222-3333-4444-ffffffffffff"
 
     Given I have an active study called "Study testing the JSON API"
-    And the UUID for the study "Study testing the JSON API" is "22222222-2222-3333-4444-ffffffffffff"
+    And the UUID for the study "Study testing the JSON API" is "22222222-2222-3333-4444-0fffffffffff"
 
     Given the UUID of the next submission created will be "11111111-2222-3333-4444-111111111111"
 
@@ -18,7 +18,7 @@ Feature: Interacting with requests through the API
     Then the JSON should be an empty array
 
   Scenario: Listing all of the requests related to sample tubes
-    Given the project "Project testing the JSON API" has a "Pulldown library creation" quota of 10
+
     And I have a sample tube called "Tube"
     And the sample tube "Tube" has been involved in a "Pulldown library creation" request within the study "Study testing the JSON API" for the project "Project testing the JSON API"
     And all assets have sequential UUIDs based on "aaaaaaaa-1111-2222-3333"
@@ -47,9 +47,9 @@ Feature: Interacting with requests through the API
             "source_asset_closed": false,
             "target_asset_uuid": "aaaaaaaa-1111-2222-3333-000000000002",
             "source_asset_uuid": "aaaaaaaa-1111-2222-3333-000000000001",
-            "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-ffffffffffff",
+            "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-0fffffffffff",
             "project_name": "Project testing the JSON API",
-            "study_uuid": "22222222-2222-3333-4444-ffffffffffff",
+            "study_uuid": "22222222-2222-3333-4444-0fffffffffff",
 
             "submission_uuid": "11111111-2222-3333-4444-111111111111",
             "submission_url": "http://localhost:3000/0_5/submissions/11111111-2222-3333-4444-111111111111",
@@ -59,12 +59,12 @@ Feature: Interacting with requests through the API
             "target_asset_name": "Study testing the JSON API - Target asset",
             "source_asset_state": "",
             "source_asset_name": "Tube",
-						"source_asset_barcode_prefix": "NT",
-						"target_asset_barcode_prefix": "DN",
-						"fragment_size_required_to": "20",
-						"fragment_size_required_from": "1",
+            "source_asset_barcode_prefix": "NT",
+            "target_asset_barcode_prefix": "DN",
+            "fragment_size_required_to": "20",
+            "fragment_size_required_from": "1",
             "library_type": "Standard",
-            
+
             "priority": 0,
 
             "source_asset_barcode": "ignored in test because it varies uncontrollably",
@@ -76,13 +76,13 @@ Feature: Interacting with requests through the API
             "source_asset_internal_id": "ignored in test because it varies uncontrollably & you should use source_asset_uuid instead",
             "source_asset_sample_internal_id": "ignored in test because it varies uncontrollably & you should use source_asset_sample_uuid instead",
             "study_internal_id": "ignored in test because it varies uncontrollably & you should use study_uuid instead"
-          }
+          }, "lims": "SQSCP"
         }
       ]
       """
 
   Scenario: Listing all of the requests related to library tubes
-    Given the project "Project testing the JSON API" has a "Paired end sequencing" quota of 10
+
     And I have a library tube called "Tube"
     And the library tube "Tube" has been involved in a "Paired end sequencing" request within the study "Study testing the JSON API" for the project "Project testing the JSON API"
     And all assets have sequential UUIDs based on "aaaaaaaa-1111-2222-3333"
@@ -114,21 +114,21 @@ Feature: Interacting with requests through the API
             "source_asset_closed": false,
             "target_asset_uuid": "aaaaaaaa-1111-2222-3333-000000000002",
             "source_asset_uuid": "aaaaaaaa-1111-2222-3333-000000000001",
-            "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-ffffffffffff",
+            "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-0fffffffffff",
             "project_name": "Project testing the JSON API",
-            "study_uuid": "22222222-2222-3333-4444-ffffffffffff",
+            "study_uuid": "22222222-2222-3333-4444-0fffffffffff",
             "submission_uuid": "11111111-2222-3333-4444-111111111111",
             "submission_url": "http://localhost:3000/0_5/submissions/11111111-2222-3333-4444-111111111111",
             "target_asset_name": "Study testing the JSON API - Target asset",
             "source_asset_state": "",
             "source_asset_name": "Tube",
-						"source_asset_barcode_prefix": "NT",
-						"target_asset_barcode_prefix": "DN",
-						"fragment_size_required_to": "21",
-						"fragment_size_required_from": "1",
+            "source_asset_barcode_prefix": "NT",
+            "target_asset_barcode_prefix": "DN",
+            "fragment_size_required_to": "21",
+            "fragment_size_required_from": "1",
 
             "read_length": 76,
-            
+
             "priority": 0,
 
             "source_asset_barcode": "ignored in test because it varies uncontrollably",
@@ -139,13 +139,13 @@ Feature: Interacting with requests through the API
             "project_internal_id": "ignored in test because it varies uncontrollably & you should use project_uuid instead",
             "source_asset_internal_id": "ignored in test because it varies uncontrollably & you should use source_asset_uuid instead",
             "study_internal_id": "ignored in test because it varies uncontrollably & you should use study_uuid instead"
-          }
+          }, "lims": "SQSCP"
         }
       ]
       """
 
   Scenario Outline: Retrieving the JSON for a request that is for library preparation
-    Given the project "Project testing the JSON API" has a "<request type>" quota of 10
+
     And I have already made a "<request type>" request within the study "Study testing the JSON API" for the project "Project testing the JSON API"
     And all assets have sequential UUIDs based on "aaaaaaaa-1111-2222-3333"
 
@@ -164,8 +164,8 @@ Feature: Interacting with requests through the API
           "project_url": "http://localhost:3000/0_5/projects/11111111-2222-3333-4444-ffffffffffff",
           "project_name": "Project testing the JSON API",
 
-          "study_uuid": "22222222-2222-3333-4444-ffffffffffff",
-          "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-ffffffffffff",
+          "study_uuid": "22222222-2222-3333-4444-0fffffffffff",
+          "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-0fffffffffff",
           "study_name": "Study testing the JSON API",
 
             "submission_uuid": "11111111-2222-3333-4444-111111111111",
@@ -186,13 +186,13 @@ Feature: Interacting with requests through the API
           "target_asset_type": "sample_tubes",
           "target_asset_state": "",
           "target_asset_closed": false,
-					"source_asset_barcode_prefix": "DN",
-					"target_asset_barcode_prefix": "DN",
-					"fragment_size_required_to": "20",
-					"fragment_size_required_from": "1",
+          "source_asset_barcode_prefix": "DN",
+          "target_asset_barcode_prefix": "DN",
+          "fragment_size_required_to": "20",
+          "fragment_size_required_from": "1",
 
           "library_type": "Standard",
-          
+
           "priority": 0,
 
           "source_asset_barcode": "ignored in test because it varies uncontrollably",
@@ -203,7 +203,7 @@ Feature: Interacting with requests through the API
           "project_internal_id": "ignored in test because it varies uncontrollably & you should use project_uuid instead",
           "source_asset_internal_id": "ignored in test because it varies uncontrollably & you should use source_asset_uuid instead",
           "study_internal_id": "ignored in test because it varies uncontrollably & you should use study_uuid instead"
-        }
+        },"lims":"SQSCP"
       }
       """
 
@@ -213,7 +213,7 @@ Feature: Interacting with requests through the API
       |Multiplexed library creation|
 
   Scenario Outline: Retrieving the JSON for a request that is for sequencing
-    Given the project "Project testing the JSON API" has a "<request type>" quota of 10
+
     And I have already made a "<request type>" request within the study "Study testing the JSON API" for the project "Project testing the JSON API"
     And all assets have sequential UUIDs based on "aaaaaaaa-1111-2222-3333"
 
@@ -232,8 +232,8 @@ Feature: Interacting with requests through the API
           "project_url": "http://localhost:3000/0_5/projects/11111111-2222-3333-4444-ffffffffffff",
           "project_name": "Project testing the JSON API",
 
-          "study_uuid": "22222222-2222-3333-4444-ffffffffffff",
-          "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-ffffffffffff",
+          "study_uuid": "22222222-2222-3333-4444-0fffffffffff",
+          "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-0fffffffffff",
           "study_name": "Study testing the JSON API",
           "user": "abc123",
             "submission_uuid": "11111111-2222-3333-4444-111111111111",
@@ -253,13 +253,13 @@ Feature: Interacting with requests through the API
           "target_asset_state": "",
           "target_asset_closed": false,
 
-					"source_asset_barcode_prefix": "DN",
-					"target_asset_barcode_prefix": "DN",
-					"fragment_size_required_to": "21",
-					"fragment_size_required_from": "1",
+          "source_asset_barcode_prefix": "DN",
+          "target_asset_barcode_prefix": "DN",
+          "fragment_size_required_to": "21",
+          "fragment_size_required_from": "1",
 
           "read_length": 76,
-          
+
           "priority": 0,
 
           "source_asset_barcode": "ignored in test because it varies uncontrollably",
@@ -270,7 +270,7 @@ Feature: Interacting with requests through the API
           "project_internal_id": "ignored in test because it varies uncontrollably & you should use project_uuid instead",
           "source_asset_internal_id": "ignored in test because it varies uncontrollably & you should use source_asset_uuid instead",
           "study_internal_id": "ignored in test because it varies uncontrollably & you should use study_uuid instead"
-        }
+        },"lims":"SQSCP"
       }
       """
 
@@ -278,10 +278,10 @@ Feature: Interacting with requests through the API
       |request type|
       |Single ended sequencing|
       |Paired end sequencing|
-      
+
   @priority
   Scenario: Retrieving the JSON for a request which is owned by a user and has the priority flag set
-    Given the project "Project testing the JSON API" has a "Single ended sequencing" quota of 10
+
     And I have already made a "Single ended sequencing" request within the study "Study testing the JSON API" for the project "Project testing the JSON API"
     And all assets have sequential UUIDs based on "aaaaaaaa-1111-2222-3333"
     Given user "abc" owns all requests
@@ -302,8 +302,8 @@ Feature: Interacting with requests through the API
           "project_url": "http://localhost:3000/0_5/projects/11111111-2222-3333-4444-ffffffffffff",
           "project_name": "Project testing the JSON API",
 
-          "study_uuid": "22222222-2222-3333-4444-ffffffffffff",
-          "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-ffffffffffff",
+          "study_uuid": "22222222-2222-3333-4444-0fffffffffff",
+          "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-0fffffffffff",
           "study_name": "Study testing the JSON API",
             "submission_uuid": "11111111-2222-3333-4444-111111111111",
             "submission_url": "http://localhost:3000/0_5/submissions/11111111-2222-3333-4444-111111111111",
@@ -322,13 +322,13 @@ Feature: Interacting with requests through the API
           "target_asset_state": "",
           "target_asset_closed": false,
 
-					"source_asset_barcode_prefix": "DN",
-					"target_asset_barcode_prefix": "DN",
-					"fragment_size_required_to": "21",
-					"fragment_size_required_from": "1",
+          "source_asset_barcode_prefix": "DN",
+          "target_asset_barcode_prefix": "DN",
+          "fragment_size_required_to": "21",
+          "fragment_size_required_from": "1",
 
           "read_length": 76,
-          
+
           "priority": 1,
           "user": "abc",
 
@@ -340,7 +340,7 @@ Feature: Interacting with requests through the API
           "project_internal_id": "ignored in test because it varies uncontrollably & you should use project_uuid instead",
           "source_asset_internal_id": "ignored in test because it varies uncontrollably & you should use source_asset_uuid instead",
           "study_internal_id": "ignored in test because it varies uncontrollably & you should use study_uuid instead"
-        }
+        },"lims":"SQSCP"
       }
       """
   @aliquot
@@ -374,23 +374,23 @@ Feature: Interacting with requests through the API
             "source_asset_closed": false,
             "target_asset_uuid": "aaaaaaaa-1111-2222-3333-000000000002",
             "source_asset_uuid": "aaaaaaaa-1111-2222-3333-000000000001",
-            "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-ffffffffffff",
+            "study_url": "http://localhost:3000/0_5/studies/22222222-2222-3333-4444-0fffffffffff",
             "project_url": "http://localhost:3000/0_5/projects/11111111-2222-3333-4444-ffffffffffff",
             "project_name": "Project testing the JSON API",
-            "study_uuid": "22222222-2222-3333-4444-ffffffffffff",
+            "study_uuid": "22222222-2222-3333-4444-0fffffffffff",
             "submission_uuid": "11111111-2222-3333-4444-111111111111",
             "submission_url": "http://localhost:3000/0_5/submissions/11111111-2222-3333-4444-111111111111",
             "target_asset_sample_uuid": "bbbbbbbb-1111-2222-3333-000000000003",
             "target_asset_name": "Study testing the JSON API - Target asset",
             "source_asset_state": "",
             "source_asset_name": "Tube",
-						"source_asset_barcode_prefix": "NT",
-						"target_asset_barcode_prefix": "DN",
-						"fragment_size_required_to": "20",
-						"fragment_size_required_from": "1",
+            "source_asset_barcode_prefix": "NT",
+            "target_asset_barcode_prefix": "DN",
+            "fragment_size_required_to": "20",
+            "fragment_size_required_from": "1",
 
             "library_type": "Standard",
-            
+
             "priority": 0,
 
             "source_asset_barcode": "ignored in test because it varies uncontrollably",
@@ -401,7 +401,7 @@ Feature: Interacting with requests through the API
             "source_asset_internal_id": "ignored in test because it varies uncontrollably & you should use source_asset_uuid instead",
             "source_asset_sample_internal_id": "ignored in test because it varies uncontrollably & you should use source_asset_sample_uuid instead",
             "study_internal_id": "ignored in test because it varies uncontrollably & you should use study_uuid instead"
-          }
+          },"lims":"SQSCP"
         }
       ]
       """

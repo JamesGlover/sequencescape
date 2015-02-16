@@ -1,8 +1,9 @@
 @nano_grams @cherrypicking_for_pulldown @cherrypicking @barcode-service @pulldown @tecan
 Feature: Pick a ng quantity using the Tecan robot
 
-  Background: 
+  Background:
     Given I am an "manager" user logged in as "john"
+    And a robot exists
 
   @gwl
   Scenario: Create a Tecan file with the correct volumes to pick
@@ -13,8 +14,8 @@ Feature: Pick a ng quantity using the Tecan robot
       | B2            | 120                    | 10              |
       | B3            | 140                    | 20              |
       | B4            | 160                    | 20              |
-      | B5            | 180                    | 20              |
-      | B6            | 200                    | 20              |
+      | B5            | 0                      | 80              |
+      | B6            | 0                      | 20              |
     And I have a plate "333" with the following wells:
       | well_location | measured_concentration | measured_volume |
       | C3            | 10                     | 30              |
@@ -35,13 +36,16 @@ Feature: Pick a ng quantity using the Tecan robot
     And I check "Select DN333P for batch"
     And I select "Create Batch" from "Action to perform"
     And I press "Submit"
-    When I follow "Start batch"
-    When I choose "Pick by ng"
+    When I follow "Cherrypick Group By Submission"
+    And the last batch is sorted in row order
     And I fill in the following:
       | Minimum Volume    | 10   |
       | Maximum Volume    | 50   |
       | Quantity to pick  | 1000 |
-    And I select "Pulldown Aliquot" from "Plate Purpose"
+    And I select "Pulldown" from "Plate Purpose"
+    And "Pulldown" plate purpose picks with "Cherrypick::Strategy::Filter::InRowOrder"
+    When I choose "Pick by ng"
+    And I press "Next step"
     And I press "Next step"
     When I press "Release this batch"
     Given the last batch has a barcode of "550000555760"
@@ -60,11 +64,11 @@ Feature: Pick a ng quantity using the Tecan robot
     A;1220000222748;;ABgene 0765;26;;7.0
     D;1220099999705;;ABgene 0800;4;;7.0
     W;
-    A;1220000222748;;ABgene 0765;34;;6.0
-    D;1220099999705;;ABgene 0800;5;;6.0
+    A;1220000222748;;ABgene 0765;34;;50.0
+    D;1220099999705;;ABgene 0800;5;;50.0
     W;
-    A;1220000222748;;ABgene 0765;42;;5.0
-    D;1220099999705;;ABgene 0800;6;;5.0
+    A;1220000222748;;ABgene 0765;42;;20.0
+    D;1220099999705;;ABgene 0800;6;;20.0
     W;
     A;1220000333802;;ABgene 0765;19;;30.0
     D;1220099999705;;ABgene 0800;7;;30.0
@@ -106,12 +110,6 @@ Feature: Pick a ng quantity using the Tecan robot
     A;BUFF;;96-TROUGH;4;;3.0
     D;1220099999705;;ABgene 0800;4;;3.0
     W;
-    A;BUFF;;96-TROUGH;5;;4.0
-    D;1220099999705;;ABgene 0800;5;;4.0
-    W;
-    A;BUFF;;96-TROUGH;6;;5.0
-    D;1220099999705;;ABgene 0800;6;;5.0
-    W;
     A;BUFF;;96-TROUGH;8;;9.0
     D;1220099999705;;ABgene 0800;8;;9.0
     W;
@@ -135,17 +133,17 @@ Feature: Pick a ng quantity using the Tecan robot
     """
     When I follow "Print worksheet for Plate 99999"
     Then I should see the cherrypick worksheet table:
-     | 1                           | 2                           | 
-     | B1        222        v10 b0 | C5        333        v2 b8  | 
-     | B2        222        v9 b1  | C6        333        v2 b8  | 
-     | B3        222        v8 b2  | C7        333        v2 b8  | 
-     | B4        222        v7 b3  | C8        333        v2 b8  | 
-     | B5        222        v6 b4  | D1        333        v10 b0 | 
-     | B6        222        v5 b5  | D2        333        v10 b0 | 
-     | C3        333        v30 b0 | D3        333        v15 b0 | 
-     | C4        333        v1 b9  | D4        333        v20 b0 | 
-     | 1                           | 2                           | 
-     
+     | 1                           | 2                           |
+     | B1        222        v10 b0 | C5        333        v2 b8  |
+     | B2        222        v9 b1  | C6        333        v2 b8  |
+     | B3        222        v8 b2  | C7        333        v2 b8  |
+     | B4        222        v7 b3  | C8        333        v2 b8  |
+     | B5        222        v50 b4 | D1        333        v10 b0 |
+     | B6        222        v20 b5 | D2        333        v10 b0 |
+     | C3        333        v30 b0 | D3        333        v15 b0 |
+     | C4        333        v1 b9  | D4        333        v20 b0 |
+     | 1                           | 2                           |
+
   Scenario: Try to cherrypick where 1 well has no concentration
     Given a plate barcode webservice is available and returns "99999"
     Given I have a plate "222" with the following wells:
@@ -156,7 +154,7 @@ Feature: Pick a ng quantity using the Tecan robot
     And I check "Select DN222J for batch"
     And I select "Create Batch" from "Action to perform"
     And I press "Submit"
-    When I follow "Start batch"
+    When I follow "Cherrypick Group By Submission"
     When I choose "Pick by ng"
     And I fill in the following:
       | Minimum Volume    | 10   |
@@ -164,7 +162,7 @@ Feature: Pick a ng quantity using the Tecan robot
       | Quantity to pick  | 1000 |
     And I press "Next step"
     Then I should see "Missing measured concentration for well DN222J:B2"
-  
+
    Scenario: Try to cherrypick where 1 well has no volume
      Given a plate barcode webservice is available and returns "99999"
      Given I have a plate "222" with the following wells:
@@ -175,7 +173,7 @@ Feature: Pick a ng quantity using the Tecan robot
      And I check "Select DN222J for batch"
      And I select "Create Batch" from "Action to perform"
      And I press "Submit"
-     When I follow "Start batch"
+     When I follow "Cherrypick Group By Submission"
      When I choose "Pick by ng"
      And I fill in the following:
        | Minimum Volume    | 10   |
@@ -183,7 +181,7 @@ Feature: Pick a ng quantity using the Tecan robot
        | Quantity to pick  | 1000 |
      And I press "Next step"
     Then I should see "Missing measured volume for well DN222J:B2"
-     
+
    Scenario Outline: Invalid picking options
      Given I have a plate "222" with the following wells:
        | well_location | measured_concentration | measured_volume |
@@ -193,12 +191,12 @@ Feature: Pick a ng quantity using the Tecan robot
      And I check "Select DN222J for batch"
      And I select "Create Batch" from "Action to perform"
      And I press "Submit"
-     When I follow "Start batch"
-     When I choose "Pick by ng"
+     When I follow "Cherrypick Group By Submission"
      And I fill in the following:
        | Minimum Volume    | <minimum_volume>   |
        | Maximum Volume    | <maximum_volume>   |
-       | Quantity to pick  | <target_ng> |
+       | Quantity to pick  | <target_ng>        |
+     When I choose "Pick by ng"
      And I press "Next step"
      Then I should see "Invalid values typed in"
      Examples:
@@ -210,4 +208,4 @@ Feature: Pick a ng quantity using the Tecan robot
        | 10             | 0.0            | 1.0       |
        | 10             | 5              | 1000      |
 
-    
+

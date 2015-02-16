@@ -1,5 +1,5 @@
 # rake features FEATURE=features/plain/api/samples.feature
-@api @json @sample @allow-rescue @sample_api 
+@api @json @sample @allow-rescue @sample_api
 Feature: Interacting with samples through the API
   # NOTE: 'id' is displayed in the JSON but the JSON comparison step removes this
   Background:
@@ -27,7 +27,7 @@ Feature: Interacting with samples through the API
       {
         "sample": {
           "name": "testing_the_json_api"
-        }
+        }, "lims": "SQSCP"
       }
       """
     Then the HTTP response should be "201 Created"
@@ -68,7 +68,7 @@ Feature: Interacting with samples through the API
           "id": "1",
           "uuid": "00000000-1111-2222-3333-444444444444",
           "sample_tubes": "http://localhost:3000/0_5/samples/00000000-1111-2222-3333-444444444445/sample_tubes"
-        }
+        }, "lims": "SQSCP"
       }
       """
 
@@ -128,7 +128,7 @@ Feature: Interacting with samples through the API
             "new_name_format": true,
 
             "id": 1
-          }
+          }, "lims": "SQSCP"
         }
       ]
       """
@@ -180,7 +180,7 @@ Feature: Interacting with samples through the API
             "new_name_format": true,
 
             "id": 1
-          }
+          }, "lims": "SQSCP"
         }
       ]
       """
@@ -228,11 +228,11 @@ Feature: Interacting with samples through the API
           "new_name_format": true,
 
           "id": 1
-        }
+        }, "lims": "SQSCP"
       }
       """
 
-  Scenario: Retrieving the JSON for a particular sample 
+  Scenario: Retrieving the JSON for a particular sample
     Given I have an active study called "Study for testing the JSON API"
     Given a reference genome table
     And the reference genome for study "Study for testing the JSON API" is "Homo_sapiens (GRCh37_53)"
@@ -282,11 +282,11 @@ Feature: Interacting with samples through the API
           "new_name_format": true,
 
           "id": 1
-        }
+        }, "lims": "SQSCP"
       }
       """
-      
-      
+
+
   Scenario: Given a sample has a supplier name set
     Given I have an active study called "Study for testing the JSON API"
     Given a reference genome table
@@ -338,10 +338,10 @@ Feature: Interacting with samples through the API
           "new_name_format": true,
 
           "id": 1
-        }
+        }, "lims": "SQSCP"
       }
       """
-      
+
 
   Scenario: Updating an existing sample without required fields
     Given the sample named "sample_testing_the_json_api" exists
@@ -352,7 +352,7 @@ Feature: Interacting with samples through the API
       {
         "sample": {
           "name": ""
-        }
+        }, "lims": "SQSCP"
       }
       """
     Then the HTTP response should be "422 Unprocessable Entity"
@@ -373,7 +373,7 @@ Feature: Interacting with samples through the API
       {
         "sample": {
           "reference_genome": "Staphylococcus_aureus (NCTC_8325)"
-        }
+        }, "lims": "SQSCP"
       }
       """
     Then the HTTP response should be "200 OK"

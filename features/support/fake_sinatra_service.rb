@@ -1,14 +1,6 @@
-# We're going to be using mongrel but it outputs stuff to STDERR.  Luckily it doesn't reference the
-# top-level constant, so we can override it here!
-require 'mongrel'
-class Mongrel::HttpServer
-  const_set(:STDERR, Object.new.tap do |null_outputter|
-    def null_outputter.puts(*args, &block)
-      # Do nothing, we don't care
-    end
-  end) unless const_defined?(:STDERR)
-end
-
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class FakeSinatraService
   include Singleton
 
@@ -37,7 +29,7 @@ class FakeSinatraService
       # Ensure that, if we're running in a javascript environment, that the browser has been launched
       # before we start our service.  This ensures that the listening port is not inherited by the fork
       # within the Selenium driver.
-      Before(tags) do |scenario| 
+      Before(tags) do |scenario|
         Capybara.current_session.driver.browser if Capybara.current_driver == Capybara.javascript_driver
         service.instance.start!
       end
@@ -106,9 +98,8 @@ private
   end
 
   class Base < Sinatra::Base
-    # Use Mongrel as the handler as it's quicker to start than Webrick.  It might take a few seconds to
-    # shutdown but Webrick takes ~30 to start so Mongrel wins out.
-    HANDLER, QUIT_HANDLER = Rack::Handler.get('mongrel'), :stop
+    # Use webrick as the handler.
+    HANDLER, QUIT_HANDLER = Rack::Handler.get('webrick'), :shutdown
 
     def self.run!(options={})
       set options

@@ -1,4 +1,11 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 class Order < ActiveRecord::Base
+  class OrderRole < ActiveRecord::Base
+    set_table_name('order_roles')
+  end
+
   module InstanceMethods
     def complete_building
       #nothing just so mixin can use super
@@ -7,7 +14,7 @@ class Order < ActiveRecord::Base
   include InstanceMethods
   include Uuid::Uuidable
   include Submission::AssetGroupBehaviour
-  include Submission::QuotaBehaviour
+  include Submission::ProjectValidation
   include Submission::RequestOptionsBehaviour
   include Submission::AccessionBehaviour
   include ModelExtensions::Order
@@ -18,11 +25,13 @@ class Order < ActiveRecord::Base
 
   # Required at initial construction time ...
   belongs_to :study
-  validates_presence_of :study
+  validates_presence_of :study, :unless => :cross_study_allowed
 
   belongs_to :project
-  validates_presence_of :project
-  has_many :quotas, :through => :project
+  validates_presence_of :project, :unless => :cross_project_allowed
+
+  belongs_to :order_role, :class_name => 'Order::OrderRole'
+  delegate :role, :to => :order_role, :allow_nil => true
 
   belongs_to :user
   validates_presence_of :user
@@ -30,15 +39,42 @@ class Order < ActiveRecord::Base
   belongs_to :workflow, :class_name => 'Submission::Workflow'
   validates_presence_of :workflow
 
+  has_many :requests, :inverse_of => :order
+
   belongs_to :submission, :inverse_of => :orders
   #validates_presence_of :submission
+
+  before_destroy :is_building_submission?
+  after_destroy :on_delete_destroy_submission
+
+  def is_building_submission?
+    self.submission.building?
+  end
+
+  def on_delete_destroy_submission
+    if is_building_submission?
+      # After destroying an order, if it is the last order on it's submission
+      # destroy the submission too.
+      orders = self.submission.orders
+      submission.destroy unless orders.size > 1
+      return true
+    end
+    return false
+  end
 
   serialize :request_types
   validates_presence_of :request_types
 
   serialize :item_options
 
+  validate :assets_are_appropriate
   validate :no_consent_withdrawl
+
+  class AssetTypeError < StandardError
+  end
+
+  def cross_study_allowed; false; end
+  def cross_project_allowed; false; end
 
   def no_consent_withdrawl
     return true unless all_samples.detect(&:consent_withdrawn?)
@@ -46,6 +82,15 @@ class Order < ActiveRecord::Base
     false
   end
   private :no_consent_withdrawl
+
+  def assets_are_appropriate
+    all_assets.each do |asset|
+      errors.add(:asset, "#{asset.name} is not an appropriate type for the request") unless is_asset_applicable_to_type?(first_request_type, asset)
+    end
+    return true if errors.empty?
+    false
+  end
+  private :assets_are_appropriate
 
   def samples
     #naive way
@@ -120,20 +165,19 @@ class Order < ActiveRecord::Base
   delegate :left_building_state?, :to => :submission, :allow_nil => true
 
   def create_request_of_type!(request_type, attributes = {}, &block)
+    em = request_type.extract_metadata_from_hash(request_options)
     request_type.create!(attributes) do |request|
+      request.submission_id               = submission_id
       request.workflow                    = workflow
       request.study                       = study
-      request.initial_project             = project # don't trigger the use_quota which is called below
+      request.initial_project             = project
       request.user                        = user
-      request.submission_id               = submission_id
-      request.request_metadata_attributes = request_type.extract_metadata_from_hash(request_options)
+      request.request_metadata_attributes = em
       request.state                       = initial_request_state(request_type)
-
-      use_quota!(request, true)
+      request.order                       = self
 
       if request.asset.present?
-        # TODO: This should really be an exception but not sure of the side-effects at the moment
-        request.asset  = nil unless is_asset_applicable_to_type?(request_type, request.asset)
+        raise AssetTypeError, "Asset type does not match that expected by request type." unless is_asset_applicable_to_type?(request_type, request.asset)
       end
     end
   end
@@ -173,7 +217,6 @@ class Order < ActiveRecord::Base
       :workflow_id => workflow.id,
       :info_differential => info_differential,
       :customize_partial => customize_partial,
-      :input_field_infos => @input_field_infos,
       :asset_input_methods => asset_input_methods != DefaultAssetInputMethods ? asset_input_methods : nil
     }.reject { |k,v| v.nil?}
   end
@@ -182,31 +225,78 @@ class Order < ActiveRecord::Base
     request_type_ids_list.map { |ids| RequestType.find(ids) }
   end
 
+  def first_request_type
+    RequestType.find(request_types.first)
+  end
+
   def filter_asset_groups(asset_groups)
     return asset_groups
   end
 
+  class CompositeAttribute
+    attr_reader :display_name, :key, :default, :options
+    def initialize(key)
+      @key = key
+    end
+    def add(attribute,metadata)
+      @display_name ||= attribute.display_name
+      @key            = attribute.assignable_attribute_name
+      @default      ||= attribute.find_default(nil,metadata)
+      @kind           = attribute.kind if @kind.nil?||attribute.required?
+      if attribute.selection?
+        new_options   = attribute.selection_options(metadata)
+        @options    ||= new_options if selection?
+        @options     &= new_options
+      end
+    end
+    def kind
+      @kind||FieldInfo::TEXT
+    end
+    def selection?
+      kind==FieldInfo::SELECTION
+    end
+    def to_field_infos
+      values = {
+        :display_name  => display_name,
+        :key           => key,
+        :default_value => default,
+        :kind          => kind
+      }
+      values.update(:selection => options) if self.selection?
+      FieldInfo.new(values)
+    end
+  end
+
   def request_attributes
-    attributes = ActiveSupport::OrderedHash.new
+    attributes = ActiveSupport::OrderedHash.new {|hash,value| hash[value] = CompositeAttribute.new(value) }
     request_types_list.flatten.each do |request_type|
+      mocked = mock_metadata_for(request_type)
       request_type.request_class::Metadata.attribute_details.each do |att|
-        old_attribute = attributes[att.name]
-        attributes[att.name] = att unless old_attribute and old_attribute.required? # required attributes have a priority
+        attributes[att.name].add(att,mocked)
       end
       request_type.request_class::Metadata.association_details.each do |att|
-        attributes[att.name] = att
+        attributes[att.name].add(att,nil)
       end
     end
 
     attributes.values
   end
 
+  def mock_metadata_for(request_type)
+    # We have to create a mocked Metadata to point back at the appropriate request class, as request options
+    # are no longer hardcoded in RequestClasses. This is a bit messy, but the tendrils of the old system went
+    # deep. In hindsight it would probably have been easier to either:
+    # a) Start from scratch
+    # b) Not bother
+    mock_request = request_type.request_class.new(:request_type=>request_type)
+    request_type.request_class::Metadata.new(:request=>mock_request,:owner=>mock_request)
+  end
+
   # Return the list of input fields to edit when creating a new submission
-  # meant to be overidden
-  # the default use request property
-  def input_field_infos()
+  # Unless you are doing something fancy, fall back on the defaults
+  def input_field_infos
     return @input_field_infos if @input_field_infos
-    return compute_input_field_infos
+    return @cache_calc ||= compute_input_field_infos
   end
 
   # we don't call it input_field_infos= because it has a slightly different meanings
@@ -228,8 +318,10 @@ class Order < ActiveRecord::Base
   end
 
 
-  def compute_input_field_infos()
-    request_attributes.uniq.map(&:to_field_info)
+  def compute_input_field_infos
+    request_attributes.uniq.map do |combined|
+      combined.to_field_infos
+    end
   end
   protected :compute_input_field_infos
 
@@ -245,7 +337,20 @@ class Order < ActiveRecord::Base
      PacBioSequencingRequest,
      SequencingRequest,
      *Class.subclasses_of(SequencingRequest)
-    ].include?(RequestType.find(request_types).last.request_class)
+    ].include?(RequestType.find(request_types.last).request_class)
+  end
+
+  def collect_gigabases_expected?
+    input_field_infos.any? {|k| k.key==:gigabases_expected}
+  end
+
+  def add_comment(comment_str, user)
+    update_attribute(:comments, comments + ['<li>', comment_str, '</li>'].join)
+    save!
+
+    requests.where_is_not_a?(TransferRequest).each do |request|
+      request.add_comment(comment_str, user)
+    end
   end
 end
 

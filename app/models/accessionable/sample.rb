@@ -1,4 +1,7 @@
-module Accessionable 
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
+module Accessionable
   class Sample < Base
     attr_reader :common_name, :taxon_id, :links, :tags
     def initialize(sample)
@@ -13,13 +16,13 @@ module Accessionable
       #@__alias    = "#{ submission_id }-#{ sample.id }"
 
       @common_name = sample.sample_metadata.sample_common_name
-      @taxon_id           = sample.sample_metadata.sample_taxon_id
+      @taxon_id    = sample.sample_metadata.sample_taxon_id
 
       # Tags from the 'ENA attributes' property group
       # NOTE[xxx]: This used to also look for 'ENA links' and push them to the 'data[:links]' value, but group was empty
       @links = []
-      @tags  = [ :sample_strain_att, :sample_description ].map do |datum|
-        Tag.new(label_scope, datum, sample.sample_metadata[datum])
+      @tags  = sample.tags.map do |datum|
+        Tag.new(label_scope, datum.name, sample.sample_metadata[datum.tag])
       end
 
       #TODO maybe unify this with the previous loop
@@ -39,7 +42,7 @@ module Accessionable
     def object_id
      @sample.id
     end
-    
+
     def xml
     xml = Builder::XmlMarkup.new
     xml.instruct!
@@ -66,8 +69,8 @@ module Accessionable
     end
 
     def update_accession_number!(user, accession_number)
-      add_updated_event(user, "Sample #{@sample.id}",  @sample) if @accession_number
       @accession_number = accession_number
+      add_updated_event(user, "Sample #{@sample.id}",  @sample) if @accession_number
       @sample.sample_metadata.sample_ebi_accession_number = accession_number
       @sample.save!
     end
@@ -75,6 +78,11 @@ module Accessionable
     def protect?(service)
       service.sample_visibility(@sample) == AccessionService::Protect
     end
+
+    def released?
+      @sample.released?
+    end
+
   end
   private
 

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2013,2014 Genome Research Ltd.
 # The classes within this namespace are responsible for defining the abilities of the user and the application
 # that are accessing the API.
 #
@@ -81,13 +84,13 @@ module Core::Abilities
     include ::CanCan::Ability
     extend ClassMethods
 
-    recorder_helper(:registered)
+    recorder_helper(:full)
     recorder_helper(:unregistered)
 
     def initialize(request)
       @request = request
       abilitise(:unregistered)
-      abilitise(:registered) if registered?
+      abilitise(privilege) if registered?
     end
 
     def abilitise(name)
@@ -131,6 +134,18 @@ module Core::Abilities
   end
 
   class Application < Base
+
+    recorder_helper(:tag_plates)
+
+    def initialize(request)
+      @api_application = ApiApplication.find_by_key(request.authorisation_code)
+      super
+    end
+
+    def privilege
+      @api_application.privilege.to_sym
+    end
+
     unregistered do
       # The API is designed to be read-only, at least.
       can(:read, :all)
@@ -141,13 +156,19 @@ module Core::Abilities
     end
 
     # Registered applications can manage all objects that allow it and can have unauthenicated users.
-    registered do
+    full do
       can(:manage, :all)
       can(:authenticate, :all)
     end
 
+    # State changes only
+    tag_plates do
+       can(:create, [ Endpoints::StateChanges::Model ])
+       can(:authenticate, :all)
+    end
+
     def registered?
-      @request.authorisation_code == configatron.api.authorisation_code
+      @api_application.present?
     end
     private :registered?
 
@@ -159,7 +180,7 @@ module Core::Abilities
       if single_sign_on_cookie.blank? and cannot?(:authenticate, :nil)
         Core::Service::Authentication::UnauthenticatedError.no_cookie!
       elsif not single_sign_on_cookie.blank?
-        user = ::User.authenticate_by_sanger_cookie(single_sign_on_cookie) or ::User.find_by_api_key(single_sign_on_cookie) or Core::Service::Authentication::UnauthenticatedError.unauthenticated!
+        user = ::User.find_by_api_key(single_sign_on_cookie) or Core::Service::Authentication::UnauthenticatedError.unauthenticated!
         @request.service.instance_variable_set(:@user, user)
       end
 

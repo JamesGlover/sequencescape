@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2014 Genome Research Ltd.
 class ReceptionsController < ApplicationController
   before_filter :find_asset_by_id, :only => [:print, :snp_register]
 
@@ -45,7 +48,7 @@ class ReceptionsController < ApplicationController
       else
         @asset = Asset.find_from_machine_barcode(barcode)
       end
-      
+
 
       if @asset.nil?
         @generic_asset = Asset.find_by_barcode(id)
@@ -81,35 +84,37 @@ class ReceptionsController < ApplicationController
   end
 
   def confirm_reception
-    location = Location.find(params[:asset][:location_id])
-    assets = params[:asset_id]
-    @errors = []
-    asset_count  = 0
+    ActiveRecord::Base.transaction do
+      location = Location.find(params[:asset][:location_id])
+      assets = params[:asset_id]
+      @errors = []
+      asset_count  = 0
 
-    assets.each do |index,asset_id|
-      begin
-        @asset = Asset.find(asset_id)
-        @asset.update_attributes(params[:asset])
-        asset_count += 1
-        @asset.events.create_scanned_into_lab!(location)
-      rescue
-        @errors << "Sample not found with asset ID #{asset_id}"
+      assets.each do |index,asset_id|
+        begin
+          @asset = Asset.find(asset_id)
+          @asset.update_attributes(params[:asset])
+          asset_count += 1
+          @asset.events.create_scanned_into_lab!(location)
+        rescue
+          @errors << "Sample not found with asset ID #{asset_id}"
+        end
       end
-    end
 
-    if @errors.size > 0
-      respond_to do |format|
-        flash[:error] = "Assets not found"
-        format.html { render :action => "reception" }
-        format.xml  { render :xml  => @errors, :status => :unprocessable_entity }
-        format.json { render :json => @errors, :status => :unprocessable_entity }
-      end
-    else
-      respond_to do |format|
-        flash[:notice] = "Successfully updated #{asset_count} samples"
-        format.html { render :action => "reception" }
-        format.xml  { head :ok }
-        format.json { head :ok }
+      if @errors.size > 0
+        respond_to do |format|
+          flash[:error] = "Assets not found"
+          format.html { render :action => "reception" }
+          format.xml  { render :xml  => @errors, :status => :unprocessable_entity }
+          format.json { render :json => @errors, :status => :unprocessable_entity }
+        end
+      else
+        respond_to do |format|
+          flash[:notice] = "Successfully updated #{asset_count} samples"
+          format.html { render :action => "reception" }
+          format.xml  { head :ok }
+          format.json { head :ok }
+        end
       end
     end
   end
@@ -127,7 +132,7 @@ class ReceptionsController < ApplicationController
         @snp_plates << plate
       end
     end
-    
+
     if @errors.size > 0
       respond_to do |format|
         format.html { render :action => "snp_import" }
@@ -144,17 +149,19 @@ class ReceptionsController < ApplicationController
   end
 
   def import_from_snp
-    respond_to do |format|
-      if Plate.create_plates_with_barcodes(params)
-        flash[:notice] = "Plates queued to be imported"
-        format.html { redirect_to :action => "snp_import" }
-        format.xml  { head :ok }
-        format.json { head :ok }
-      else
-        flash[:errors] = "Plates could not be created"
-        format.html { render :action => "snp_import" }
-        format.xml  { render :xml  => @errors, :status => :unprocessable_entity }
-        format.json { render :json => @errors, :status => :unprocessable_entity }
+    ActiveRecord::Base.transaction do
+      respond_to do |format|
+        if Plate.create_plates_with_barcodes(params)
+          flash[:notice] = "Plates queued to be imported"
+          format.html { redirect_to :action => "snp_import" }
+          format.xml  { head :ok }
+          format.json { head :ok }
+        else
+          flash[:errors] = "Plates could not be created"
+          format.html { render :action => "snp_import" }
+          format.xml  { render :xml  => @errors, :status => :unprocessable_entity }
+          format.json { render :json => @errors, :status => :unprocessable_entity }
+        end
       end
     end
   end

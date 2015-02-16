@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 class MetadataMigration < ActiveRecord::Migration
   class Property < ActiveRecord::Base
     class Definition < ActiveRecord::Base
@@ -48,10 +51,10 @@ class MetadataMigration < ActiveRecord::Migration
         objects = records.map do |record|
           metadata_class.new(
             properties.inject({ self.reference_id.to_s => record.id }) do |attributes,(property,definition)|
-              returning(attributes) do 
-                attributes[ property.to_s ] = record.properties.detect { |p| 
-                  p.property_definition_id == definition.id 
-                }.try(:value) 
+              returning(attributes) do
+                attributes[ property.to_s ] = record.properties.detect { |p|
+                  p.property_definition_id == definition.id
+                }.try(:value)
               end
             end
           )

@@ -14,6 +14,7 @@ Feature: Access users through the API
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
   @read
   Scenario: Reading the JSON for a user UUID
@@ -43,9 +44,6 @@ Feature: Access users through the API
           "has_a_swipecard_code": false,
 
           "uuid": "00000000-1111-2222-3333-444444444444"
-        },
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
         }
       }
       """
@@ -71,6 +69,7 @@ Feature: Access users through the API
             "read": "http://www.example.com/api/1/00000000-1111-2222-3333-444444444444",
             "update": "http://www.example.com/api/1/00000000-1111-2222-3333-444444444444"
           }
+        }
       }
       """
 

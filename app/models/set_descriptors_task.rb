@@ -1,10 +1,13 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class SetDescriptorsTask < Task
-  
+
   def render_task(workflows_controller, params)
     super
     workflows_controller.render_set_descriptors_task(self, params)
   end
-  
+
 
   def do_task(workflows_controller, params)
     workflows_controller.do_set_descriptors_task(self,params)
@@ -18,5 +21,5 @@ class SetDescriptorsTask < Task
     end
     return subassets.map { |a| generate_events_from_descriptors(a) }
   end
-  
+
 end

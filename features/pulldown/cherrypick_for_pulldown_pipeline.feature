@@ -3,9 +3,10 @@ Feature: Cherrypicking for Pulldown pipeline
 
   Background:
     Given I am a "administrator" user logged in as "user"
+    And a robot exists
 
   Scenario: All parts of a submission across multiple plates must be in batch
-    Given I have a "Cherrypicking for Pulldown - Pulldown Multiplex Library Preparation - HiSeq Paired end sequencing" submission with 2 plates
+    Given I have a "Illumina-A - Cherrypick for pulldown - Pulldown WGS - HiSeq Paired end sequencing" submission with 2 plates
     Given I am on the show page for pipeline "Cherrypicking for Pulldown"
     When I check "Select DN222J for batch"
     And I press "Submit"
@@ -17,10 +18,10 @@ Feature: Cherrypicking for Pulldown pipeline
 
   Scenario: Dont allow more than 96 wells in a batch
     Given I have a project called "Test project"
-    And project "Test project" has enough quotas
+
     Given I have an active study called "Test study"
     And I have an active study called "Study A"
-  
+
     Given the CherrypickForPulldownPipeline pipeline has a max batch size of 2
     Given plate "1234567" with 2 samples in study "Test study" has a "Cherrypicking for Pulldown" submission for cherrypicking
     Given plate "222" with 1 samples in study "Study A" has a "Cherrypicking for Pulldown" submission for cherrypicking
@@ -36,16 +37,16 @@ Feature: Cherrypicking for Pulldown pipeline
 
  Scenario: Cherrypick for pulldown from 2 submissions from different studies and view worksheet
    Given I have a project called "Test project"
-   And project "Test project" has enough quotas
+
    Given I have an active study called "Test study"
    And I have an active study called "Study A"
    And the "96 Well Plate" barcode printer "xyz" exists
- 
+
    Given plate "1234567" with 8 samples in study "Test study" has a "Cherrypicking for Pulldown" submission for cherrypicking
    Given plate "222" with 8 samples in study "Study A" has a "Cherrypicking for Pulldown" submission for cherrypicking
    Given plate "1234567" has nonzero concentration results
    Given plate "222" has nonzero concentration results
-   
+
    Given I am on the show page for pipeline "Cherrypicking for Pulldown"
    When I check "Select DN1234567T for batch"
    And I check "Select DN222J for batch"
@@ -53,14 +54,15 @@ Feature: Cherrypicking for Pulldown pipeline
    Then I should see "This batch belongs to pipeline: Cherrypicking for Pulldown"
    And I should see "Cherrypick Group By Submission"
    Given a plate barcode webservice is available and returns "99999"
-   When I follow "Start batch"
+   When I follow "Cherrypick Group By Submission"
+   And the last batch is sorted in row order
    When I fill in "Volume Required" with "13"
+   And I select "WGS stock DNA" from "Plate Purpose"
    And I fill in "Concentration Required" with "50"
-   And I select "Pulldown Aliquot" from "Plate Purpose"
+   And I press "Next step"
    And I press "Next step"
    When I press "Release this batch"
    Then I should see "Batch released!"
-   And I should see "Pulldown Aliquot"
    Given the last batch has a barcode of "550000555760"
    Then the downloaded tecan file for batch "550000555760" and plate "1220099999705" is
    """
@@ -168,5 +170,5 @@ Feature: Cherrypicking for Pulldown pipeline
     | A7        1234567        v3 b10  | A7        222        v3 b10 |
     | A8        1234567        v3 b10  | A8        222        v3 b10 |
     | 1                                | 2                           |
-                                                                      
+
 

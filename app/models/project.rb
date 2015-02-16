@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class Project < ActiveRecord::Base
   include Api::ProjectIO::Extensions
   include ModelExtensions::Project
@@ -11,9 +14,6 @@ class Project < ActiveRecord::Base
   extend EventfulRecord
   has_many_events
   has_many_lab_events
-  
-  acts_as_audited :on => [:destroy, :update]
-  
 
   aasm_column :state
   aasm_initial_state :pending
@@ -33,7 +33,6 @@ class Project < ActiveRecord::Base
     transitions :to => :inactive, :from => [:pending, :active]
   end
 
-  has_many :quotas 
   has_many :billing_events
   has_many :roles, :as => :authorizable
   has_many :orders
@@ -44,63 +43,9 @@ class Project < ActiveRecord::Base
   validates_presence_of :name
   validates_uniqueness_of :name, :on => :create, :message => "already in use (#{self.name})"
 
-  named_scope :for_search_query, lambda { |query|
+  named_scope :for_search_query, lambda { |query,with_includes|
     { :conditions => [ 'name LIKE ? OR id=?', "%#{query}%", query ] }
   }
-
-
-  def used_quota(request_type)
-    quota_for(request_type).try(:used) || 0
-  end
-
-  def has_quota?(request_type, number)
-    return true unless self.enforce_quotas?  # Quotas not being enforced so assume it does
-    self.actionable? && (self.projected_remaining_quota(request_type) >= number)
-  end
-
-  def projected_remaining_quota(request_type)
-    quota_for(request_type).try(:remaining) || 0
-  end
-
-
-  def quota_limit_for(request_type)
-    quota_for(request_type).try(:limit) || 0
-  end
-
-  alias total_quota quota_limit_for
-
-  def quota_for(request_type)
-    request_type_id = request_type.is_a?(RequestType) ? request_type.id  : request_type
-    self.quotas.find_by_request_type_id(request_type_id)
-  end
-
-  # create a quota if missing
-  def quota_for!(request_type)
-    quota = quota_for(request_type)
-    quota || quotas.create(:request_type_id => request_type.is_a?(RequestType) ? request_type.id : request_type,
-      :limit => 0,
-      :preordered_count => 0)
-  end
-
-  def book_quota(request_type,number=1)
-    quota_for!(request_type).book_request!(number, enforce_quotas?) 
-  end
-
-  def unbook_quota(request_type, number=1)
-    quota_for!(request_type).unbook_request!(number)
-  end
-
-  def use_quota!(request, unbook=true)
-      quota_for!(request.request_type_id).add_request!(request, unbook, enforce_quotas?)
-  end
-
-  # Frees remaining quotas on the current project
-  # Sets quota limit to the used quota level on each request type
-  def quota_limit_equals_quota_used!
-    self.quotas.each do |quota|
-      quota.update_limit_to_used!
-    end
-  end
 
   def ended_billable_lanes(ended)
     events = []
@@ -146,57 +91,6 @@ class Project < ActiveRecord::Base
     billable_events_between(from, to).size
   end
 
-  def new_quotas
-    RequestType.all.each do |request_type|
-      self.quotas.build(:limit => 0, :request_type => request_type)
-    end
-  end
-
-  def new_quotas=(quotas=[])
-    quotas.each do |k, v|
-      request_type = RequestType.find(k) unless k.empty?
-      self.quotas.build(:limit => v, :request_type => request_type)
-    end
-  end
-
-  def compare_quotas(params_quotas)
-    if params_quotas
-      params_quotas.each do |key, limit|
-        if quota = Quota.find_by_project_id_and_request_type_id(self.id, key)
-          if quota.limit.to_i != limit.to_i
-            return false
-          end
-        elsif limit.to_i > 0
-          return false
-        end
-      end
-    elsif self.quotas.size > 0
-      return false
-    else # self.quota.size == 0 && params_quotas == nil
-      return true
-    end # Quotas are identical
-    true
-  end
-
-  def add_quotas(params_quotas)
-    if params_quotas
-      params_quotas.each do |key, limit|
-        if quota = Quota.find_by_project_id_and_request_type_id(self.id, key)
-          quota.limit = limit.to_i
-          quota.save
-        elsif limit.to_i > 0
-          self.quotas << Quota.new(:limit => limit, :request_type_id => key)
-        end
-      end
-    end
-  end
-
-  def set_available_quotas!(request_type, number)
-    quota = quota_for!(request_type)
-    quota.limit += number+quota.used
-    quota.save!
-  end
-  
   def owners
     role = self.roles.detect{|r| r.name == "owner" }
     unless role.nil?
@@ -210,7 +104,7 @@ class Project < ActiveRecord::Base
     owners_ = owners
     owners_ and owners_.first
   end
-  
+
   def manager
     role = self.roles.detect{|r| r.name == "manager"}
     unless role.nil?
@@ -219,14 +113,26 @@ class Project < ActiveRecord::Base
       nil
     end
   end
-  
+
   def actionable?
     self.project_metadata.budget_division.name != 'Unallocated'
   end
-  
+
+  def submittable?
+    return true if project_metadata.project_funding_model.present?
+    errors.add_to_base("No funding model specified")
+    false
+  end
+
+  def r_and_d?
+    self.project_metadata.budget_division.name == configatron.r_and_d_division
+  end
+
   def sequencing_budget_division
     self.project_metadata.budget_division.name
   end
+
+  delegate :project_cost_code, :to=> :project_metadata
 
   PROJECT_FUNDING_MODELS = [
     '',
@@ -243,7 +149,7 @@ class Project < ActiveRecord::Base
     # that doesn't.
     include ProjectManager::Associations
     include BudgetDivision::Associations
-    
+
     attribute(:project_cost_code, :required => true)
     attribute(:funding_comments)
     attribute(:collaborators)

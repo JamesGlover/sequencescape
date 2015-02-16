@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2014 Genome Research Ltd.
 module Request::Statistics
   module DeprecatedMethods
     # TODO - Move these to named scope on Request
@@ -27,6 +30,15 @@ module Request::Statistics
 
     def cancelled_requests(request_type)
       self.requests.request_type(request_type).cancelled.count
+    end
+    def total_requests_report
+      Hash[
+        self.requests.find(
+          :all,
+          :select=>'request_type_id,count(requests.id) AS total',
+          :group=>'request_type_id'
+          ).map {|rt| [rt.request_type.id,rt.total] }
+      ]
     end
   end
 
@@ -95,7 +107,7 @@ module Request::Statistics
   def asset_statistics(options = {})
     counters = self.all(options.merge(:select => 'asset_id,request_type_id,state, count(*) as total', :group => 'asset_id, request_type_id, state'))
     tabulated = Hash.new { |h,k| h[k] = Summary.new }
-    tabulated.tap do 
+    tabulated.tap do
       counters.each do |asset_request_type_state_count|
         tabulated[asset_request_type_state_count.asset_id.to_i][asset_request_type_state_count.request_type_id.to_i][asset_request_type_state_count.state] = asset_request_type_state_count.total.to_i
       end
@@ -105,7 +117,7 @@ module Request::Statistics
   def sample_statistics(options = {})
     counters = self.join_asset.all(options.merge(:select => 'sample_id,request_type_id,state,count(*) as total', :group => 'sample_id, request_type_id, state'))
     tabulated = Hash.new { |h,k| h[k] = Summary.new }
-    tabulated.tap do 
+    tabulated.tap do
       counters.each do |sample_request_type_state_count|
         tabulated[sample_request_type_state_count.sample_id.to_i][sample_request_type_state_count.request_type_id.to_i][sample_request_type_state_count.state] = sample_request_type_state_count.total.to_i
       end

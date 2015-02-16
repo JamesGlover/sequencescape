@@ -1,7 +1,10 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 # Creates all of the Map instances in the DB for all know plate sizes.  This assumes a horizontal orientation
 # of the plate, i.e.:
 #
-#   1 2 3 4 5 6 7 8 9 
+#   1 2 3 4 5 6 7 8 9
 # A . . . . . . . . .
 # B . . . . . . . . .
 # C . . . . . . . . .
@@ -13,8 +16,9 @@ map_data = []
     details = (0...plate_size).map do |index|
       {
         :location_id => index + 1,
-        :description => Map.horizontal_plate_position_to_description(index+1, plate_size),
-        :asset_size  => plate_size
+        :description => Map::Coordinate.horizontal_plate_position_to_description(index+1, plate_size),
+        :asset_size  => plate_size,
+        :asset_shape => Map::AssetShape.find_by_name('Standard')
       }
     end
 
@@ -28,9 +32,9 @@ map_data = []
 end
 
 COLUMNS = [:location_id, :description, :asset_size, :column_order, :row_order]
-Map.import(
-  COLUMNS,
-  map_data.map { |details| COLUMNS.map { |k| details[k] } },
-  :validate => false
-)
 
+map_data.each do |details|
+  Map.create(details)
+end
+
+Map.create!(FluidigmHelper.map_configuration_for(6,16,Map::AssetShape.find_by_name('Fluidigm96').id) + FluidigmHelper.map_configuration_for(12,16,Map::AssetShape.find_by_name('Fluidigm192').id))

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2013 Genome Research Ltd.
 module AuthenticatedSystem
   protected
     # Returns true or false if the user is logged in.
@@ -64,13 +67,6 @@ module AuthenticatedSystem
         else
           self.current_user = user
         end
-      elsif cookies[:WTSISignOn]
-        user = User.authenticate_by_sanger_cookie(cookies[:WTSISignOn])
-        if user.nil?
-          self.current_user = :false
-        else
-          self.current_user = user
-        end
       end
 
       respond_to do |accepts|
@@ -112,21 +108,35 @@ module AuthenticatedSystem
         end
       end
     end
-    
+
+    def lab_manager_login_required
+      setup_current_user
+      respond_to do |accepts|
+        accepts.html   { logged_in? && authorized? && current_user.lab_manager? ? true : access_denied }
+        if configatron.disable_api_authentication == true
+          accepts.xml  { true }
+          accepts.json { true }
+        else
+          accepts.xml  { logged_in? && authorized? && current_user.lab_manager? ? true : access_denied }
+          accepts.json { logged_in? && authorized? && current_user.lab_manager? ? true : access_denied }
+        end
+      end
+    end
+
     def slf_manager_login_required
       setup_current_user
       respond_to do |accepts|
         accepts.html   { logged_in? && authorized? && (current_user.slf_manager? || current_user.administrator? ) ? true : access_denied }
       end
     end
-    
+
     def slf_gel_login_required
       setup_current_user
       respond_to do |accepts|
         accepts.html   { logged_in? && authorized? && (current_user.slf_manager? || current_user.slf_gel? || current_user.administrator? ) ? true : access_denied }
       end
     end
-    
+
     def setup_current_user
       username, passwd = get_auth_data
       self.current_user ||= User.authenticate(username, passwd) || :false if username && passwd

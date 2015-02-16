@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 module Core::Endpoint::BasicHandler::Actions
   class UnsupportedAction < StandardError
     def initialize(action, request)
@@ -19,7 +22,10 @@ module Core::Endpoint::BasicHandler::Actions
     :create => 201,
     :read   => 200,
     :update => 200,
-    :delete => 200
+    :delete => 200,
+
+    :create_from_file => 201,
+    :update_from_file => 200
   }
 
   ACTIONS_WITH_SUCCESS_CODES.each do |action, status_code|
@@ -35,7 +41,7 @@ module Core::Endpoint::BasicHandler::Actions
         request.response do |response|
           response.status(#{status_code})
           _#{action}(request, response) do |handler, object|
-            response.handled_by = handler
+            response.handled_by ||= handler
             response.object     = object
           end
         end
@@ -93,4 +99,12 @@ module Core::Endpoint::BasicHandler::Actions
     }, __FILE__, line)
   end
   private :declare_action
+
+  def generate_json_actions(object, options)
+    options[:stream].block('actions') do |result|
+      actions(object, options).each do |name, url|
+        result.attribute(name, url)
+      end
+    end
+  end
 end

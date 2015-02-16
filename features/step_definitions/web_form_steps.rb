@@ -1,20 +1,23 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 ########################################################################################
 # TODO: Remove these from the features and replace them with the new versions
 ########################################################################################
 Then /^the field labeled "([^"]+)" should contain "([^"]*)"$/ do |label, value|
-  Then %Q{the "#{ label }" field should contain "#{ value }"}
+  step %Q{the "#{ label }" field should contain "#{ value }"}
 end
 
 When /^I fill in the field labeled "([^"]+)" with "([^"]*)"$/ do |label, value|
-  When %Q{I fill in "#{ label }" with "#{ value }"}
+  step(%Q{I fill in "#{ label }" with "#{ value }"})
 end
 
 Then /^the checkbox labeled "([^"]+)" should not be checked$/ do |label|
-  Then %Q{the "#{ label }" checkbox should not be checked}
+  step %Q{the "#{ label }" checkbox should not be checked}
 end
 
 Then /^the checkbox labeled "([^"]+)" should be checked$/ do |label|
-  Then %Q{the "#{ label }" checkbox should be checked}
+  step %Q{the "#{ label }" checkbox should be checked}
 end
 
 Then /^option "([^"]*)" in the menu labeled "([^"]*)" should be selected$/ do |arg1, arg2|
@@ -41,9 +44,9 @@ end
 Then /^I should see the following (required )?fields:$/ do |required,table|
   table.hashes.each do |field|
     if field['type'].include?('/')
-      Then %Q{I should see the #{ required }select field "#{ field['field'] }" with options "#{ field['type'] }"}
-    else 
-      Then %Q{I should see the #{ required }#{ field['type'] } field "#{ field['field'] }"}
+      step %Q{I should see the #{ required }select field "#{ field['field'] }" with options "#{ field['type'] }"}
+    else
+      step %Q{I should see the #{ required }#{ field['type'] } field "#{ field['field'] }"}
     end
   end
 end

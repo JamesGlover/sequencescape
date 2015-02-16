@@ -1,76 +1,63 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 # Every request "moving" an asset from somewhere to somewhere else without really transforming it
 # (chemically) as, cherrypicking, pooling, spreading on the floor etc
 class TransferRequest < Request
-  # Destroy all evidence of the statemachine we've inherited!  Ugly, but it works!
-  instance_variable_set(:@aasm, nil)
-  AASM::StateMachine[self] = AASM::StateMachine.new('')
 
-  TRANSITIONS = {
-    'started' => {
-      'passed' => :pass!,
-      'cancelled' => :cancel!,
-      'failed' => :fail!
-    },
-    'pending' =>{
-      'started' => :start!,
-      'passed' => :pass!,
-      'failed' => :fail!,
-      'pending' => :detach!,
-      'cancelled' => :cancel_before_started!
-    },
-    'passed' => {
-      'failed' => :fail!
-    },
-    'cancelled' => {
-    },
-    'failed' => {
-      'passed' => :pass!
-    },
-    'hold' => {
-    },
-    'blocked' => {
-    }
-  }
+  module InitialTransfer
+    def perform_transfer_of_contents
+      target_asset.aliquots << asset.aliquots.map do |a|
+        aliquot = a.clone
+        aliquot.study = outer_request.initial_study
+        aliquot.project = outer_request.initial_project
+        aliquot
+      end unless asset.failed? or asset.cancelled?
+    end
+    private :perform_transfer_of_contents
 
-  # The statemachine for transfer requests is more promiscuous than normal requests, as well
-  # as being more concise as it has less states.
-  aasm_column :state
-  aasm_state :pending
-  aasm_state :started
-  aasm_state :failed
-  aasm_state :passed
-  aasm_state :cancelled
-  aasm_initial_state :pending
-
-  # State Machine events
-  aasm_event :start do
-    transitions :to => :started, :from => [:pending]
+    def outer_request
+      asset.requests.detect{|r| r.is_a?(Request::LibraryCreation)}
+    end
   end
 
-  aasm_event :pass do
-    transitions :to => :passed, :from => [:pending, :started, :failed]
-  end
 
-  aasm_event :fail do
-    transitions :to => :failed, :from => [:pending, :started, :passed]
-  end
+  redefine_state_machine do
+    # The statemachine for transfer requests is more promiscuous than normal requests, as well
+    # as being more concise as it has less states.
+    aasm_column :state
+    aasm_state :pending
+    aasm_state :started
+    aasm_state :failed,	    :enter => :on_failed
+    aasm_state :passed
+    aasm_state :cancelled,  :enter => :on_cancelled
+    aasm_initial_state :pending
 
-  aasm_event :cancel do
-    transitions :to => :cancelled, :from => [:started]
-  end
+    # State Machine events
+    aasm_event :start do
+      transitions :to => :started, :from => [:pending]
+    end
 
-  aasm_event :cancel_before_started do
-    transitions :to => :cancelled, :from => [:pending]
-  end
+    aasm_event :pass do
+      transitions :to => :passed, :from => [:pending, :started, :failed]
+    end
 
-  aasm_event :detach do
-    transitions :to => :pending, :from => [:pending]
-  end
+    aasm_event :fail do
+      transitions :to => :failed, :from => [:pending, :started, :passed]
+    end
 
-  def transition_method_to(target_state)
-    TransferRequest::TRANSITIONS[state][target_state]
+    aasm_event :cancel do
+      transitions :to => :cancelled, :from => [:started, :passed]
+    end
+
+    aasm_event :cancel_before_started do
+      transitions :to => :cancelled, :from => [:pending]
+    end
+
+    aasm_event :detach do
+      transitions :to => :pending, :from => [:pending]
+    end
   end
-  private :transition_method_to
 
   # Ensure that the source and the target assets are not the same, otherwise bad things will happen!
   validate do |record|
@@ -92,4 +79,16 @@ class TransferRequest < Request
     target_asset.aliquots << asset.aliquots.map(&:clone) unless asset.failed? or asset.cancelled?
   end
   private :perform_transfer_of_contents
+
+  def on_failed
+    self.target_asset.remove_downstream_aliquots
+  end
+  private :on_failed
+
+  alias_method :on_cancelled, :on_failed
+
+  def remove_unused_assets
+    # Don't remove assets for transfer requests as they are made on creation
+  end
+
 end

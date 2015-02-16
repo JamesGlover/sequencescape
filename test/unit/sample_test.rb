@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2014 Genome Research Ltd.
 require "test_helper"
 
 class Sample
@@ -12,6 +15,23 @@ class SampleTest < ActiveSupport::TestCase
     should_have_many :study_samples
     should_have_many :studies, :through => :study_samples
 
+    context "when used in older assets" do
+
+      setup do
+        @sample = Factory :sample
+        @tube_a = Factory :empty_library_tube
+        @tube_b = Factory :empty_sample_tube
+
+        @tube_b.aliquots.create!(:sample=>@sample)
+        @tube_a.aliquots.create!(:sample=>@sample)
+      end
+
+      should "have the first tube it was added to as a primary asset" do
+        assert_equal @sample.primary_receptacle, @tube_b
+      end
+
+    end
+
     context "move a Sample" do
       setup do
         @study_from = Factory :study
@@ -23,7 +43,7 @@ class SampleTest < ActiveSupport::TestCase
         @current_user = Factory :user
 
         @asset_1 = Factory(:empty_sample_tube, :name => @sample_from.name).tap { |sample_tube| sample_tube.aliquots.create!(:sample => @sample_from) }
-        
+
         @asset_group = Factory :asset_group, :name => "not mx"
         @asset_group_asset = Factory :asset_group_asset, :asset_id => @asset_1.id, :asset_group_id => @asset_group.id
 
@@ -51,7 +71,7 @@ class SampleTest < ActiveSupport::TestCase
           @asset_from.aliquots.each {|a| a.study= @study_from}
           @asset_from.save!
 
-          @sample_to = Factory :sample         
+          @sample_to = Factory :sample
           @asset_to = Factory(:empty_sample_tube, :name => @sample_to.name).tap { |sample_tube| sample_tube.aliquots.create!(:sample => @sample_to) }
           @asset_group_to_new = Factory :asset_group, :name => "Asset_Sample"
           @asset_group_asset_to = Factory :asset_group_asset, :asset_id => @asset_to.id, :asset_group_id => @asset_group_to_new.id
@@ -68,7 +88,7 @@ class SampleTest < ActiveSupport::TestCase
           @result = @sample_from_ok.move(@study_from, @study_to, @asset_group_to_new, @new_assets_name, @current_user, "0")
           assert @asset_from.aliquots(true).all? {|a| a.study  == @study_to}
         end
-      end      
+      end
 
       context  "With Study_from with submission and New assets or assets without submission" do
         setup do
@@ -103,12 +123,12 @@ class SampleTest < ActiveSupport::TestCase
           #the assets of submission_from is empty. @submission_from_1
           #@submission_from_1.reload
           #assert_equal [], @submission_from_1.assets
-          
+
           #check link about AssetGroup
           assert_equal @asset_group_to_new.id, @sample_from_ok.assets.first.asset_group_assets.first.asset_group_id
         end
-      end      
-    
+      end
+
 
       context  "With 2 submissions, with same requests" do
         setup do
@@ -124,7 +144,7 @@ class SampleTest < ActiveSupport::TestCase
                               :name => @sample_to.name).tap { |sample_tube| sample_tube.aliquots.create!(:sample => @sample_to) }
           @asset_group_to_new = Factory :asset_group, :name => "Asset_Sample_To"
           @asset_group_asset_to = Factory :asset_group_asset, :asset_id => @asset_to.id, :asset_group_id => @asset_group_to_new.id
-          
+
           @request_type_ids_both = [@request_type_2.id, @request_type_3.id]
           @item = Factory :item
           @submission_from_1 = Factory::submission :study => @study_from, :workflow => @workflow, :assets => [ @asset_from ],
@@ -151,7 +171,7 @@ class SampleTest < ActiveSupport::TestCase
           #check link about AssetGroup
           assert_equal @asset_group_to_new.id, @sample_from_ok.assets.first.asset_group_assets.first.asset_group_id
         end
-      end      
+      end
     end
 
     context "#accession_number?" do

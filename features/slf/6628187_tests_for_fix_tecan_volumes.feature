@@ -1,10 +1,10 @@
 @javascript @barcode-service @cherrypicking @gwl
 Feature: The Tecan file has the wrong buffer volumes, defaulting to 13 total volume
-  
-  Background:
+
+  Scenario: volume of 65 is required
     Given I am a "administrator" user logged in as "user"
     Given I have a project called "Test project"
-    And project "Test project" has enough quotas
+
     Given I have an active study called "Test study"
     Given I have a plate "1" in study "Test study" with 2 samples in asset group "Plate asset group"
     Given I have a plate "10" in study "Test study" with 2 samples in asset group "Plate asset group"
@@ -22,15 +22,12 @@ Feature: The Tecan file has the wrong buffer volumes, defaulting to 13 total vol
     Given plate "1220000010734" has concentration and volume results
     Given plate "1220000001831" has concentration and volume results
     Given plate "1220000005877" has concentration and volume results
-  	When I follow "Start batch"
+  	When I follow "Select Plate Template"
   	When I select "testtemplate" from "Plate Template"
+  	When I select "Infinium 670k" from "Output plate purpose"
 
-
-  Scenario: volume of 65 is required
     When I fill in "Volume Required" with "65"
     When I press "Next step"
-  	When I press "Next step"
-  	When I select "Infinium 670k" from "Plate Purpose"
   	And I press "Next step"
   	When I select "Genotyping freezer" from "Location"
   	And I press "Next step"

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class ContainerAssociation < ActiveRecord::Base
   #We don't define the class, so will get an error if being used directly
   # in fact , the class need to be definend otherwise, eager loading through doesn't work
@@ -11,7 +14,7 @@ class ContainerAssociation < ActiveRecord::Base
   private :ensure_position_copied
 
   # NOTE: This was originally on the content asset but this causes massive performance issues.
-  # It causes the plate and it's metadata to be loaded for each well, which would be cached if 
+  # It causes the plate and it's metadata to be loaded for each well, which would be cached if
   # it were not for inserts/updates being performed.  I'm disabling this as it should be caught
   # in tests and we've not seen it in production.
   #
@@ -38,7 +41,8 @@ class ContainerAssociation < ActiveRecord::Base
         class_eval(%Q{
           def import(records)
             ActiveRecord::Base.transaction do
-              #{class_name}.import(records)
+
+              records.map(&:save!)
 
               sub_query = #{class_name}.send(:construct_finder_sql, :select => 'id, map_id', :order => 'id DESC')
               records   = #{class_name}.connection.select_all(%Q{SELECT id, map_id FROM (\#{sub_query}) AS a LIMIT \#{records.size}})
@@ -46,20 +50,25 @@ class ContainerAssociation < ActiveRecord::Base
               post_import(records.map { |r| [proxy_owner.id, r['id']] })
             end
           end
-
-          def attach(records)
-            ActiveRecord::Base.transaction do
-              links_data = records.map { |r| [proxy_owner.id, r['id'], r['map_id']] }
-              ContainerAssociation.import([:container_id, :content_id, :position_id], links_data, :validate => false)
-            end
-          end
         }, __FILE__, line)
+
+        def attach(records)
+          ActiveRecord::Base.transaction do
+            records.each { |r| ContainerAssociation.create!(:container_id => proxy_owner.id, :content_id => r['id'], :map_id => r['map_id']) }
+          end
+        end
 
         # Sometimes we need to do things after importing the contained records.  This is the callback that should be
         # overridden by the block passed.
         def post_import(_)
           # Does nothing by default
         end
+
+        def connect(content)
+          ContainerAssociation.create!(:container => proxy_owner, :content => content)
+          post_connect(content)
+        end
+        private :connect
 
         class_eval(&block) if block_given?
       end

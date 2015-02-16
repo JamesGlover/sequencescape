@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 module Batch::PipelineBehaviour
   def self.included(base)
     base.class_eval do
@@ -32,7 +35,7 @@ module Batch::PipelineBehaviour
   def internally_released?
     workflow.source_is_external? && self.released?
   end
-  
+
   def show_actions?
     return true if pipeline.is_a?(PulldownMultiplexLibraryPreparationPipeline) || pipeline.is_a?(CherrypickForPulldownPipeline)
     !released?

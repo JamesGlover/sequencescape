@@ -1,7 +1,10 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014,2015 Genome Research Ltd.
 require "net/ldap"
 require "openssl"
 require "digest/sha1"
-require 'curb'
+#require 'curb'
 
 class User < ActiveRecord::Base
   include Authentication
@@ -136,14 +139,18 @@ class User < ActiveRecord::Base
     self.has_role? 'internal'
   end
 
+  def qa_manager?
+    self.has_role? 'qa_manager'
+  end
+
   def lab_manager?
     self.has_role? 'lab_manager'
   end
-  
+
   def slf_manager?
     self.has_role? 'slf_manager'
   end
-  
+
   def slf_gel?
     self.has_role? 'slf_gel'
   end
@@ -157,11 +164,7 @@ class User < ActiveRecord::Base
   end
 
   def manager_or_administrator?
-    access = false
-    if self.is_administrator? || self.is_manager?
-      access = true
-    end
-    access
+    self.is_administrator? || self.is_manager?
   end
 
   # Checks if the current user is a manager
@@ -176,7 +179,7 @@ class User < ActiveRecord::Base
 
   # returns all administrator users
   def self.all_administrators
-    role = Role.find_by_name('administrator')
+    role = Role.find_by_name_and_authorizable_type('administrator')
     role ? role.users : []
   end
 
@@ -222,7 +225,7 @@ class User < ActiveRecord::Base
   def interesting_studies
     Study.of_interest_to(self)
   end
-  
+
   def self.valid_barcode?(code)
     begin
       human_code = Barcode.barcode_to_human!(code, self.prefix)
@@ -233,16 +236,16 @@ class User < ActiveRecord::Base
 
     true
   end
-  
+
   def self.lookup_by_barcode(user_barcode)
     barcode = Barcode.barcode_to_human(user_barcode)
     if barcode
-      return User.find_by_barcode(barcode) 
+      return User.find_by_barcode(barcode)
     end
-    
+
     nil
   end
-  
+
   def self.owners
     all.select{ |user| user.is_owner? && ! user.last_name.blank? }.sort{ |user1, user2| user1.last_name <=> user2.last_name }
   end

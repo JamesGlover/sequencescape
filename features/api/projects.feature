@@ -12,6 +12,7 @@ Feature: Access projects through the API
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
   @read
   Scenario: Reading the JSON for a UUID
@@ -39,13 +40,10 @@ Feature: Access projects through the API
           "external_funding_source": null,
           "budget_division": "Human variation",
           "budget_cost_centre": null,
-          "funding_model": null,
+          "funding_model": "Internal",
 
           "roles": {
           }
-        },
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
         }
       }
       """

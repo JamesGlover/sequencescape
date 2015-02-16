@@ -1,6 +1,10 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013,2014 Genome Research Ltd.
 module Tasks::DnaQcHandler
   def render_dna_qc_task(task, params)
     @batch = Batch.find(params[:batch_id], :include => [{ :requests => :request_metadata }, :pipeline, :lab_events])
+    @batch.start!(current_user) if @batch.pending?
     @rits = @batch.pipeline.request_information_types
     @requests = @batch.requests.all(
       :include => {
@@ -14,10 +18,6 @@ module Tasks::DnaQcHandler
       },
       :order => 'maps.column_order ASC'
     )
-
-    unless @batch.started? || @batch.failed?
-      @batch.start!(current_user)
-    end
 
     @workflow = LabInterface::Workflow.find(params[:workflow_id], :include => [:tasks])
     @task = task # @workflow.tasks[params[:id].to_i]

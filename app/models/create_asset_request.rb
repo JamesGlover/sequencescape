@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class CreateAssetRequest < Request
   def initialize_aliquots
     # set study on aliquot
@@ -9,5 +12,14 @@ class CreateAssetRequest < Request
   private :initialize_aliquots
   before_save :initialize_aliquots
 
+  # CreateAssetRequests should only be generated for sample tubes, or for wells on
+  # stock plates.
+  validate :on_valid_asset?
+  def on_valid_asset?
+    return true if asset.can_be_created?
+    errors.add :asset, "should be either a sample tube, or a well on a stock plate."
+    false
+  end
+  private :on_valid_asset?
 
 end

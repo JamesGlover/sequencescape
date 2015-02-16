@@ -1,13 +1,32 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 class Core::Endpoint::BasicHandler
   module Json
-    def as_json(options = {})
-      request = options[:response].request
+    def actions(object, options)
+      Hash[@actions.select do |name, behaviour|
+        accessible_action?(self, behaviour, options[:response].request, object)
+      end.map do |name, behaviour|
+        [name, core_path(options)]
+      end]
+    end
+    private :actions
 
-      { 'actions' => { } }.tap do |json|
-        json['actions'] = Hash[@actions.map do |name, behaviour|
-          [ name, core_path(options) ] if accessible_action?(self, behaviour, request, options[:target])
-        end.compact]
-      end
+    def root_json
+      'unknown'
+    end
+
+    def related
+      []
+    end
+
+    def tree_for(object, options)
+      associations, actions = {}, {}
+      related.each { |r| r.separate(associations, actions) }
+      Core::Io::Json::Grammar::Root.new(
+        root_json,
+        associations.merge('actions' => Core::Io::Json::Grammar::Actions.new(self, actions))
+      )
     end
 
     def core_path(*args)
@@ -47,4 +66,5 @@ class Core::Endpoint::BasicHandler
   include Core::Endpoint::BasicHandler::Handlers
   include Core::Endpoint::BasicHandler::Associations::HasMany
   include Core::Endpoint::BasicHandler::Associations::BelongsTo
+  include Core::Endpoint::BasicHandler::Associations::HasFile
 end

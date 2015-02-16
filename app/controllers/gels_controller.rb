@@ -1,6 +1,9 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class GelsController < ApplicationController
   before_filter :slf_gel_login_required
-  
+
   def index
     # TODO: if a plate has a working dilution plate and it has a gel dilution plate, display:
     @gel_plates = GelDilutionPlate.paginate(:page => params[:page], :order => 'id DESC')
@@ -17,14 +20,14 @@ class GelsController < ApplicationController
       render :action => :find
       return
     end
-      
+
     render :action => :show
   end
 
   def show
     @plate = Plate.find(params[:id])
   end
-  
+
   def update
     ActiveRecord::Base.transaction do
       params[:wells].keys.each do |well_id|

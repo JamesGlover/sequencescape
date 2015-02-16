@@ -23,12 +23,11 @@ Feature: Interacting with pulldown_multiplexed_library_tubes through the API
             "created_at": "2010-09-16T13:45:00+01:00",
             "updated_at": "2010-09-16T13:45:00+01:00",
             "uuid": "00000000-1111-2222-3333-444444444444",
-            "barcode_prefix": "NT", 
-            "scanned_in_date": "",
+            "barcode_prefix": "NT",
             "public_name": "ABC",
 
             "internal_id": 1
-          }
+          }, "lims": "SQSCP"
         }
       ]
       """
@@ -49,11 +48,10 @@ Feature: Interacting with pulldown_multiplexed_library_tubes through the API
           "created_at": "2010-09-16T13:45:00+01:00",
           "updated_at": "2010-09-16T13:45:00+01:00",
           "uuid": "00000000-1111-2222-3333-444444444444",
-          "barcode_prefix": "NT", 
-          "scanned_in_date": "",
+          "barcode_prefix": "NT",
           "public_name": "ABC",
 
           "internal_id": 1
-        }
+        }, "lims": "SQSCP"
       }
       """

@@ -1,6 +1,9 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 Then /^I should see barcode "([^"]*)"$/ do |machine_barcode|
   barcode = Barcode.barcode_to_human(machine_barcode)
-  Then %Q{I should see "#{barcode}"}
+  step %Q{I should see "#{barcode}"}
 end
 
 Given /^the plate barcode webservice returns "([1-9][0-9]*)"$/ do |barcode|
@@ -8,7 +11,7 @@ Given /^the plate barcode webservice returns "([1-9][0-9]*)"$/ do |barcode|
 end
 
 Given /^a plate barcode webservice is available and returns "(\d+)"$/ do |barcode|
-  Given %Q{the plate barcode webservice returns "#{barcode}"}
+  step(%Q{the plate barcode webservice returns "#{barcode}"})
 end
 
 Given /^the plate barcode printing service will error$/ do
@@ -17,7 +20,7 @@ end
 
 
 Given /^the plate barcode webservice returns "([1-9][0-9]*)\.\.([1-9][0-9]*)"$/ do |start, finish|
-  (start.to_i..finish.to_i).each { |i| Given %Q{the plate barcode webservice returns "#{i}"} }
+  (start.to_i..finish.to_i).each { |i| step(%Q{the plate barcode webservice returns "#{i}"}) }
 end
 
 Given /^the "([^\"]+)" barcode printer "([^\"]+)" exists$/ do |type_name, name|
@@ -48,4 +51,12 @@ end
 Given /^the barcode of the last sample tube is "([^\"]+)"$/ do |barcode|
   tube = SampleTube.last or raise StandardError, "There appear to be no sample tubes"
   tube.update_attributes!(:barcode => barcode)
+end
+
+Given /^sample tubes are barcoded sequentially from (\d+)$/ do |initial|
+  counter = initial.to_i
+  SampleTube.find(:all,:order=>'id ASC').each do |asset|
+    asset.update_attributes!(:barcode=>counter)
+    counter += 1
+  end
 end

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013,2014 Genome Research Ltd.
 require "test_helper"
 require 'projects_controller'
 
@@ -48,9 +51,9 @@ class ProjectsControllerTest < ActionController::TestCase
           post :create, "project" => {
             "name" => "hello",
             :project_metadata_attributes => {
-              :project_cost_code => 'Some cost code'
-            },
-            :quotas => {"#{@request_type_1.id}"=>"0"}
+              :project_cost_code => 'Some cost code',
+              :project_funding_model => 'Internal'
+            }
           }
         end
 
@@ -62,11 +65,11 @@ class ProjectsControllerTest < ActionController::TestCase
       context "with invalid data" do
         setup do
           post :create, "project" => {
-            "name" => "hello 2", 
+            "name" => "hello 2",
             :project_metadata_attributes => {
-              :project_cost_code => ''
-            },
-            "quotas" => {"#{@request_type_1.id}"=>"0"}
+              :project_cost_code => '',
+              :project_funding_model => ''
+            }
           }
         end
 
@@ -83,9 +86,9 @@ class ProjectsControllerTest < ActionController::TestCase
           post :create, "project" => {
             "name" => "hello 3",
             :project_metadata_attributes => {
-              :project_cost_code => 'Some cost code'
-            },
-            :quotas => {"#{@request_type_1.id}"=>"0"}
+              :project_cost_code => 'Some cost code',
+              :project_funding_model => 'Internal'
+            }
           }
         end
 
@@ -112,7 +115,8 @@ class ProjectsControllerTest < ActionController::TestCase
             "project": {
               "name": "Some Project",
               "project_metadata_attributes": {
-                "project_cost_code": "Some cost code"
+                "project_cost_code": "Some cost code",
+                "project_funding_model": "Internal"
               }
             }
           }

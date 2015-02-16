@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 module Tasks::AssignTagsToWellsHandler
   def render_assign_tags_to_wells_task(task, params)
     @tag_group = TagGroup.find(params[:tag_group])
@@ -24,7 +27,7 @@ module Tasks::AssignTagsToWellsHandler
       redirect_to :action => 'stage', :batch_id => @batch.id, :workflow_id => @workflow.id, :id => (0).to_s, :tag_group => params[:tag_group]
       return false
     end
-    
+
     ActiveRecord::Base.transaction do
       well_id_tag_id_map = {}
       params[:tag].each do |k,v|

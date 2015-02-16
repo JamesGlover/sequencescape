@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 module SampleManifest::InputBehaviour
   module ClassMethods
     def find_sample_manifest_from_uploaded_spreadsheet(spreadsheet_file)
@@ -37,6 +40,15 @@ module SampleManifest::InputBehaviour
           # the sample ID so this can't be done with validates_presence_of
           validates_each(:volume, :concentration, :if => :updating_from_manifest?) do |record, attr, value|
             record.errors.add_on_blank(attr, "can't be blank for #{record.sample.sanger_sample_id}")
+          end
+
+        end
+
+        def accession_number_from_manifest=(new_value)
+          self.sample_ebi_accession_number ||= new_value
+          if new_value.present? && new_value != sample_ebi_accession_number
+            self.errors.add(:sample_ebi_accession_number, "can not be changed")
+            raise ActiveRecord::RecordInvalid, self
           end
         end
       end
@@ -122,7 +134,7 @@ module SampleManifest::InputBehaviour
       alias_method_chain(:update_attributes!, :sample_manifest)
     end
   end
-  
+
   def convert_yes_no_to_boolean(value)
     !!(value && value.match(/Y/i))
   end
@@ -151,46 +163,15 @@ module SampleManifest::InputBehaviour
   end
   private :strip_non_word_characters
 
-  METADATA_ATTRIBUTES_TO_CSV_COLUMNS = {
-    :cohort                      => 'COHORT',
-    :gender                      => 'GENDER',
-    :father                      => 'FATHER (optional)',
-    :mother                      => 'MOTHER (optional)',
-    :sibling                     => 'SIBLING (optional)',
-    :country_of_origin           => 'COUNTRY OF ORIGIN',
-    :geographical_region         => 'GEOGRAPHICAL REGION',
-    :ethnicity                   => 'ETHNICITY',
-    :dna_source                  => 'DNA SOURCE',
-    :date_of_sample_collection   => 'DATE OF SAMPLE COLLECTION (MM/YY or YYYY only)',
-    :date_of_sample_extraction   => 'DATE OF DNA EXTRACTION (MM/YY or YYYY only)',
-    :sample_extraction_method    => 'DNA EXTRACTION METHOD',
-    :sample_purified             => 'SAMPLE PURIFIED?',
-    :purification_method         => 'PURIFICATION METHOD',
-    :concentration               => "CONC. (ng/ul)",
-    :concentration_determined_by => 'CONCENTRATION DETERMINED BY',
-    :sample_taxon_id             => 'TAXON ID',
-    :sample_description          => 'SAMPLE DESCRIPTION',
-    :sample_ebi_accession_number => 'SAMPLE ACCESSION NUMBER (optional)',
-    :sample_sra_hold             => 'SAMPLE VISIBILITY',
-    :sample_type                 => 'SAMPLE TYPE',
-    :volume                      => "VOLUME (ul)",
-    :sample_storage_conditions   => 'DNA STORAGE CONDITIONS',
-    :supplier_name               => 'SUPPLIER SAMPLE NAME',
-    :gc_content                  => 'GC CONTENT',
-    :sample_public_name          => 'PUBLIC NAME',
-    :sample_common_name          => 'COMMON NAME',
-    :sample_strain_att           => 'STRAIN'
-  }
-
   InvalidManifest = Class.new(StandardError)
 
   def each_csv_row(&block)
-    csv = FasterCSV.parse(uploaded.data)
+    csv = FasterCSV.parse(uploaded.current_data)
     clean_up_sheet(csv)
 
-    headers = csv[spreadsheet_header_row].map { |header| header.gsub(/\s+/, ' ') }
+    headers = csv[spreadsheet_header_row].map { |header| h = header.gsub(/\s+/, ' '); SampleManifest::Headers.renamed(h) }
     headers.each_with_index.map do |name, index|
-      "Header '#{name}' should be '#{ColumnMap.fields[index]}'" if not name.blank? and strip_non_word_characters(name) != strip_non_word_characters(ColumnMap.fields[index])
+      "Header '#{name}' not recognised!" unless name.blank? || SampleManifest::Headers.valid?(name)
     end.compact.tap do |headers_with_errors|
       raise InvalidManifest, headers_with_errors unless headers_with_errors.empty?
     end
@@ -217,7 +198,10 @@ module SampleManifest::InputBehaviour
       #
       # NOTE: Do not include the primary_receptacle here as it will cause the wrong one to be loaded!
       sample = samples.find_by_sanger_sample_id(sanger_sample_id)
-      if sample.primary_receptacle.nil?
+      if sample.nil?
+        sample_errors.push("Sample #{sanger_sample_id} does not appear to be part of this manifest")
+        next
+      elsif sample.primary_receptacle.nil?
         sample_errors.push("Sample #{sanger_sample_id} appears to not have a receptacle defined! Contact PSD")
         next
       else
@@ -228,7 +212,7 @@ module SampleManifest::InputBehaviour
       end
 
       metadata = Hash[
-        METADATA_ATTRIBUTES_TO_CSV_COLUMNS.map do |attribute, csv_column|
+        SampleManifest::Headers::METADATA_ATTRIBUTES_TO_CSV_COLUMNS.map do |attribute, csv_column|
           [ attribute, row[csv_column] ]
         end
       ].merge(
@@ -236,8 +220,8 @@ module SampleManifest::InputBehaviour
       )
 
       samples_to_updated_attributes.push([
-        sample, {
-          :id                         => sample.try(:id),
+        sample.id, {
+          :id                         => sample.id,
           :sanger_sample_id           => sanger_sample_id,
           :control                    => convert_yes_no_to_boolean(row['IS SAMPLE A CONTROL?']),
           :sample_metadata_attributes => metadata.delete_if { |_,v| v.nil? }
@@ -247,7 +231,7 @@ module SampleManifest::InputBehaviour
 
     raise InvalidManifest, sample_errors unless sample_errors.empty?
 
-    ActiveRecord::Base.transaction do 
+    ActiveRecord::Base.transaction do
       update_attributes!({
         :override_previous_manifest => override_sample_information,
         :samples_attributes         => samples_to_updated_attributes.map(&:last)
@@ -285,7 +269,9 @@ module SampleManifest::InputBehaviour
   private :ensure_samples_are_being_updated_by_manifest
 
   def update_attributes_with_sample_manifest!(attributes, user = nil)
-    ensure_samples_are_being_updated_by_manifest(attributes, user)
-    update_attributes_without_sample_manifest!(attributes)
+    ActiveRecord::Base.transaction do
+      ensure_samples_are_being_updated_by_manifest(attributes, user)
+      update_attributes_without_sample_manifest!(attributes)
+    end
   end
 end

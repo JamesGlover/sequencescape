@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2013 Genome Research Ltd.
 require "test_helper"
 require 'samples_controller'
 
@@ -30,8 +33,7 @@ class Admin::ProjectsControllerTest < ActionController::TestCase
 
       context "#managed_update (without changes)" do
         setup do
-          @quota = Factory :project_quota, :project => @project, :request_type => @request_type, :limit => 10
-          get :managed_update, :id => @project.id, :project => { :name => @project.name, :quotas => { "#{@request_type.id}" => 10 } }, :quota => { "#{@request_type.id}" => 10 }
+          get :managed_update, :id => @project.id, :project => { :name => @project.name }
         end
 
         should "not send an email" do
@@ -41,64 +43,10 @@ class Admin::ProjectsControllerTest < ActionController::TestCase
         should_redirect_to("admin projects") { "/admin/projects/#{@project.id}" }
       end
 
-      context "#managed_update (with new quota update)" do
-        setup do
-          get :managed_update, :id => @project.id, :quota => { "#{@request_type.id}" => "50" }, :project => { :name => @project.name }
-        end
-
-        should_set_the_flash_to "Your project has been updated"
-
-        should "send an email" do
-          assert_sent_email do |email|
-            email.subject  =~ /Project/ && email.subject =~ /[TEST]/ && email.bcc.include?(@project.owner.email)
-            email.bcc.size == 2
-            email.body     =~ /Project quota approved by/
-          end
-        end
-        should_redirect_to("admin project") { "/admin/projects/#{@project.id}" }
-      end
-
-      context "#managed_update (with new quota update and existing other request_type quota)" do
-        setup do
-          @quota = Factory :project_quota, :project => @project, :request_type => @other_request_type, :limit => 10
-          get :managed_update, :id => @project.id, :quota => { "#{@request_type.id}" => "50" }, :project => { :quotas => { "#{@other_request_type.id}" => "10" }, :name => @project.name }
-        end
-
-        should_set_the_flash_to "Your project has been updated"
-
-        should "send an email" do
-          assert_sent_email do |email|
-            email.subject  =~ /Project/ && email.subject =~ /[TEST]/ && email.bcc.include?(@project.owner.email)
-            email.bcc.size == 2
-            email.body     =~ /Project quota approved by/
-          end
-        end
-        should_redirect_to("admin project") { "/admin/projects/#{@project.id}" }
-      end
-
-
-      context "#managed_update (with changed quota update)" do
-        setup do
-          @quota = Factory :project_quota, :project => @project, :request_type => @request_type, :limit => 10
-          get :managed_update, :id => @project.id, :project => { :name => @project.name, :quotas => { "#{@request_type.id}" => "50" }}
-        end
-
-        should_set_the_flash_to "Your project has been updated"
-
-        should "send an email" do
-          assert_sent_email do |email|
-            email.subject  =~ /Project/ && email.subject =~ /[TEST]/ && email.bcc.include?(@project.owner.email)
-            email.bcc.size == 2
-            email.body     =~ /Project quota approved by/
-          end
-        end
-        should_redirect_to("admin projects") { "/admin/projects/#{@project.id}" }
-      end
 
       context "#managed_update (with getting approved)" do
         setup do
-          @quota = Factory :project_quota, :project => @project, :request_type => @request_type, :limit => 10
-          get :managed_update, :id => @project.id, :project => { :approved => true, :name => @project.name, :quotas => { "#{@request_type.id}" => "10" } }
+          get :managed_update, :id => @project.id, :project => { :approved => true, :name => @project.name }
         end
 
         should_redirect_to("admin project") { "/admin/projects/#{@project.id}" }

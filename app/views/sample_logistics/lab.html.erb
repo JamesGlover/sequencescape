@@ -1,13 +1,16 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.%>
 <fieldset>
-	<legend>Verification</legend>
-	<h3><%= link_to "Lab Activity", asset_audits_path %></h3>
-	  <p>Scan what your doing, and what instrument your using.</p>
+  <legend>Verification</legend>
+  <h3><%= link_to "Lab Activity", asset_audits_path %></h3>
+    <p>Scan what your doing, and what instrument your using.</p>
   <h3><%= link_to "Bed verification", robot_verifications_path %></h3>
     <p>Verify cherrypicked plates which have been created in Sequencescape.</p>
 </fieldset>
 
 <fieldset>
-	<legend>Barcode Printing</legend>
+  <legend>Barcode Printing</legend>
   <h3><%= link_to "Print plate barcodes", new_plate_path  %></h3>
     <p>Create plates and print barcodes.</p>
   <h3><%= link_to "Print Sequenom plate barcode", new_sequenom_qc_plate_path  %></h3>
@@ -16,7 +19,7 @@
 
 
 <fieldset>
-	<legend>Tracking</legend>
-	<h3><%= link_to "Lab reception", receptions_path %></h3>
+  <legend>Tracking</legend>
+  <h3><%= link_to "Lab reception", receptions_path %></h3>
     <p>When plates/tubes come into the lab, scan them into the reception freezer.</p>
 </fieldset>

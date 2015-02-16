@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 require 'time'
 require 'log4r'
 include Log4r
@@ -26,11 +29,11 @@ module TimeKeeping
   def self.start!
     @start = Time.now
   end
-  
+
   def self.finish!
     @finish = Time.now
   end
-  
+
   def self.running_time
     "#{(((@finish - @start).abs)/60)} minutes"
   end
@@ -43,7 +46,7 @@ def custom_log(script_name)
   @log = Log4r::Logger.new 'log'
 #  @log.outputters = Log4r::StdoutOutputter.new 'console', :formatter => console_formatter
   @log.level = Log4r::INFO
-  
+
   file_format = PatternFormatter.new(:pattern => "[ %d ] %l\t %m")
   @log.add FileOutputter.new('fileOutputter', :filename => log_file, :trunc => false, :formatter=>file_format)
 end

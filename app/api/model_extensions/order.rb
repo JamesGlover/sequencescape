@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013 Genome Research Ltd.
 module ModelExtensions::Order
   module Validations
     def self.included(base)
@@ -28,7 +31,7 @@ module ModelExtensions::Order
     def request_options_for_validation
       OpenStruct.new({ :owner => self }.reverse_merge(self.request_options || {})).tap do |v|
         v.class.delegate(:errors, :include_unset_values?, :to => :owner)
-      end 
+      end
     end
   end
 
@@ -57,8 +60,8 @@ module ModelExtensions::Order
       # The API can create submissions but we have to prevent someone from changing the study
       # and the project once they have been set.
       validates_each(:study, :project) do |record, attr, value|
-        # NOTE: This can get called after the record has been saved but before it has been completely saved, i.e. after_create for
-        # the quota checking.  In this case the original value of the attribute will be nil, so we account for that here.
+        # NOTE: This can get called after the record has been saved but before it has been completely saved, i.e. after_create
+        # In this case the original value of the attribute will be nil, so we account for that here.
         attr_value_was, attr_value_is = record.send(:"#{attr}_id_was"), record.send(:"#{attr}_id")
         record.errors.add(attr, 'cannot be changed') if not record.new_record? and attr_value_was != attr_value_is and attr_value_was.present?
       end
@@ -67,7 +70,7 @@ module ModelExtensions::Order
     end
   end
 
-  class NonNilHash 
+  class NonNilHash
     def initialize(key_style_operation = :symbolize_keys)
       @key_style_operation = key_style_operation
       @store = {}
@@ -83,7 +86,7 @@ module ModelExtensions::Order
     end
 
     def []=(*keys_and_values)
-      value = keys_and_values.pop 
+      value = keys_and_values.pop
       return if value.nil?
       node_and_leaf(*keys_and_values) { |node, leaf| node[leaf] = value }
     end

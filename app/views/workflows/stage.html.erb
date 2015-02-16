@@ -1,5 +1,9 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013 Genome Research Ltd.%>
 <% add :title, "Processing batch" %>
 <% add :menu, "View all batches" => batches_path %>
+<% add :menu, "Edit batch" => edit_batch_path(@batch) %>
 <% add :menu, "Print worksheet" => url_for(:controller => :batches, :action => :print, :id => @batch.id) %>
 <% if @batch.multiplexed? -%>
   <% add :menu, "Print pool label" => url_for(:controller => :batches, :action => :print_multiplex_labels, :id => @batch.id) -%>
@@ -18,7 +22,7 @@
 <% end %>
 <% add :menu, "Fail batch" => url_for(:controller => :batches, :action => :fail, :id => @batch.id) %>
 
-<% if @batch.workflow.locale == "Internal" && ! @batch.pipeline.sequencing? %> 
+<% if @batch.workflow.locale == "Internal" && ! @batch.pipeline.sequencing? %>
   <% add :menu, "Release" => release_batch_url(@batch) %>
 <% end %>
 <% if @batch.has_limit? %>

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 class SequenomController < ApplicationController
   EmptyBarcode = Class.new(StandardError)
 
@@ -39,11 +42,13 @@ class SequenomController < ApplicationController
   end
 
   def update
-    STEPS.for(params[:sequenom_step]).update_plate(@plate, @user) do |step|
-      flash[:notice] = I18n.t(
-        'sequenom.notices.step_completed', 
-        :step => step.name, :barcode => @plate.ean13_barcode, :human_barcode => @plate.sanger_human_barcode
-      )
+    ActiveRecord::Base.transaction do
+      STEPS.for(params[:sequenom_step]).update_plate(@plate, @user) do |step|
+        flash[:notice] = I18n.t(
+          'sequenom.notices.step_completed',
+          :step => step.name, :barcode => @plate.ean13_barcode, :human_barcode => @plate.sanger_human_barcode
+        )
+      end
     end
     redirect_to sequenom_plate_path(@plate)
   end
@@ -65,7 +70,7 @@ private
   # Defines a filter method that will lookup an instance of the specified model class, assigning
   # an instance variable or redirecting to the sequenom_root_path on error.  The block passed
   # should take two parameters (the barcode and the human version of that barcode) and return the
-  # value that can be used by +model_class.find_by_barcode+.  +filter_options+ are exactly as 
+  # value that can be used by +model_class.find_by_barcode+.  +filter_options+ are exactly as
   # would be specified for a +before_filter+.
   def self.find_by_barcode_filter(model_class, filter_options, &block)
     name                        = model_class.name.underscore
@@ -85,7 +90,7 @@ private
       end
     end
     define_method(rescue_exception_for_filter) do |exception,barcode,human_barcode|
-      case 
+      case
       when ActiveRecord::RecordNotFound === exception
         flash[:error] = I18n.t("sequenom.errors.#{ name }.not_found_by_barcode", :barcode => barcode, :human_barcode => human_barcode)
         redirect_to sequenom_root_path

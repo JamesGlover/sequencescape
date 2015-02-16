@@ -1,9 +1,11 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 module User::Authentication
   def self.included(base)
     base.class_eval do
       extend ClassMethods
       extend Ldap
-      extend SangerSingleSignOn
       extend Local
     end
   end
@@ -81,87 +83,6 @@ module User::Authentication
         false
       end
     end
-  end
-
-  module SangerSingleSignOn
-    def self.extended(base)
-      base.named_scope :with_fresh_cookie, lambda { |c| { :conditions => [ 'cookie=? AND cookie_validated_at > ?', c, configatron.sanger_auth_freshness.minutes.ago ] } }
-    end
-
-    if Rails.env == 'development'
-      def authenticate_by_sanger_cookie(cookie_value)
-        self.find_by_login(cookie_value)
-      end
-    else
-      def authenticate_by_sanger_cookie(cookie_value)
-        self.with_fresh_cookie(cookie_value).first || validate_user_with_single_sign_on_service(cookie_value)
-      end
-    end
-
-    def validate_user_with_single_sign_on_service(cookie_value)
-      user_from_single_sign_on_service(cookie_value).tap do |user|
-        user.update_attributes!(:cookie => cookie_value, :cookie_validated_at => Time.now) unless user.nil?
-      end
-    end
-    private :validate_user_with_single_sign_on_service
-
-    def init_curl(uri)
-      curl = Curl::Easy.new(URI.parse(uri).to_s)
-      if configatron.disable_web_proxy == true
-        curl.proxy_url = ''
-      elsif not configatron.proxy.blank?
-        curl.headers["User-Agent"] = "Sequencescape"
-        curl.proxy_url = configatron.proxy
-        curl.proxy_tunnel = true
-      end
-      curl
-    end
-    private :init_curl
-
-    def get_sanger_token(username,password)
-      begin
-        curl = self.init_curl(configatron.sanger_login_service)
-        wtsi_token =""
-        curl.on_header do |header|
-          wtsi_token = "#{$1}" if header =~ /^Set-Cookie: WTSISignOn=([^; ]+);/
-          header.length
-        end
-        curl.http_post(configatron.sanger_login_service,Curl::PostField.content('credential_0', username), Curl::PostField.content('credential_1', password),Curl::PostField.content('destination', '/'))
-        wtsi_token
-      rescue
-        logger.info "Authentication service down #{configatron.sanger_login_service} user: #{username}: #{$!}"
-        return nil
-      end
-    end
-
-    def user_from_single_sign_on_service(value)
-      logger.debug "Authentication by cookie: " + value
-      res = ""
-      begin
-        curl = init_curl(configatron.sanger_auth_service)
-        curl.http_post(Curl::PostField.content('cookie',value))
-        res = curl.body_str
-      rescue SocketError
-        logger.info "Authentication service down #{configatron.sanger_auth_service} cookie: #{value}"
-      rescue Curl::Err::RecvError
-        logger.info "Authentication service down #{configatron.sanger_auth_service} cookie: #{value}"
-      end
-      
-      u = nil
-      begin
-        result = ActiveSupport::JSON.decode(res)
-        logger.debug "Authentication by cookie: " + res
-      
-        if result && result["valid"] == 1 && result["username"]
-          u = find_or_create_by_login(result["username"])
-        end
-      rescue ParseError
-        logger.info "Authentication service parse error #{configatron.sanger_auth_service} cookie: #{value}"
-        return nil
-      end
-      u
-    end
-    private :user_from_single_sign_on_service
   end
 
   module Local

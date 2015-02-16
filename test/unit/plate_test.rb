@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 require "test_helper"
 
 class PlateTest < ActiveSupport::TestCase
@@ -13,13 +16,27 @@ class PlateTest < ActiveSupport::TestCase
         assert_equal "AAA", @plate.infinium_barcode
       end
     end
+    
+    context "#fluidigm_barcode" do
+      def create_plate_with_fluidigm(fluidigm_barcode)
+        barcode = "12345678"
+        PlatePurpose.find_by_name("Cherrypicked").create!(:do_not_create_wells,{:name => "Cherrypicked #{barcode}", :size => 192,:barcode => barcode,:plate_metadata_attributes=>{:fluidigm_barcode=>fluidigm_barcode}})
+      end      
+      
+      should "check that I cannot create a plate with a fluidigm barcode different from 10 characters" do
+        assert_raises(ActiveRecord::RecordInvalid) { create_plate_with_fluidigm("12345678") }
+      end
+      should "check that I can create a plate with a fluidigm barcode equal to 10 characters" do
+        assert_nothing_raised { create_plate_with_fluidigm("1234567890") }
+      end
+    end
 
     context "#add_well" do
       [ [96,7,11], [384,15,23] ].each do |plate_size, row_size,col_size|
         context "for #{plate_size} plate" do
           setup do
             @well = Well.new
-            @plate =Plate.new(:name => "Test Plate", :size => plate_size)
+            @plate =Plate.new(:name => "Test Plate", :size => plate_size, :purpose=>Purpose.find_by_name('Stock Plate'))
           end
           context "with valid row and col combinations" do
             (0..row_size).step(1) do |row|
@@ -62,7 +79,7 @@ class PlateTest < ActiveSupport::TestCase
           @plate_cw = Plate.create!
           @plate_cw.add_and_save_well Well.new
           @plate_cw.reload
-          Factory :request, :asset => @control_well_asset, :target_asset => @plate_cw.child
+          Factory :well_request, :asset => @control_well_asset, :target_asset => @plate_cw.child
         end
         should "return true" do
           assert @plate_cw.control_well_exists?
@@ -87,7 +104,7 @@ class PlateTest < ActiveSupport::TestCase
       @well1 = Well.new
       @plate1 = Factory :plate
       @plate1.add_and_save_well(@well1)
-      @request1 = Factory :request, :asset => @well1
+      @request1 = Factory :well_request, :asset => @well1
     end
 
     context "with 1 request" do
@@ -102,7 +119,7 @@ class PlateTest < ActiveSupport::TestCase
       setup do
         @well2 = Well.new
         @plate1.add_and_save_well(@well2)
-        @request2 = Factory :request, :asset => @well2
+        @request2 = Factory :well_request, :asset => @well2
       end
       context "with a valid well assets" do
         should "return a single plate ID" do
@@ -117,10 +134,10 @@ class PlateTest < ActiveSupport::TestCase
         @well2 = Well.new
         @plate2 = Factory :plate
         @plate2.add_and_save_well(@well2)
-        @request2 = Factory :request, :asset => @well2
+        @request2 = Factory :well_request, :asset => @well2
         @well3 = Well.new
         @plate1.add_and_save_well(@well3)
-        @request3 = Factory :request, :asset => @well3
+        @request3 = Factory :well_request, :asset => @well3
       end
       context "with a valid well assets" do
         should "return 2 plate IDs" do
@@ -133,15 +150,29 @@ class PlateTest < ActiveSupport::TestCase
     end
 
   end
-  
+
+  context "Plate priority" do
+    setup do
+      @plate = Factory :transfer_plate
+      user = Factory(:user)
+      @plate.wells.each_with_index do |well,index|
+        Factory :request, :asset=>well, :submission=>Submission.create!(:priority => index+1, :user => user)
+      end
+    end
+
+    should "inherit the highest submission priority" do
+      assert_equal 2, @plate.priority
+    end
+  end
+
   context "Plate submission" do
     setup do
       @plate1 = Factory :plate
       @plate2 = Factory :plate
       @plate3 = Factory :plate
       @workflow = Factory :submission_workflow,:key => 'microarray_genotyping'
-      @request_type_1 = Factory :request_type, :workflow => @workflow
-      @request_type_2 = Factory :request_type, :workflow => @workflow
+      @request_type_1 = Factory :well_request_type, :workflow => @workflow
+      @request_type_2 = Factory :well_request_type, :workflow => @workflow
       @workflow.request_types << @request_type_1
       @workflow.request_types << @request_type_2
       @study = Factory :study
@@ -165,21 +196,6 @@ class PlateTest < ActiveSupport::TestCase
         should_change("Request.count", :by => 0) { Request.count }
         should "not set study.errors" do
           assert_equal 0, @study.errors.count
-        end
-      end
-      context "where project quotas are enforced" do
-        context "and there is no quota available" do
-          setup do
-            @project.enforce_quotas = true
-            @project.quotas.create(:request_type => @request_type_1, :limit => 0)
-            @project.quotas.create(:request_type => @request_type_2, :limit => 0)
-            @project.save
-          end
-          should "raise quota exception" do
-            assert_raise Quota::Error do
-              @plate1.generate_plate_submission(@project, @study, @user, @current_time)
-            end
-          end
         end
       end
     end
@@ -241,6 +257,47 @@ class PlateTest < ActiveSupport::TestCase
           end
           should_change("Event.count", :by => 0) { Event.count }
           should_change("Submission.count", :by => 0) { Submission.count }
+        end
+      end
+
+    end
+
+    context "A Plate" do
+      setup do
+        @plate = Plate.create!
+      end
+
+      context "without attachments" do
+        should "not report any qc_data" do
+          assert @plate.qc_files.empty?
+        end
+      end
+
+      context "with attached qc data" do
+        setup do
+          File.open("test/data/manifests/mismatched_plate.csv") do |file|
+            @plate.add_qc_file file
+          end
+        end
+
+        should "return any qc data" do
+          assert @plate.qc_files.count ==1
+          File.open("test/data/manifests/mismatched_plate.csv") do |file|
+            assert_equal file.read, @plate.qc_files.first.uploaded_data.file.read
+          end
+        end
+      end
+
+     context "with multiple attached qc data" do
+        setup do
+          File.open("test/data/manifests/mismatched_plate.csv") do |file|
+            @plate.add_qc_file file
+            @plate.add_qc_file file
+          end
+        end
+
+        should "return multiple qc data" do
+          assert @plate.qc_files.count ==2
         end
       end
 

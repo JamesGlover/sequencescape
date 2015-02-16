@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 Given /^study "([^\"]+)" has an asset group called "([^\"]+)" with (\d+) wells$/ do |study_name, group_name, count|
   study = Study.find_by_name(study_name) or raise StandardError, "Cannot find the study #{study_name.inspect}"
 
@@ -11,15 +14,15 @@ Given /^I have a "([^\"]+)" submission of asset group "([^\"]+)" under project "
   asset_group = AssetGroup.find_by_name(group_name) or raise StandardError, "Cannot find the asset group #{group_name.inspect}"
 
   # NOTE: Working with Submission from the code at this point is a nightmare, so use the UI!
-  Given %Q{I am on the show page for study "#{asset_group.study.name}"}
-  When %Q{I follow "Create Submission"}
-  When %Q{I select "#{template_name}" from "Template"}
-  When %Q{I press "Next"}
-  When %Q{I select "#{project_name}" from "Select a financial project"}
-  When %Q{I select "#{group_name}" from "Select a group to submit"}
-  And %Q{I create the order and submit the submission}
+  step(%Q{I am on the show page for study "#{asset_group.study.name}"})
+  step(%Q{I follow "Create Submission"})
+  step(%Q{I select "#{template_name}" from "Template"})
+  step(%Q{I press "Next"})
+  step(%Q{I select "#{project_name}" from "Select a financial project"})
+  step(%Q{I select "#{group_name}" from "Select a group to submit"})
+  step(%Q{I create the order and submit the submission})
 
-  Given %Q{all pending delayed jobs are processed}
+  step(%Q{all pending delayed jobs are processed})
 end
 
 Given /^all assets for requests in the "([^\"]+)" pipeline have been scanned into the lab$/ do |name|
@@ -29,7 +32,7 @@ end
 
 When /^I check "([^\"]+)" for (\d+) to (\d+)$/ do |label_root, start, finish|
   (start.to_i..finish.to_i).each do |i|
-    When %Q{I check "#{label_root} #{i}"}
+    step(%Q{I check "#{label_root} #{i}"})
   end
 end
 
@@ -86,6 +89,7 @@ def build_batch_for(name, count, &block)
     asset_attributes = { }
     if submission_details.key?(:holder_type)
       asset_attributes[:container] = Factory(submission_details[:holder_type], :location_id => pipeline.location_id)
+      asset_attributes[:map_id] = Map.find(1)
     else
       asset_attributes[:location_id] = pipeline.location_id
     end
@@ -102,14 +106,14 @@ def build_batch_for(name, count, &block)
 
     # Setup the assets so that they have samples and they are scanned into the correct lab.
     :assets        => assets,
-    :request_types => pipeline.request_type_ids,
+    :request_types => [pipeline.request_type_ids.detect {|id| !RequestType.find(id).deprecated }],
 
     # Request parameter options
     :request_options => submission_details[:request_options]
   )
-  Given %Q{all pending delayed jobs are processed}
+  step(%Q{all pending delayed jobs are processed})
 
-  # Then build a batch that will hold all of these requests, ensuring that it appears to be at least started
+  # step build a batch that will hold all of these requests, ensuring that it appears to be at least started
   # in some form.
   requests = pipeline.requests.ready_in_storage.all
   raise StandardError, "Pipeline has #{requests.size} requests waiting rather than #{count}" if requests.size != count.to_i
@@ -149,7 +153,7 @@ Given /^I have a batch with (\d+) requests? for the "(#{SEQUENCING_PIPELINES})" 
       :request_options => {
         :fragment_size_required_from => 1,
         :fragment_size_required_to   => 100,
-        :read_length                 => pipeline.request_types.last.request_class_name.constantize::Metadata.attribute_details_for(:read_length).to_field_info.selection.first
+        :read_length                 => pipeline.request_types.last.request_type_validators.find_by_request_option('read_length').valid_options.first
       }
     }
   end

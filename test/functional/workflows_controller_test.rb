@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 require File.join(File.dirname(__FILE__), %w[.. test_helper])
 require 'workflows_controller'
 
@@ -14,7 +17,7 @@ class WorkflowsControllerTest < ActionController::TestCase
       @user = Factory :user
       @controller.stubs(:current_user).returns(@user)
       @pipeline_user = Factory :pipeline_admin, :login => @user.login
-      
+
     end
     should_require_login
 
@@ -131,7 +134,7 @@ class WorkflowsControllerTest < ActionController::TestCase
         @controller.stubs(:current_user).returns(@user)
         @batch_events_size = @batch.lab_events.size
       end
-      
+
       context "should set descriptors on batch" do
         setup do
 

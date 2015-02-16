@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2013 Genome Research Ltd.
 class CreateRequestsForStudySamples < ActiveRecord::Migration
   def self.up
     # This code can be run anytime and stopped and started
@@ -23,7 +26,7 @@ class CreateRequestsForStudySamples < ActiveRecord::Migration
 
       puts("Linking Sample #{sample.id} to Studies [#{sample_studies.map(&:id).join(',')}]")
 
-      sample_studies.each{ |study| RequestFactory.create_assets_requests([asset.id], study.id) }
+      sample_studies.each{ |study| RequestFactory.create_assets_requests([asset], study) }
     end
   end
 

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class Api::AssetLinkIO < Api::Base
   module Extensions
     module ClassMethods
@@ -20,7 +23,7 @@ class Api::AssetLinkIO < Api::Base
   map_attribute_to_json_attribute(:created_at)
   map_attribute_to_json_attribute(:updated_at)
 
-  with_association(:ancestor) do 
+  with_association(:ancestor) do
     map_attribute_to_json_attribute(:uuid, 'ancestor_uuid')
     map_attribute_to_json_attribute(:id,   'ancestor_internal_id')
 
@@ -29,7 +32,7 @@ class Api::AssetLinkIO < Api::Base
     end
   end
 
-  with_association(:descendant) do 
+  with_association(:descendant) do
     map_attribute_to_json_attribute(:uuid, 'descendant_uuid')
     map_attribute_to_json_attribute(:id,   'descendant_internal_id')
 

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class Api::BillingEventIO < Api::Base
   module Extensions
     module ClassMethods
@@ -34,21 +37,21 @@ class Api::BillingEventIO < Api::Base
     map_attribute_to_json_attribute(:id,   'project_internal_id')
     map_attribute_to_json_attribute(:name, 'project_name')
 
-    with_association(:project_metadata) do 
+    with_association(:project_metadata) do
       with_association(:budget_division, :lookup_by => :name) do
         map_attribute_to_json_attribute(:name , 'project_division')
       end
       map_attribute_to_json_attribute(:project_cost_code, 'project_cost_code')
     end
   end
-  
+
   with_association(:request) do
     map_attribute_to_json_attribute(:id, 'request_internal_id')
     map_attribute_to_json_attribute(:uuid, 'request_uuid')
-    with_association(:request_type) do 
+    with_association(:request_type) do
       map_attribute_to_json_attribute(:name, 'request_type')
     end
-    with_association(:request_metadata) do 
+    with_association(:request_metadata) do
       map_attribute_to_json_attribute(:read_length, 'price')
       map_attribute_to_json_attribute(:library_type, 'library_type')
       extra_json_attributes do |object, json_attributes|

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 class Accessionable::Submission < Accessionable::Base
   attr_reader :broker, :alias, :date, :accessionables, :contact
 
@@ -23,8 +26,8 @@ class Accessionable::Submission < Accessionable::Base
     xml.instruct!
     xml.SUBMISSION(
       'xmlns:xsi'      => 'http://www.w3.org/2001/XMLSchema-instance',
-      :center_name     => self.center_name, 
-      :broker_name     => self.broker, 
+      :center_name     => self.center_name,
+      :broker_name     => self.broker,
       :alias           => self.alias,
       :submission_date => self.date
     ) {
@@ -49,18 +52,28 @@ class Accessionable::Submission < Accessionable::Base
           xml.ACTION {
             xml.MODIFY(
               :source => accessionable.file_name,
-              :schema => accessionable.schema_type,
-              :target => accessionable.accession_number
+              :schema => accessionable.schema_type
             )
           }
 
-          xml.ACTION {
-            xml.tag!(accessionable.protect?(@service) ? 'PROTECT' : 'HOLD')
-          }
+          state_action(accessionable) do |action|
+            xml.ACTION {
+              xml.tag!(action)
+            }
+          end
         end
       }
     }
     return xml.target!
+  end
+
+
+  def state_action(accessionable)
+    if accessionable.protect?(@service)
+      yield 'PROTECT'
+    elsif !accessionable.released?
+      yield 'HOLD'
+    end
   end
 
   def name
@@ -91,7 +104,7 @@ private
 
     def build(markup)
       markup.CONTACT(
-        :inform_on_error  => inform_on_error, 
+        :inform_on_error  => inform_on_error,
         :inform_on_status => inform_on_status,
         :name             => name
       )

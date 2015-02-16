@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2013 Genome Research Ltd.
 class LocationAssociation < ActiveRecord::Base
   belongs_to :locatable, :class_name => "Asset"
   belongs_to :location
@@ -5,13 +8,24 @@ class LocationAssociation < ActiveRecord::Base
   validates_uniqueness_of :locatable_id
   validates_presence_of :location_id, :locatable_id
 
+  after_save :update_locatable
+
+  def update_locatable
+    locatable.touch
+  end
+
   module Locatable
     def self.included(base)
       base.class_eval do
-        has_one :location_association, :foreign_key => :locatable_id
+        has_one :location_association, :foreign_key => :locatable_id, :inverse_of => :locatable
 
         has_one :location, :through => :location_association
         delegate :location_id, :to => :location_association, :allow_nil => true
+
+        named_scope :located_in, lambda { |location| {
+          :joins => 'INNER JOIN `location_associations` ON `assets`.id=`location_associations`.`locatable_id`',
+          :conditions => [ '`location_associations`.`location_id`=?', location.id ]
+        } }
 
         # TODO:  not optimal
         def location_id=(l_id)

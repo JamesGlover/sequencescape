@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014,2015 Genome Research Ltd.
 class Asset < ActiveRecord::Base
   include StudyReport::AssetDetails
   include ModelExtensions::Asset
@@ -19,18 +22,13 @@ class Asset < ActiveRecord::Base
   class VolumeError< StandardError
   end
 
-  before_create :set_default_prefix
-  
-  class_inheritable_accessor :prefix
-  self.prefix = "NT"
-  
   cattr_reader :per_page
   @@per_page = 500
   self.inheritance_column = "sti_type"
   #acts_as_paranoid
 #  validates_uniqueness_of :name
 
-  has_many :asset_group_assets
+  has_many :asset_group_assets, :dependent => :destroy
   has_many :asset_groups, :through => :asset_group_assets
   has_many :asset_audits
 
@@ -63,6 +61,7 @@ class Asset < ActiveRecord::Base
   named_scope :sorted , :order => "map_id ASC"
   named_scope :position_name, lambda { |*args| { :joins => :map, :conditions => ["description = ? AND asset_size = ?", args[0], args[1]] }}
   named_scope :get_by_type, lambda {|*args| {:conditions => { :sti_type => args[0]} } }
+  named_scope :for_summary, {:include=>[:map,:barcode_prefix]}
 
   named_scope :of_type, lambda { |*args| { :conditions => { :sti_type => args.map { |t| [t, Class.subclasses_of(t)] }.flatten.map(&:name) } } }
 
@@ -79,21 +78,17 @@ class Asset < ActiveRecord::Base
     (orders.map(&:study)+studies).compact.uniq
   end
   # Named scope for search by query string behaviour
-  named_scope :for_search_query, lambda { |query|
+  named_scope :for_search_query, lambda { |query,with_includes|
     {
       :conditions => [
-        'assets.name IS NOT NULL AND (assets.name LIKE :like OR assets.id=:query OR assets.barcode LIKE :query)', { :like => "%#{query}%", :query => query } ],
-      :include => :requests, :order => 'requests.pipeline_id ASC'
-    }
+        'assets.name IS NOT NULL AND (assets.name LIKE :like OR assets.id=:query OR assets.barcode = :query)', { :like => "%#{query}%", :query => query } ]
+    }.tap {|cond| cond.merge!(:include => :requests, :order => 'requests.pipeline_id ASC') if with_includes }
   }
 
   named_scope :with_name, lambda { |*names| { :conditions => { :name => names.flatten } } }
 
-  acts_as_audited :on => [:destroy]
-  
-
   extend EventfulRecord
-  has_many_events do 
+  has_many_events do
     event_constructor(:create_external_release!,       ExternalReleaseEvent,          :create_for_asset!)
     event_constructor(:create_pass!,                   Event::AssetSetQcStateEvent,   :create_passed!)
     event_constructor(:create_fail!,                   Event::AssetSetQcStateEvent,   :create_failed!)
@@ -221,11 +216,19 @@ class Asset < ActiveRecord::Base
   end
 
   def library_prep?
-    self.sti_type == "LibraryTube" || self.sti_type == "MultiplexedLibraryTube"
+    false
   end
 
   def display_name
     self.name.blank? ? "#{self.sti_type} #{self.id}" : self.name
+  end
+
+  def external_identifier
+    "#{self.sti_type}#{self.id}"
+  end
+
+  def details
+    nil
   end
 
   QC_STATES =  [
@@ -252,7 +255,7 @@ class Asset < ActiveRecord::Base
   def set_qc_state(state)
     self.qc_state = QC_STATES.rassoc(state).try(:first) || state
     self.save
-    self.set_external_release(self.qc_state) 
+    self.set_external_release(self.qc_state)
   end
 
   def move_asset_group(study_from, asset_group)
@@ -317,40 +320,24 @@ class Asset < ActiveRecord::Base
 
     return move_result
   end
-  
+
   def has_been_through_qc?
     not self.qc_state.blank?
   end
 
-  def sanger_human_barcode
-    if self.barcode
-      return self.prefix + self.barcode.to_s + Barcode.calculate_checksum(self.prefix, self.barcode)
-    else
-      return nil
-    end
-  end
-
-  def ean13_barcode
-    if barcode && self.prefix
-      return Barcode.calculate_barcode(self.prefix, self.barcode.to_i).to_s
-    else
-      return nil
-    end
-  end
-  
   def set_external_release(state)
-    update_external_release do 
-      case 
+    update_external_release do
+      case
       when state == 'failed'  then self.external_release = false
       when state == 'passed'  then self.external_release = true
       when state == 'pending' then self # Do nothing
-      when state.nil?         then self # TODO: Ignore for the moment, correct later     
+      when state.nil?         then self # TODO: Ignore for the moment, correct later
       when [ 'scanned_into_lab' ].include?(state.to_s) then self # TODO: Ignore for the moment, correct later
       else raise StandardError, "Invalid external release state #{state.inspect}"
       end
     end
   end
-  
+
   def update_external_release(&block)
     external_release_nil_before = external_release.nil?
     yield
@@ -364,30 +351,9 @@ class Asset < ActiveRecord::Base
     if data[0] == 'DN'
       plate = Plate.find_by_barcode(data[1])
       well = plate.find_well_by_name(location)
-      return well if well 
+      return well if well
     end
     raise ActiveRecord::RecordNotFound, "Couldn't find well with for #{barcode} #{location}"
-  end
-
-  def self.get_barcode_from_params(params)
-    prefix = 'NT'
-    asset = nil
-    if _pre=params[:prefix]
-      prefix = _pre
-    else
-      begin
-        asset = Asset.find(params[:id])
-        prefix = asset.prefix
-      rescue
-      end
-    end
-    if asset and asset.barcode
-      barcode = Barcode.calculate_barcode(prefix, asset.barcode.to_i)
-    else
-      barcode = Barcode.calculate_barcode(prefix, params[:id].to_i)
-    end
-
-    barcode
   end
 
   def assign_relationships(parents, child)
@@ -426,26 +392,37 @@ class Asset < ActiveRecord::Base
   # them together with 'OR' to get the overall conditions.
   named_scope :with_machine_barcode, lambda { |*barcodes|
     query_details = barcodes.flatten.map do |source_barcode|
-      barcode_number = Barcode.number_to_human(source_barcode)
-      prefix_string  = Barcode.prefix_from_barcode(source_barcode)
-      barcode_prefix = BarcodePrefix.find_by_prefix(prefix_string)
+      case source_barcode.to_s
+      when /^\d{13}$/ #An EAN13 barcode
+        barcode_number = Barcode.number_to_human(source_barcode)
+        prefix_string  = Barcode.prefix_from_barcode(source_barcode)
+        barcode_prefix = BarcodePrefix.find_by_prefix(prefix_string)
 
-      if barcode_number.nil? or prefix_string.nil? or barcode_prefix.nil?
-        { :query => 'FALSE' }
+        if barcode_number.nil? or prefix_string.nil? or barcode_prefix.nil?
+          { :query => 'FALSE' }
+        else
+          { :query => '(barcode=? AND barcode_prefix_id=?)', :conditions => [ barcode_number, barcode_prefix.id ] }
+        end
+      when /^\d{10}$/ # A Fluidigm barcode
+        { :joins => 'JOIN plate_metadata AS pmmb ON pmmb.plate_id = assets.id', :query=>'(pmmb.fluidigm_barcode=?)', :conditions => source_barcode.to_s }
       else
-        { :query => '(barcode=? AND barcode_prefix_id=?)', :conditions => [ barcode_number, barcode_prefix.id ] }
+        { :query => 'FALSE' }
       end
-    end.inject({ :query => [], :conditions => [] }) do |building, current|
+    end.inject({ :query => ['FALSE'], :conditions => [nil], :joins=>[] }) do |building, current|
       building.tap do
+        building[:joins]      << current[:joins]
         building[:query]      << current[:query]
         building[:conditions] << current[:conditions]
       end
     end
 
-    { :conditions => [ query_details[:query].join(' OR '), *query_details[:conditions].flatten.compact ] }
+    {
+      :conditions => [ query_details[:query].join(' OR '), *query_details[:conditions].flatten.compact ],
+      :joins => query_details[:joins].compact.uniq
+    }
   }
-  
-  
+
+
   named_scope :source_assets_from_machine_barcode, lambda { |destination_barcode|
     destination_asset = find_from_machine_barcode(destination_barcode)
     if destination_asset
@@ -457,26 +434,26 @@ class Asset < ActiveRecord::Base
       end
     else
       { :conditions => 'FALSE' }
-    end 
+    end
   }
-  
-  
+
+
   def self.find_from_machine_barcode(source_barcode)
     with_machine_barcode(source_barcode).first
   end
-  
-  def barcode_and_created_at_hash 
+
+  def barcode_and_created_at_hash
     return {} if barcode.blank?
     {
       :barcode    => generate_machine_barcode,
       :created_at => created_at
     }
   end
-  
+
   def generate_machine_barcode
     "#{Barcode.calculate_barcode( barcode_prefix.prefix,barcode.to_i)}"
   end
-  
+
   def external_release_text
     return "Unknown" if self.external_release.nil?
     return self.external_release? ? "Yes" : "No"
@@ -485,7 +462,7 @@ class Asset < ActiveRecord::Base
   def add_parent(parent)
     return unless parent
     #should be self.parents << parent but that doesn't work
-    
+
     self.save!
     parent.save!
     AssetLink.create_edge!(parent, self)
@@ -494,7 +471,7 @@ class Asset < ActiveRecord::Base
   def attach_tag(tag)
     tag.tag!(self) if tag.present?
   end
-  
+
   def requests_status(request_type)
    # get the most recent request (ignore previous runs)
     self.requests.sort_by{ |r| r.id }.select{ |request| request.request_type == request_type }.map{ |filtered_request| filtered_request.state }
@@ -516,25 +493,30 @@ class Asset < ActiveRecord::Base
   def spiked_in_buffer
     return nil
   end
-  
+
   def has_stock_asset?
     return false
   end
-  
-    
+
+
   def has_many_requests?
     Request.find_all_target_asset(self.id).size > 1
   end
-  
+
   def is_a_resource
    self.resource == true
   end
 
-  private
-  def set_default_prefix
-    if barcode_prefix.nil?
-      self.barcode_prefix = BarcodePrefix.find_by_prefix(self.prefix)
-    end
+  def can_be_created?
+    false
   end
-  
+
+  def compatible_purposes
+    []
+  end
+
+  def automatic_move?
+    false
+  end
+
 end

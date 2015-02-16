@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class Studies::WorkflowsController < ApplicationController
   before_filter :discover_study, :discover_workflow
 
@@ -9,7 +12,7 @@ class Studies::WorkflowsController < ApplicationController
 
     @request_types  = @workflow.request_types.all(:order => "`order` ASC").reject { |r| @total_requests[r].zero? }
 
-    @basic_tabs = ["Summary", "Sample progress", "Assets progress", "Project quotas"]
+    @basic_tabs = ["Summary", "Sample progress", "Assets progress"]
     @summaries = @basic_tabs + @request_types.map(&:name)
   end
   private :setup_tabs
@@ -68,10 +71,9 @@ class Studies::WorkflowsController < ApplicationController
         @cache.merge!(:passed => @passed_asset_request, :failed => @failed_asset_request)
         render :partial => "asset_progress"
       when "Summary"
+        @page_elements= @study.assets_through_requests.for_summary.paginate(page_params)
+        asset_ids = @page_elements.map { |e| e.id }
         render :partial => "summary"
-      when "Project quotas"
-        @projects = @study.projects.paginate(page_params)
-        render :partial => "shared/project_listing_quotas"
       else
         @request_type = @request_types[@summary - @basic_tabs.size]
         @assets_to_detail = @study.requests.request_type(@request_type).with_asset.all(:include =>:asset).map(&:asset).uniq
@@ -99,8 +101,9 @@ class Studies::WorkflowsController < ApplicationController
 
   def compute_total_request(study)
     total_requests = { }
+    report =  @study.total_requests_report
     @workflow.request_types.each do |rt|
-      total_requests[rt] = @study.total_requests(rt)
+      total_requests[rt] = report[rt.id]||0
     end
     total_requests
   end
@@ -119,6 +122,7 @@ class Studies::WorkflowsController < ApplicationController
   private
   def discover_study
     @study  = Study.find(params[:study_id])
+    flash[:warning] = "#{flash[:warning]} #{@study.warnings}" if @study.warnings.present?
   end
 
   def discover_workflow

@@ -5,6 +5,7 @@ Feature: Creating submissions for pulldown
       And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
     Given I have an "active" study called "Testing submission creation"
       And the UUID for the study "Testing submission creation" is "22222222-3333-4444-5555-000000000000"
@@ -42,7 +43,7 @@ Feature: Creating submissions for pulldown
       """
       {
         "content": {
-          "request_options.read_length": [ "is not included in the list" ]
+          "request_options.read_length": ["is '22' should be 50, 75 or 100"]
         }
       }
       """
@@ -78,7 +79,7 @@ Feature: Creating submissions for pulldown
       """
       {
         "content": {
-          "orders.request_options.read_length": [ "is not included in the list" ]
+          "orders.request_options.read_length": ["is '0' should be 50, 75 or 100"]
         }
       }
       """
@@ -153,7 +154,7 @@ Feature: Creating submissions for pulldown
             "submit": "http://www.example.com/api/1/11111111-2222-3333-4444-555555555555/submit"
           },
           "state": "building",
-          "orders": [ 
+          "orders": [
             {
               "uuid": "11111111-2222-3333-4444-666666666666"
             }
@@ -258,7 +259,7 @@ Feature: Creating submissions for pulldown
             "submit": "http://www.example.com/api/1/11111111-2222-3333-4444-555555555555/submit"
           },
           "state": "building",
-          "orders": [ 
+          "orders": [
             {
               "uuid": "11111111-2222-3333-4444-666666666666"
             }
@@ -339,7 +340,7 @@ Feature: Creating submissions for pulldown
             "submit": "http://www.example.com/api/1/11111111-2222-3333-4444-555555555555/submit"
           },
           "state": "building",
-          "orders": [ 
+          "orders": [
             {
               "uuid": "11111111-2222-3333-4444-666666666666"
             }
@@ -372,8 +373,8 @@ Feature: Creating submissions for pulldown
     # Check that all of the library creation requests have the correct information on them
     Given all pending delayed jobs have been processed
     Then all "Pulldown <pipeline>" requests should have the following details:
-      | fragment_size_required_from | 99  | 
-      | fragment_size_required_to   | 999 | 
+      | fragment_size_required_from | 99  |
+      | fragment_size_required_to   | 999 |
 
     Examples:
       | pipeline |

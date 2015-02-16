@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 module Submission::StateMachine
   def self.extended(base)
     base.class_eval do
@@ -29,19 +32,26 @@ module Submission::StateMachine
     # TODO[xxx]: ... to here
 
     def complete_building
-      orders(true).all?(&:complete_building)
-
+      orders(true).each(&:complete_building)
     end
 
     def process_submission!
       # Does nothing by default!
     end
 
-    def fail_orders!
-      # TODO we need to find a cleaner way release
-      # book quota and especially not release them twice
-      return if state == "failed"  # don't do it twice
-      orders.each(&:unbook_quota_available_for_request_types!)
+    def process_callbacks!
+      callbacks.each do |_,callback|
+        callback.call
+      end
+    end
+
+    def callbacks
+      @callbacks ||= {}
+    end
+
+    def register_callback(key=nil,&block)
+      key ||= "k#{@callbacks.size}"
+      callbacks[key] = block
     end
 
     def unprocessed?
@@ -54,9 +64,9 @@ module Submission::StateMachine
     aasm_initial_state :building
     aasm_state :building, :exit => :valid_for_leaving_building_state
     aasm_state :pending, :enter => :complete_building
-    aasm_state :processing, :enter => :process_submission!
+    aasm_state :processing, :enter => :process_submission!, :exit => :process_callbacks!
     aasm_state :ready
-    aasm_state :failed, :enter => :fail_orders!
+    aasm_state :failed
 
     aasm_event :built do
       transitions :to => :pending, :from => [ :building ]

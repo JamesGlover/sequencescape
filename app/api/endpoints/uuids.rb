@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 #--
 # This is a complete hack of the standard behaviour and quite rightly so: people shouldn't be using it and
 # so it is going to go.  Rather than pollute the main API code with this rubbish it's here.
@@ -88,7 +91,7 @@ class ::Endpoints::Uuids < ::Core::Endpoint::Base
     disable(:read)
 
     # Does an individual resource lookup
-    bind_action(:create, :to => 'lookup', :as => :lookup) do |request, response|
+    bind_action(:create, :to => 'lookup', :as => :lookup) do |_,request, response|
       uuid = Search.create!(request.json['lookup']).find
 
       # Hack time ...
@@ -105,7 +108,7 @@ class ::Endpoints::Uuids < ::Core::Endpoint::Base
     bound_action_does_not_require_an_io_class(:lookup)
 
     # Handles trying to find multiple resources
-    bind_action(:create, :to => 'bulk', :as => :bulk) do |request, response|
+    bind_action(:create, :to => 'bulk', :as => :bulk) do |_,request, response|
       uuids = Search.create_bulk!(request.json['lookup']).map(&:find)
 
       # Hack time ...

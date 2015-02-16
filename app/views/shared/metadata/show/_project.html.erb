@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.%>
 <%# NOTE[xxx]: Kind of a hack because we're not actually building a form %>
 <div class="project_information">
 <% fields_for(project) do |form| %>
@@ -11,7 +14,7 @@
     <% metadata_fields.with_options(:grouping => 'Billing') do |group| %>
       <%= group.association_attribute(:project_manager, :name) %>
       <%= group.plain_value(:external_funding_source) %>
-      <%= group.association_attribute(:budget_division, :name) %> 
+      <%= group.association_attribute(:budget_division, :name) %>
       <%= group.plain_value(:sequencing_budget_cost_centre) %>
     <% end %>
     <%= metadata_fields.plain_value(:project_funding_model) %>

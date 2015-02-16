@@ -1,4 +1,10 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class RequestType < ActiveRecord::Base
+
+  include RequestType::Validation
+
   class DeprecatedError < RuntimeError; end
 
   class RequestTypePlatePurpose < ActiveRecord::Base
@@ -15,9 +21,16 @@ class RequestType < ActiveRecord::Base
   include Uuid::Uuidable
   include Named
 
-  has_many :requests
-  has_many :pipelines_request_types
+  has_many :requests, :inverse_of => :request_type
+  has_many :pipelines_request_types, :inverse_of => :request_type
   has_many :pipelines, :through => :pipelines_request_types
+  has_many :library_types_request_types, :inverse_of=> :request_type
+  has_many :library_types, :through => :library_types_request_types
+  has_many :request_type_validators, :class_name => 'RequestType::Validator'
+
+  def default_library_type
+    library_types.find(:first,:conditions=>{:library_types_request_types=>{:is_default=>true}})
+  end
 
   # Returns a collect of pipelines for which this RequestType is valid control.
   # ...so only valid for ControlRequest producing RequestTypes...
@@ -47,9 +60,9 @@ class RequestType < ActiveRecord::Base
 
   serialize :request_parameters
 
-  delegate :delegate_validator, :to => :request_class
+  delegate :accessioning_required?, :to => :request_class
 
-  named_scope :applicable_for_asset, lambda { |asset| 
+  named_scope :applicable_for_asset, lambda { |asset|
     {
       :conditions => [
         'asset_type = ?
@@ -94,36 +107,16 @@ class RequestType < ActiveRecord::Base
     self.request_class_name = request_class.name
   end
 
-  def quarantine_create_asset_at_submission_time?
-    # temporary
-    # we should had an attribute for that
-    [6,7, 8].include? id
-  end
-
-  def order_with_default(default=2^31)
-    order || default
-  end
-
-  def quarantine_is_for_library_creation?
-    # TODO: this should either be an attribute in the request_types table or a specific class hierarchy is required
-    [ :library_creation, :multiplexed_library_creation ].include?(self.key.to_sym)
-  end
-
-  def quaratine_is_for_sequencing?
-    # TODO: this should either be an attribute in the request_types table or a specific class hierarchy is required
-    [ :single_ended_sequencing, :paired_end_sequencing ].include?(self.key.to_sym)
-  end
-
   def self.dna_qc
-    @dna_qc ||= RequestType.find_by_key("dna_qc")
+    find_by_key("dna_qc") or raise "Cannot find dna_qc request type"
   end
 
   def self.genotyping
-    @genotyping ||= RequestType.find_by_key("genotyping")
+    find_by_key("genotyping") or raise "Cannot find genotyping request type"
   end
 
   def self.transfer
-    @transfer ||= RequestType.find_by_key("transfer")
+    find_by_key("transfer") or raise "Cannot find transfer request type"
   end
 
   def extract_metadata_from_hash(request_options)
@@ -135,7 +128,22 @@ class RequestType < ActiveRecord::Base
     attributes.delete_if { |k,_| not common_attributes.include?(k) }
   end
 
-  def asset_type_class
-    asset_type ? asset_type.constantize : Asset
+  def targets_lanes?
+    (target_asset_type == 'Lane') or (name =~ /\ssequencing$/)
+  end
+
+  # The target asset can either be described by a purpose, or by the target asset type.
+  belongs_to :target_purpose, :class_name => 'Purpose'
+
+  def needs_target_asset?
+    target_purpose.nil? and target_asset_type.blank?
+  end
+
+  def create_target_asset!(&block)
+    case
+    when target_purpose.present?  then target_purpose.create!(&block)
+    when target_asset_type.blank? then nil
+    else                               target_asset_type.constantize.create!(&block)
+    end
   end
 end

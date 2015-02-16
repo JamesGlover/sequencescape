@@ -12,6 +12,7 @@ Feature: Access sample tubes through the API
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
   @read
   Scenario: Reading the JSON for a UUID
@@ -40,7 +41,6 @@ Feature: Access sample tubes through the API
           "closed": false,
           "concentration": null,
           "volume": null,
-          "scanned_in_date": "",
 
           "barcode": {
             "prefix": "NT",
@@ -66,9 +66,6 @@ Feature: Access sample tubes through the API
               "read": "http://www.example.com/api/1/00000000-1111-2222-3333-444444444444/library_tubes"
             }
           }
-        },
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
         }
       }
       """

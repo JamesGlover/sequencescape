@@ -1,80 +1,45 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 module Pulldown::Requests
   module BaitLibraryRequest
     def self.included(base)
       base.class_eval do
-        const_set(:DEFAULT_LIBRARY_TYPE, 'Agilent Pulldown')
-        const_set(:LIBRARY_TYPES, [ 'Agilent Pulldown' ])
-
         fragment_size_details(100, 400)
       end
       base::Metadata.class_eval do
-        include BaitLibrary::Associations
-        association(:bait_library, :name, :scope => :visible)
-        validates_presence_of :bait_library
-        validate :bait_library_valid
+        include Pulldown::Requests::BaitLibraryRequest::BaitMetadata
+      end
+    end
 
-        def bait_library_valid
-          errors.add(:bait_library_id, "Validation failed: Bait library is no longer available.") unless bait_library.visible?
+    # Ensure that the bait library information is also included in the pool information.
+    def update_pool_information(pool_information)
+      super
+      pool_information[:bait_library] = request_metadata.bait_library
+    end
+
+    module BaitMetadata
+      def self.included(base)
+        base.class_eval do
+          include BaitLibrary::Associations
+          association(:bait_library, :name, :scope => :visible)
+          validates_presence_of :bait_library
+          validate :bait_library_valid
         end
       end
+
+      def bait_library_valid
+        errors.add(:bait_library_id, "Validation failed: Bait library is no longer available.") unless bait_library.visible?
+      end
+      private :bait_library_valid
     end
   end
 
-  # This is the billing strategy for the pulldown requests, which mimics the behaviour of the
-  # general billing behaviour.
-  module BillingStrategy
-    def charge_to_project
-      BillingEvent.bill_projects_for(self) if request_type.billable?
-    end
+  class LibraryCreation < Request::LibraryCreation
 
-    def charge_internally
-      BillingEvent.bill_internally_for(self) if request_type.billable?
-    end
-
-    def refund_project
-      BillingEvent.refund_projects_for(self) if request_type.billable?
-    end
-  end
-
-  # Override the behaviour of Request so that we do not copy the aliquots from our source asset
-  # to the target when we are passed.  This is actually done by the TransferRequest from plate
-  # to plate as it goes through being processed.
-  class LibraryCreation < Request
-    include BillingStrategy
-
-    def on_started
-      # Override the default behaviour to not do the transfer
-    end
-
-    # Convenience helper for ensuring that the fragment size information is properly treated.
-    # The columns in the database are strings and we need them to be integers, hence we force
-    # that here.
-    def self.fragment_size_details(minimum, maximum)
-      class_eval do
-        has_metadata :as => Request do
-          # Redefine the fragment size attributes as they are fixed
-          attribute(:fragment_size_required_from, { :required => true, :default => minimum, :integer => true })
-          attribute(:fragment_size_required_to,   { :required => true, :default => maximum, :integer => true })
-        end
-
-        include Request::LibraryManufacture
-      end
-      const_get(:Metadata).class_eval do
-        def fragment_size_required_from
-          self[:fragment_size_required_from].try(:to_i)
-        end
-
-        def fragment_size_required_to
-          self[:fragment_size_required_to].try(:to_i)
-        end
-      end
-    end
   end
 
   class WgsLibraryRequest < LibraryCreation
-    DEFAULT_LIBRARY_TYPE = 'Standard'
-    LIBRARY_TYPES        = [ DEFAULT_LIBRARY_TYPE ]
-
     fragment_size_details(300, 500)
   end
 
@@ -84,5 +49,38 @@ module Pulldown::Requests
 
   class IscLibraryRequest < LibraryCreation
     include BaitLibraryRequest
+    include PreCapturePool::Poolable
+
+    Metadata.class_eval do
+      attribute(:pre_capture_plex_level, :default => 8, :integer => true)
+    end
+
+  end
+
+  class IscLibraryRequestPart < IscLibraryRequest
+    include IlluminaHtp::Requests::LibraryCompletion::FailUpstream
+  end
+
+  class StockToCovaris < TransferRequest
+    include TransferRequest::InitialTransfer
+  end
+
+  class PcrXpToIscLibPool < TransferRequest
+    include IlluminaHtp::Requests::InitialDownstream
+    redefine_state_machine do
+      aasm_column :state
+      aasm_initial_state :pending
+
+      aasm_state :pending
+      aasm_state :started
+      aasm_state :nx_in_progress
+      aasm_state :passed
+      aasm_state :cancelled
+
+      aasm_event :start       do transitions :to => :started,        :from => [:pending]                    end
+      aasm_event :nx_progress do transitions :to => :nx_in_progress, :from => [:pending, :started]          end
+      aasm_event :pass        do transitions :to => :passed,         :from => [:nx_in_progress, :failed]    end
+      aasm_event :cancel      do transitions :to => :cancelled,      :from => [:started, :passed]           end
+    end
   end
 end

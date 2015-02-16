@@ -1,8 +1,15 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 class SpikedBuffer < LibraryTube
   # The index of a spiked buffer is the first parent library tube.  Note that this does not cover cases where
   # the sti_type is a derivative of LibraryTube, which is actually fine because SpikedBuffer is a LibraryTube
   # and we definitely don't want that in the list.
   has_one_as_child(:index, :conditions => { :sti_type => 'LibraryTube' })
+
+  def library_prep?
+    false
+  end
 
   # Before the validations are run on creation we need to ensure that there is at least an aliquot of phiX
   # in this tube.

@@ -1,7 +1,24 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013,2014 Genome Research Ltd.
 require "test_helper"
 
 class ProjectTest < ActiveSupport::TestCase
   context "Project" do
+
+    should_validate_presence_of :name
+
+    context "#metadata" do
+      setup do
+        @project = Project.new :name => "Project : #{Time.now}"
+      end
+
+      should "require cost-code and project funding model" do
+        assert_equal false, @project.save
+        assert  @project.errors.full_messages.include?("Project cost code can't be blank")
+      end
+
+    end
 
     context "#billable_events" do
       setup do
@@ -49,9 +66,6 @@ class ProjectTest < ActiveSupport::TestCase
         @request_type    = Factory :request_type
         @request_type_2  = Factory :request_type, :name => "request_type_2", :key => "request_type_2"
         @request_type_3  = Factory :request_type, :name => "request_type_3", :key => "request_type_3"
-        @quota           = Factory :project_quota, :project => @project, :request_type => @request_type, :limit => 5
-        @quota_2         = Factory :project_quota, :project => @project, :request_type => @request_type_2, :limit => 7
-        @quota_3         = Factory :project_quota, :project => @project, :request_type => @request_type_3, :limit => 14
         @submission       = Factory::submission :project => @project, :asset_group_name => 'to avoid asset errors'
         # Failed
         Factory :cancelled_request, :project => @project, :request_type => @request_type, :submission => @submission
@@ -90,118 +104,8 @@ class ProjectTest < ActiveSupport::TestCase
         assert_equal 8, @submission.total_requests(@request_type)
       end
 
-      context "#Quotas" do
-        should "Calculate correctly" do
-          assert_equal 4, @project.used_quota(@request_type) # Include pending
-          assert_equal 3, @submission.passed_requests(@request_type)
-          assert_equal 1, @submission.pending_requests(@request_type)
-          assert_equal 1, @project.projected_remaining_quota(@request_type)
-          assert_equal 5, @project.total_quota(@request_type)
-          assert_equal 5, @project.quota_limit_for(@request_type)
-          assert_equal @quota, @project.quota_for(@request_type)
-        end
-
-        context "compare_quotas" do
-          setup do
-            @new_quotas = { "#{@request_type.id}" => "8" }
-            @old_quotas = { "#{@request_type.id}" => "5" }
-          end
-
-          should "return false because quotas are not equal" do
-            assert_equal 5, @project.quota_limit_for(@request_type)
-            assert_equal 5, @quota.limit
-            assert_equal false, @project.compare_quotas(@new_quotas)
-          end
-
-          should "return true because quotas are equal" do
-            assert_equal 5, @quota.limit
-            assert @project.compare_quotas(@old_quotas)
-          end
-        end
-      end
-
     end
 
-    context "#has_quota?" do
-      setup do
-        @project = Factory :project
-        @request_type = Factory :request_type
-      end
-      context "when enforced" do
-        setup do
-          @project.enforce_quotas = true
-        end
-        context "and has excess remaining" do
-          setup do
-            @quota = 10
-            @required = 5
-            @project.quotas.create(:limit => @quota, :request_type => @request_type)
-            @project.project_metadata.budget_division.name = 'MetaHit'
-          end
-          should "be true" do
-            assert @project.has_quota?(@request_type, @required)
-          end
-        end
-        context "and has exact amount remaining" do
-          setup do
-            @quota = 10
-            @required = 10
-            @project.quotas.create(:limit => @quota, :request_type => @request_type)
-            @project.project_metadata.budget_division.name = 'Small Faculty'
-          end
-          should "be true" do
-            assert @project.has_quota?(@request_type, @required)
-          end
-        end
-        context "and has insufficent remaining" do
-          setup do
-            @quota = 5
-            @required = 10
-            @project.quotas.create(:limit => @quota, :request_type => @request_type)
-          end
-          should "be false" do
-            assert ! @project.has_quota?(@request_type, @required)
-          end
-        end
-        context "and has a quota limit set to 0" do
-          setup do
-            @quota = 0
-            @required = 1
-
-            @project.quotas.create(:limit => @quota, :request_type => @request_type)
-
-            assert_equal @quota, @project.projected_remaining_quota(@request_type)
-          end
-          should "be false" do
-            assert ! @project.has_quota?(@request_type, @required)
-          end
-        end
-      end
-      context "when not being enforced" do
-        setup do
-          @project.enforce_quotas = false
-        end
-        should "be true" do
-          assert @project.has_quota?(@request_type, 1000)
-        end
-      end
-      context "with unallocated budget division" do
-        setup do
-          @project.enforce_quotas = true
-          @project.project_metadata.budget_division.name = 'Unallocated'
-          @project.save!
-          @project.quotas.create(:limit => 2, :request_type => @request_type)
-        end
-
-        should 'not be actionable' do
-          assert !@project.actionable?   
-        end
-
-        should 'not have quota for request type' do
-          assert !@project.has_quota?(@request_type, 1)
-        end
-      end
-    end
   end
 end
 

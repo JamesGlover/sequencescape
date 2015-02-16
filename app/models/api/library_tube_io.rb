@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 class Api::LibraryTubeIO < Api::Base
   module Extensions
     module ClassMethods
@@ -16,7 +19,8 @@ class Api::LibraryTubeIO < Api::Base
             :barcode_prefix, {
               :source_request => [:uuid_object, :request_metadata],
               :primary_aliquot => { :sample => :uuid_object, :tag => [ :uuid_object, { :tag_group => :uuid_object } ] }
-            }
+            },
+            :scanned_into_lab_event
           ]
         }
 
@@ -44,8 +48,8 @@ class Api::LibraryTubeIO < Api::Base
   map_attribute_to_json_attribute(:updated_at)
   map_attribute_to_json_attribute(:public_name)
 
-  extra_json_attributes do |object, json_attributes|
-    json_attributes["scanned_in_date"] = object.scanned_in_date if object.respond_to?(:scanned_in_date)
+  with_association(:scanned_into_lab_event) do
+    map_attribute_to_json_attribute(:content, 'scanned_in_date')
   end
 
   with_association(:barcode_prefix) do

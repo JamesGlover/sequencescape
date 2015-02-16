@@ -1,14 +1,26 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2012 Genome Research Ltd.
 Given /^the patient has withdrawn consent for "([^"]*)"$/ do |sample|
   Sample.find_by_name(sample).withdraw_consent
 end
 
 Given /^the study "([^"]*)" has the sample "([^"]*)" in a sample tube and asset group$/ do |study, sample|
-  And %Q{the study "#{study}" has an asset group called "#{sample}_group"}
-  And %Q{I have a sample called "#{sample}" with metadata}
-  And %Q{the sample "#{sample}" belongs to the study "#{study}"}
-  And %Q{a sample tube called "#{sample}_tube" with ID #{Asset.count+1}}
-  And %Q{the sample "#{sample}" is in the sample tube "#{sample}_tube"}
-  And %Q{the sample tube "#{sample}_tube" is in the asset group "#{sample}_group"}
+  step(%Q{the study "#{study}" has an asset group called "#{sample}_group"})
+  step(%Q{I have a sample called "#{sample}" with metadata})
+  step(%Q{the sample "#{sample}" belongs to the study "#{study}"})
+  step(%Q{a sample tube called "#{sample}_tube" with ID #{Asset.count+1}})
+  step(%Q{the sample "#{sample}" is in the sample tube "#{sample}_tube"})
+  step(%Q{the sample tube "#{sample}_tube" is in the asset group "#{sample}_group"})
+end
+
+Given /^the study "([^"]*)" has the sample "([^"]*)" in a well and asset group$/ do |study, sample|
+  step(%Q{the study "#{study}" has an asset group called "#{sample}_group"})
+  step(%Q{I have a sample called "#{sample}" with metadata})
+  step(%Q{the sample "#{sample}" belongs to the study "#{study}"})
+  step(%Q{a well called "#{sample}_well" with ID #{Asset.count+1}})
+  step(%Q{the sample "#{sample}" is in the well "#{sample}_well"})
+  step(%Q{the well "#{sample}_well" is in the asset group "#{sample}_group"})
 end
 
 Given /^I try to create a "([^\"]*)" order with the following setup:$/ do |template_name, table|

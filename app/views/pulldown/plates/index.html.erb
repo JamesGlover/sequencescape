@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.%>
 <% add :menu, "Create Plates" => '/pulldown/plates/new' %>
 <% add :menu, "Verify Plates" => '/pulldown/verifies' %>
 
@@ -37,8 +40,8 @@
       <td><%= sonication ? link_to(sonication.sanger_human_barcode, asset_path(sonication)) : "" %></td>
       <td><%= run_of_robot ? link_to(run_of_robot.sanger_human_barcode, asset_path(run_of_robot)) : "" %></td>
       <td><%= er1 ? link_to(er1.sanger_human_barcode, asset_path(er1))  : "" %></td>
-      <td><%= er2 ? link_to(er2.sanger_human_barcode, asset_path(er2))  : "" %></td>      
-      <td><%= er3 ? link_to(er3.sanger_human_barcode, asset_path(er3))  : "" %></td>      
+      <td><%= er2 ? link_to(er2.sanger_human_barcode, asset_path(er2))  : "" %></td>
+      <td><%= er3 ? link_to(er3.sanger_human_barcode, asset_path(er3))  : "" %></td>
       <td><%= er4 ? link_to(er4.sanger_human_barcode, asset_path(er4))  : "" %></td>
       <td><%= sequence_capture ? link_to(sequence_capture.sanger_human_barcode, asset_path(sequence_capture))  : "" %></td>
       <td><%= pcr ? link_to(pcr.sanger_human_barcode, asset_path(pcr)) : "" %></td>

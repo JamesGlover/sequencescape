@@ -1,6 +1,9 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014,2015 Genome Research Ltd.
 class AssetsController < ApplicationController
   include BarcodePrintersController::Print
-   before_filter :discover_asset, :only => [:show, :edit, :update, :destory, :summary, :close, :print_assets, :print, :show_plate, :create_wells_group, :history, :holded_assets, :complete_move_to_2D]
+   before_filter :discover_asset, :only => [:show, :edit, :update, :destory, :summary, :close, :print_assets, :print, :show_plate, :history, :holded_assets, :complete_move_to_2D]
 
   def index
     @assets_without_requests = []
@@ -26,7 +29,7 @@ class AssetsController < ApplicationController
       end
     end
   end
-  
+
   def show
     respond_to do |format|
       format.html
@@ -37,7 +40,10 @@ class AssetsController < ApplicationController
 
   def new
     @asset = Asset.new
-		@asset_types = { "Sample Tube" =>'SampleTube', "Library Tube" => 'LibraryTube', "Hybridization Buffer Spiked" => "SpikedBuffer" }
+    @asset_types = { "Library Tube" => 'LibraryTube', "Hybridization Buffer Spiked" => "SpikedBuffer" }
+    @phyx_tag = TagGroup.find_by_name(configatron.phyx_tag.tag_group_name).tags.select do |t|
+      t.map_id == configatron.phyx_tag.tag_map_id
+    end.first
 
     respond_to do |format|
       format.html
@@ -46,6 +52,9 @@ class AssetsController < ApplicationController
   end
 
   def edit
+    @valid_purposes_options = @asset.compatible_purposes.map do |purpose|
+      [purpose.name, purpose.id]
+    end
   end
 
   def find_parents(text)
@@ -61,6 +70,7 @@ class AssetsController < ApplicationController
   end
 
   def create
+
     count = first_param(:count)
     count = count.present? ? count.to_i : 1
     saved = true
@@ -72,13 +82,12 @@ class AssetsController < ApplicationController
         parent = Asset.find_by_id(parent_param) || Asset.find_from_machine_barcode(parent_param) || Asset.find_by_name(parent_param)
         raise StandardError, "Cannot find the parent asset #{parent_param.inspect}" if parent.nil?
       end
-
       # Find the tag up front
       tag, tag_param = nil, first_param(:tag)
       if tag_param.present?
         conditions = { :map_id => tag_param }
         oligo      = params[:tag_sequence]
-        conditions[:oligo] = oligo.first.upcase! if oligo.present? and oligo.first.present?
+        conditions[:oligo] = oligo.first.upcase if oligo.present? and oligo.first.present?
 
         tag = Tag.first(:conditions => conditions) or raise StandardError, "Cannot find tag #{tag_param.inspect}"
       end
@@ -213,9 +222,6 @@ class AssetsController < ApplicationController
     params[:printables]={@asset =>1}
     return print_asset_labels(asset_url(@asset), asset_url(@asset))
   end
-  def submit_wells
-    @asset = Asset.find params[:id]
-  end
 
   def show_plate
   end
@@ -228,7 +234,7 @@ class AssetsController < ApplicationController
   private :prepare_asset
 
   def new_request_for_current_asset
-    new_request_asset_path(@asset, {:study_id => @study.id, :project_id => params[:project_id], :request_type_id => @request_type.id})
+    new_request_asset_path(@asset, {:study_id => @study.try(:id), :project_id => @project.try(:id), :request_type_id => @request_type.id})
   end
   private :new_request_for_current_asset
 
@@ -238,28 +244,30 @@ class AssetsController < ApplicationController
 
   def create_request
     @request_type = RequestType.find(params[:request_type_id])
-    @study        = Study.find(params[:study_id])
+    @study        = Study.find(params[:study_id]) unless params[:cross_study_request].present?
+    @project      = Project.find(params[:project_id]) unless params[:cross_project_request].present?
 
     request_options = params.fetch(:request, {}).fetch(:request_metadata_attributes, {})
     request_options[:multiplier] = { @request_type.id => params[:count].to_i } unless params[:count].blank?
     submission = ReRequestSubmission.build!(
       :study           => @study,
-      :project         => Project.find(params[:project_id]),
+      :project         => @project,
       :workflow        => @request_type.workflow,
       :user            => current_user,
       :assets          => [ @asset ],
       :request_types   => [ @request_type.id ],
       :request_options => request_options,
-      :comments        => params[:comments]
+      :comments        => params[:comments],
+      :priority        => params[:priority]
     )
 
-    respond_to do |format| 
+    respond_to do |format|
       flash[:notice] = 'Created request'
 
       format.html { redirect_to new_request_for_current_asset }
       format.json { render :json => submission.requests, :status => :created }
     end
-  rescue Quota::Error => exception
+  rescue Submission::ProjectValidation::Error => exception
     respond_to do |format|
       flash[:error] = exception.message
       format.html { redirect_to new_request_for_current_asset }
@@ -271,7 +279,7 @@ class AssetsController < ApplicationController
       format.html { redirect_to new_request_for_current_asset }
       format.json { render :json => exception.message, :status => :precondition_failed }
     end
-  rescue ActiveRecord::RecordInvalid => exception 
+  rescue ActiveRecord::RecordInvalid => exception
     respond_to do |format|
       flash[:error] = exception.message
       format.html { redirect_to new_request_for_current_asset }
@@ -279,23 +287,29 @@ class AssetsController < ApplicationController
     end
   end
 
-  def create_wells_group
-    study_id = params[:asset_group][:study_id]
-
-    if study_id.blank?
-      flash[:error] = "Please select a study"
-      redirect_to submit_wells_asset_path(@asset)
-      return
-    end
-
-    asset_group = @asset.create_asset_group_wells(@current_user, params[:asset_group])
-    redirect_to template_chooser_study_workflow_submissions_path(nil, asset_group.study, @current_user.workflow)
-  end
-
   def get_barcode
     barcode = Asset.get_barcode_from_params(params)
     render(:text => "#{Barcode.barcode_to_human(barcode)} => #{barcode}")
   end
+
+  def get_barcode_from_params(params)
+    prefix, asset = 'NT', nil
+    if params[:prefix]
+      prefix = params[:prefix]
+    else
+      begin
+        asset = Asset.find(params[:id])
+      rescue
+      end
+    end
+
+    if asset and asset.barcode
+      Barcode.calculate_barcode(asset.prefix, asset.barcode.to_i)
+    else
+      Barcode.calculate_barcode(prefix, params[:id].to_i)
+    end
+  end
+  private :get_barcode_from_params
 
   def lookup
     if params[:asset] && params[:asset][:barcode]
@@ -376,7 +390,7 @@ class AssetsController < ApplicationController
       redirect_to :action => :filtered_move, :id => params[:id]
       return
     end
-    
+
     result = move_single(params)
     if result
       flash[:notice] = "Assets has been moved"
@@ -386,28 +400,30 @@ class AssetsController < ApplicationController
       redirect_to :action => "filtered_move", :id => @asset.id
     end
   end
-  
+
   def find_by_barcode
   end
-  
+
   def lab_view
     barcode = params[:barcode]
     if barcode.blank?
       redirect_to :action => "find_by_barcode"
     else
       if barcode.size == 13 && Barcode.check_EAN(barcode)
-        @asset = Asset.find_by_barcode(Barcode.split_barcode(barcode)[1])
+        num_prefix, number, _ = Barcode.split_barcode(barcode)
+        prefix = BarcodePrefix.find_by_prefix(Barcode.prefix_to_human(num_prefix))
+        @asset = Asset.find_by_barcode_and_barcode_prefix_id(number,prefix.id)
       else
         @asset = Asset.find_by_barcode(barcode)
       end
-      
+
       if @asset.nil?
         flash[:error] = "Unable to find anything with this barcode"
         redirect_to :action => "find_by_barcode"
       end
     end
   end
-  
+
   def create_stocks
     params[:assets].each do |id, params|
       asset = Asset.find(id)
@@ -418,25 +434,9 @@ class AssetsController < ApplicationController
       )
       stock_asset.assign_relationships(asset.parents, asset)
     end
-    
+
     batch = Batch.find(params[:batch_id])
     redirect_to batch_path(batch)
-  end
-
-  def move_requests(source_asset, destination_asset)
-    raise 'Is this method still in use?'
-    # @pipeline = Pipeline.find(1)
-    # request_type = @pipeline.request_type
-    # request = Request.find_by_asset_id_and_request_type_id_and_state(source_asset.id, request_type.id, "pending")
-    # unless request.nil?
-    #   # make the event
-    #   self.events << Event.new({:message => "Moved from 1D tube #{source_asset.id} to 2D tube #{destination_asset.id}", :created_by => user.login, :family => "Update"})
-    #   # Move all requests
-    #   self.requests.each do |request|
-    #     request.events << Event.new({:message => "Moved from 1D tube #{source_asset.id} to 2D tube #{destination_asset.id}", :created_by => user.login, :family => "Update"})
-    #     request.initial_study_id = study.id
-    #   end
-    # end
   end
 
   private

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 Given /^the system has a plate with a barcode of "([^\"]*)"$/ do |encoded_barcode|
   Factory(:plate, :barcode => Barcode.number_to_human(encoded_barcode))
 end
@@ -32,9 +35,8 @@ Given /^plate "([^"]*)" has "([^"]*)" wells with samples$/ do |plate_barcode, nu
   plate = Plate.find_by_barcode(plate_barcode)
   well_data = []
   1.upto(number_of_wells.to_i) do |i|
-    well_data  << Well.new(:plate => plate, :map_id => i, :sample => Factory(:sample))
+    Well.create!(:plate => plate, :map_id => i, :sample => Factory(:sample))
   end
-  plate.wells.import well_data
 end
 
 
@@ -132,18 +134,19 @@ end
 
 Given /^the well with ID (\d+) is at position "([^\"]+)" on the plate with ID (\d+)$/ do |well_id, position, plate_id|
   plate = Plate.find(plate_id)
-  map   = Map.where_description(position).where_plate_size(plate.size).first or raise StandardError, "Could not find position #{position}"
+  map   = Map.where_description(position).where_plate_size(plate.size).where_plate_shape(plate.asset_shape).first or raise StandardError, "Could not find position #{position}"
   Well.find(well_id).update_attributes!(:plate => plate, :map => map)
 end
 
 Given /^well "([^"]*)" is holded by plate "([^"]*)"$/ do |well_uuid, plate_uuid|
   well = Uuid.find_by_external_id(well_uuid).resource
   plate = Uuid.find_by_external_id(plate_uuid).resource
-  well.update_attributes!(:plate => plate)
+  well.update_attributes!(:plate => plate, :map=>Map.find_by_description('A1'))
+  plate.update_attributes!(:barcode=>1)
 end
 
 Then /^plate "([^"]*)" should have a purpose of "([^"]*)"$/ do |plate_barcode, plate_purpose_name|
-  assert_equal plate_purpose_name, Plate.find_by_barcode("1234567").plate_purpose.name 
+  assert_equal plate_purpose_name, Plate.find_by_barcode("1234567").plate_purpose.name
 end
 
 Given /^the well with ID (\d+) contains the sample "([^\"]+)"$/ do |well_id, name|
@@ -168,6 +171,18 @@ Given /^a "([^\"]+)" plate called "([^\"]+)" exists$/ do |name, plate_name|
   plate_purpose.create!(:name => plate_name)
 end
 
+Given /^a "([^\"]+)" plate called "([^\"]+)" exists as a child of "([^\"]+)"$/ do |name, plate_name, parent_name|
+  plate_purpose = PlatePurpose.find_by_name(name) or raise StandardError, "Cannot find plate purpose #{name.inspect}"
+  parent        = Plate.find_by_name(parent_name) or raise StandardError, "Cannot find parent plate #{parent_name.inspect}"
+  AssetLink.create!(:ancestor => parent, :descendant => plate_purpose.create!(:name => plate_name))
+end
+
+Given /^a "(.*?)" plate called "(.*?)" exists as a child of plate (\d+)$/ do |name, plate_name, parent_id|
+  plate_purpose = PlatePurpose.find_by_name(name) or raise StandardError, "Cannot find plate purpose #{name.inspect}"
+  parent        = Plate.find(parent_id) or raise StandardError, "Cannot find parent plate #{parent_id.inspect}"
+  AssetLink.create!(:ancestor => parent, :descendant => plate_purpose.create!(:name => plate_name))
+end
+
 Given /^a "([^\"]+)" plate called "([^\"]+)" with ID (\d+)$/ do |name, plate_name, id|
   plate_purpose = PlatePurpose.find_by_name(name) or raise StandardError, "Cannot find plate purpose #{name.inspect}"
   plate_purpose.create!(:name => plate_name, :id => id)
@@ -178,9 +193,42 @@ Given /^all wells on (the plate "[^\"]+") have unique samples$/ do |plate|
     well.aliquots.create!(:sample => Factory(:sample))
   end
 end
+
+Given /^([0-9]+) wells on (the plate "[^\"]+") have unique samples$/ do |number,plate|
+  plate.wells.in_column_major_order[0,number.to_i].each do |well|
+    well.aliquots.create!(:sample => Factory(:sample))
+  end
+end
+
 Given /^plate "([^"]*)" has "([^"]*)" wells with aliquots$/ do |plate_barcode, number_of_wells|
   plate = Plate.find_by_barcode(plate_barcode)
   1.upto(number_of_wells.to_i) do |i|
     Well.create!(:plate => plate, :map_id => i).aliquots.create!(:sample => Factory(:sample))
   end
 end
+
+Given /^the plate "([^"]*)" is (passed|started|pending|failed) by "([^"]*)"$/ do |plate_name, state, user_name|
+  plate = Plate.find_by_name(plate_name)
+  user = User.find_by_login(user_name)
+  StateChange.create!(:user => user, :target => plate, :target_state => state)
+end
+
+
+Given /^(passed|started|pending|failed) transfer requests exist between (\d+) wells on "([^"]*)" and "([^"]*)"$/ do |state, count, source_name, dest_name|
+  source = Plate.find_by_name(source_name)
+  destination = Plate.find_by_name(dest_name)
+  (0...count.to_i).each do |i|
+    RequestType.transfer.create!(:asset => source.wells.in_row_major_order[i], :target_asset => destination.wells.in_row_major_order[i], :state=>state)
+    Well::Link.create!(:source_well=>source.wells.in_row_major_order[i],:target_well=>destination.wells.in_row_major_order[i], :type=>'stock')
+  end
+  AssetLink.create(:ancestor=>source,:descendant=>destination)
+end
+
+Then /^the plate with the barcode "(.*?)" should have a label of "(.*?)"$/ do |barcode, label|
+  plate = Plate.find_by_barcode!(barcode)
+  assert_equal label, plate.role
+end
+
+
+
+

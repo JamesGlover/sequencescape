@@ -1,16 +1,16 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2014 Genome Research Ltd.%>
 <table>
   <tr>
-		<th>Index</th>
-		<th>Expected Sequence</th>
-
-		<th></th>
+    <th>Index</th>
+    <th>Expected Sequence</th>
   </tr>
 
 <% for tag in tags %>
   <tr>
-		<td><%=h tag.map_id %></td>
-		<td><%=h tag.oligo %></td>
-    <td><% if current_user.administrator? %><%= link_to 'Edit', edit_tag_group_tag_path(tag_group,tag) %><% end %></td>
+    <td><%=h tag.map_id %></td>
+    <td><%=h tag.oligo %></td>
   </tr>
 <% end %>
 </table>

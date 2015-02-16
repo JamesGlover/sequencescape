@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2014 Genome Research Ltd.%>
 <% add(:tab, I18n.t('navigation.tabs.studies')   => studies_path) -%>
 <% add(:tab, I18n.t('navigation.tabs.projects')  => projects_path) -%>
 <% add(:tab, I18n.t('navigation.tabs.admin')     => admin_path) if logged_in? && current_user.is_administrator? -%>
@@ -74,16 +77,19 @@
         <div id="header">
           <div id='header_container'>
             <div id="app_name"><%= link_to I18n.t('application.name').upcase, root_path %></div>
-          
+
           <%# Only show the info-box if there's something to talk about... %>
           <%- unless custom_text("app_info_box", 1).blank? -%>
             <div id="app-info-box">
               <span><%= custom_text("app_info_box", 1) %></span>
             </div>
           <%- end -%>
-            
+
             <div id="search">
-            <% form_tag searches_path, :method => :get do %>Search <%= text_field_tag :q, "", :size => 20, :type => "search", :placeholder => "samples, studies", :id => 'layout_search' %> <% end %>
+            <% form_tag searches_path, :method => :get do %>Search
+              <%= select_tag :type, options_for_select(search_options), :id => 'layout_search_options' %>
+              <%= text_field_tag :q, "", :size => 20, :type => "search", :placeholder => "name, id, barcode", :id => 'layout_search' %>
+            <% end %>
             </div>
           </div>
           <div id="tab_bar">

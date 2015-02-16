@@ -1,20 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 class MiSeqSequencingRequest < SequencingRequest
-  READ_LENGTHS = [25, 50, 130, 150, 250]
-  has_metadata :as => Request  do
-    #redundant with library creation , but THEY are using it .
-    attribute(:fragment_size_required_from, :required =>true, :integer => true)
-    attribute(:fragment_size_required_to, :required =>true, :integer =>true)
-
-    attribute(:read_length, :integer => true, :required => true, :in => READ_LENGTHS)
-  end
-
-  class RequestOptionsValidator < DelegateValidation::Validator
-    delegate_attribute :read_length, :to => :target, :type_cast => :to_i
-    validates_numericality_of :read_length, :integer_only => true, :greater_than => 0
-    validates_inclusion_of :read_length, :in => MiSeqSequencingRequest::READ_LENGTHS
-  end
-
-  def self.delegate_validator
-    MiSeqSequencingRequest::RequestOptionsValidator
-  end
+  include Request::CustomerResponsibility
 end

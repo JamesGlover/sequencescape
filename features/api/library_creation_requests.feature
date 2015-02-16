@@ -12,6 +12,7 @@ Feature: Access library creation requests through the API
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
     Given I have a project called "My project"
     And the UUID for the project "My project" is "11111111-1111-2222-3333-444444444444"
@@ -40,9 +41,6 @@ Feature: Access library creation requests through the API
 
           "type": "Library creation",
           "library_type": "Standard"
-        },
-        "uuids_to_ids": {
-          "00000000-1111-2222-3333-444444444444": 1
         }
       }
       """

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 # Then /^I should see an ordered list with:$/ do |ordered_list_table|
   # assert_select 'ol' do
     # ordered_list_table.raw.each do |text|
@@ -24,5 +27,5 @@ Then /^I should see a field marked "([^\"]+)"$/ do |field_label_text|
 end
 
 When /^I fill in "([^\"]+)" with the human barcode "(..)(.+)."$/ do |field,prefix,number|
-  When %Q{I fill in "#{ field }" with "#{ Barcode.calculate_barcode(prefix, number.to_i) }"}
+  step(%Q{I fill in "#{ field }" with "#{ Barcode.calculate_barcode(prefix, number.to_i) }"})
 end

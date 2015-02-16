@@ -1,4 +1,7 @@
-class ::Core::Registry 
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
+class ::Core::Registry
   include ::Singleton
   include ::Core::Logging
 
@@ -9,16 +12,6 @@ class ::Core::Registry
   def initialize
     @model_class_to_target = {}
   end
-
-#  def register!(model_class, io_class)
-#    raise AlreadyRegisteredError, "Already registered for #{model_class.name.inspect}" if is_already_registered?(model_class)
-#    register(model_class, io_class)
-#  end
-#  
-#  def deregister!(model_class)
-#    raise UnregisteredError, "There is no #{model_clas.name.inspect} registered" unless is_already_registered?(model_class)
-#    deregister(model_class)
-#  end
 
   def lookup_target_class_in_registry!(model_class)
     lookup_target_class_in_registry(model_class) or raise UnregisteredError, "Unable to locate for #{model_class.name.inspect}"

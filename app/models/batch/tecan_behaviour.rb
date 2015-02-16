@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 module Batch::TecanBehaviour
   def validate_for_tecan(target_barcode)
     return false if user_id.nil?
@@ -26,8 +29,8 @@ module Batch::TecanBehaviour
       destination_barcode = request.target_asset.plate.barcode
       next unless destination_barcode == target_barcode
 
-      full_source_barcode = request.asset.plate.ean13_barcode
-      full_destination_barcode = request.target_asset.plate.ean13_barcode
+      full_source_barcode = request.asset.plate.barcode_for_tecan
+      full_destination_barcode = request.target_asset.plate.barcode_for_tecan
 
       source_plate_name = request.asset.plate.stock_plate_name.gsub(/_/, "\s")
       if override_plate_type
@@ -58,19 +61,19 @@ module Batch::TecanBehaviour
 
   def tecan_layout_plate_barcodes(target_barcode)
     data_object = generate_tecan_data(target_barcode)
-    dest_barcode_index = Generator.barcode_to_plate_index(data_object["destination"])
-    source_barcode_index = Generator.source_barcode_to_plate_index(data_object["destination"])
+    dest_barcode_index = Sanger::Robots::Tecan::Generator.barcode_to_plate_index(data_object["destination"])
+    source_barcode_index = Sanger::Robots::Tecan::Generator.source_barcode_to_plate_index(data_object["destination"])
     [dest_barcode_index,source_barcode_index]
   end
 
   def tecan_gwl_file_as_text(target_barcode, volume_required = 13, plate_type = nil)
     data_object = generate_tecan_data(target_barcode, plate_type)
-    Generator.mapping(data_object,  volume_required.to_i)
+    Sanger::Robots::Tecan::Generator.mapping(data_object,  volume_required.to_i)
   end
 
   def tecan_gwl_file(target_barcode,volume_required=13)
     data_object = generate_tecan_data(target_barcode)
-    gwl_data  = Generator.mapping(data_object,  volume_required.to_i)
+    gwl_data  = Sanger::Robots::Tecan::Generator.mapping(data_object,  volume_required.to_i)
     begin
       year= Time.now.year
       base_directory ="#{configatron.tecan_files_location}/#{year}"

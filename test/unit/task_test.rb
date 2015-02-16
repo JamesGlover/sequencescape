@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 require "test_helper"
 
 class TaskTest < ActiveSupport::TestCase
@@ -58,13 +61,13 @@ class TaskTest < ActiveSupport::TestCase
       #      self.send(:remove_const, :MyTask)
     end
     should "define subclass_attribute attribute" do
-      class MyTask 
+      class MyTask
         set_subclass_attribute :att
       end
     end
     context "with subclass_attributes" do
       setup do
-        class MyTask 
+        class MyTask
           set_subclass_attribute :att
         end
         @task = MyTask.new
@@ -79,7 +82,7 @@ class TaskTest < ActiveSupport::TestCase
       end
       should "not accept the same subclass_attribute definition twice" do
         assert_raises ArgumentError do
-          class MyTask 
+          class MyTask
             set_subclass_attribute :att
           end
         end
@@ -89,7 +92,7 @@ class TaskTest < ActiveSupport::TestCase
         @task.att= "value"
         assert_equal "value", @task.get_subclass_attribute_value(:att)
       end
-      
+
       should "get subclass_attributes via attribute" do
         @task.att= "value"
         assert_equal "value", @task.att

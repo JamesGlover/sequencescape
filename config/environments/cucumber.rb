@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 # Edit at your own peril - it's recommended to regenerate this file
 # in the future when you upgrade to a newer version of Cucumber.
 
@@ -24,4 +27,11 @@ config.action_controller.allow_forgery_protection    = false
 # ActionMailer::Base.deliveries array.
 config.action_mailer.delivery_method = :test
 
-config.active_record.observers = [ :batch_cache_sweeper ]
+config.active_record.observers = [ :batch_cache_sweeper, :request_observer ]
+
+if defined?(ENV_JAVA)
+  ENV_JAVA['http.proxyHost'] = nil
+  ENV_JAVA['http.proxyPort'] = nil
+  ENV_JAVA['https.proxyHost'] = nil
+  ENV_JAVA['https.proxyPort'] = nil
+end

@@ -1,8 +1,9 @@
 development:
     amqp:
-      url: amqp://localhost:5672/
+      url: amqp://localhost:5672
       persistent: false
       burst_size: 1000
+      lims_id: SQSCP
     accession_login: "accession_login"
     accession_url: http://localhost:9999/accession_service/
     accession_view_url: http://localhost:9999/view_accession/
@@ -13,17 +14,24 @@ development:
     array_express_accession_login:
     asset_audits_url: http://localhost:3014/process_plates/new
     auth_cookie:
-    authentication: 'ldap'
+    authentication: local
     barcode_images_url: http://localhost:10000
     barcode_prefix: CT
     barcode_service_url: http://localhost:9998/barcode_service.wsdl
+    default_policy_text: https://www.example.com/
+    default_policy_title: Default Policy Title
+    invalid_policy_url_domains: []
     delayed_job:
       study_report_priority: 100
       submission_process_priority: 0
+    fluidigm_data:
+      source: directory
+      directory: <%= Rails.root %>/data/fluidigm
     disable_accession_check: true
     disable_api_authentication: true
     ega_accession_login: "ega_accession_login"
     era_accession_login: "era_accession_login"
+    irods_audience: http://localhost:3000
     ldap_port: 13890
     ldap_secure_port: 6360
     ldap_server: localhost
@@ -31,10 +39,14 @@ development:
     mail_prefix: "[DEVELOPMENT]"
     pac_bio_instrument_api: http://example.com
     pac_bio_smrt_portal_api:  http://example.com
+    phyx_tag:
+        tag_group_name: "Control Tag Group 888"
+        tag_map_id: 888
     pico_green_url: http://localhost:3003
     pipelines_url: http://localhost:3000
     plate_barcode_service: http://localhost:3011
     plate_volume_files: <%= Rails.root %>/data/plate_volume/
+    r_and_d_division: RandD
     proxy: http://example.com
     sanger_auth_service: http://localhost:9999/cgi-bin/prodsoft/SSO/isAuth.pl
     sanger_login_service: http://localhost:9999/LOGIN
@@ -45,6 +57,9 @@ development:
     taxon_lookup_url: http://eutils.ncbi.nlm.nih.gov/entrez/eutils/
     tecan_files_location:  <%= Rails.root %>/data
     two_d_barcode_files_location: <%= Rails.root %>/data/2d
+    uploaded_spreadsheet:
+      max_number_of_samples: 384
+      max_number_of_move_samples: 0
     xml_files_location: <%= Rails.root %>/data/
     data_sharing_contact:
       name: John Doe
@@ -59,8 +74,14 @@ development:
     sequencing_admin_email: admin@example.com
     api:
       authorisation_code: development
+      flush_response_at: 32768
 
 test: &TEST
+    amqp:
+      url: amqp://localhost:5672/
+      persistent: false
+      burst_size: 1000
+      lims_id: SQSCP
     accession_login: "accession_login"
     accession_url: http://localhost:9999/accession_service/
     accession_view_url: http://localhost:9999/view_accession/
@@ -74,19 +95,31 @@ test: &TEST
     barcode_images_url: http://example.com/deliberately_broken_url
     barcode_prefix: NT
     barcode_service_url: http://localhost:9998/barcode_service.wsdl
+    default_policy_text: https://www.example.com/
+    default_policy_title: Default Policy Title
+    invalid_policy_url_domains:
+        - internal.example.com
+        - invalid.example.com
     disable_accession_check: false
     disable_api_authentication: true
     disable_web_proxy: true
     ega_accession_login: "ega_accession_login"
     era_accession_login: "era_accession_login"
+    fluidigm_data:
+      source: directory
+      directory: <%= Rails.root %>/data/fluidigm
     ldap_port: 389
     ldap_secure_port: 636
     ldap_server: "ldap.internal.sanger.ac.uk"
     login_url: /login
     mail_prefix: "[DEVELOPMENT]"
+    phyx_tag:
+        tag_group_name: "Control Tag Group 888"
+        tag_map_id: 888
     pico_green_url: http://localhost:3003
     plate_barcode_service: http://localhost:9998/plate_barcode_service/
     plate_volume_files: <%= Rails.root %>/test/data/plate_volume/
+    r_and_d_division: RandD
     sanger_auth_service: http://localhost:9999/cgi-bin/prodsoft/SSO/isAuth.pl
     site_name: Projects (TEST)
     site_url: localhost:3000
@@ -95,6 +128,9 @@ test: &TEST
     studies_url: http://localhost:3000
     taxon_lookup_url: http://eutils.ncbi.nlm.nih.gov/entrez/eutils/
     tecan_files_location:  <%= Rails.root %>/data
+    uploaded_spreadsheet:
+      max_number_of_samples: 380
+      max_number_of_move_samples: 0
     verify_login_url: http://localhost:9999/cgi-bin/prodsoft/SSO/isAuth.pl
     xml_files_location: <%= Rails.root %>/data/
     data_sharing_contact:
@@ -110,6 +146,7 @@ test: &TEST
     sequencing_admin_email: admin@example.com
     api:
       authorisation_code: cucumber
+      flush_response_at: 32768
 
 cucumber:
     <<: *TEST

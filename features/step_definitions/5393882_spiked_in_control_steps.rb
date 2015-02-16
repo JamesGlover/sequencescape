@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.
 Given /^I have a tag instance called "([^\"]+)"$/ do |name|
   Factory(:tag_instance, :name => name)
 end
@@ -22,14 +25,14 @@ end
 
 Then /^(.+) asset (?:called|named) "([^\"]+)"(.*)$/ do |pre, name, post|
   asset = Asset.find_by_name(name) or raise StandardError, "Cannot find asset #{name.inspect}"
-  Then %Q{#{pre} asset "#{asset.id}"#{post}}
+  step %Q{#{pre} asset "#{asset.id}"#{post}}
 end
 
 Given /^(.+) the (\w+) asset of the asset "([^\"]+)"(.*)$/ do |pre,relation, id, post|
   asset  = Asset.find(id)
   related = asset.send(relation)
 
-  Then %Q{#{pre} the asset "#{related.id}"#{post}}
+  step %Q{#{pre} the asset "#{related.id}"#{post}}
 
 end
-  
+

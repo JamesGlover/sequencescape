@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2013,2014 Genome Research Ltd.
 module Batch::StateMachineBehaviour
   def self.included(base)
     base.class_eval do
@@ -7,10 +10,11 @@ module Batch::StateMachineBehaviour
       aasm_state :started, :enter => :start_requests
       aasm_state :completed
       aasm_state :released
+      aasm_state :discarded
 
       # State Machine events
       aasm_event :start do
-        transitions :to => :started, :from => [:pending, :started, :completed, :released]
+        transitions :to => :started, :from => [:pending, :started]
       end
 
       aasm_event :complete do
@@ -19,6 +23,10 @@ module Batch::StateMachineBehaviour
 
       aasm_event :release do
         transitions :to => :released, :from => [:completed, :started, :pending, :released]
+      end
+
+      aasm_event :discard do
+        transitions :to => :discarded, :from => [:pending]
       end
 
       # Some named scopes needed for finding the batches in a particular state
@@ -37,6 +45,10 @@ module Batch::StateMachineBehaviour
 
   def finished?
     completed? or released?
+  end
+
+  def editable?
+    pending? or started?
   end
 
   def start_with_user!(user)
@@ -75,4 +87,5 @@ module Batch::StateMachineBehaviour
     end
   end
   private :create_release_batch_event_for
+
 end

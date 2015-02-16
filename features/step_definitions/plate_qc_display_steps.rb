@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 Given /^I have a Sample Tube "([^"]*)" with a request in "([^"]*)"$/ do |tube_name, study_name|
   study = Study.find_by_name(study_name)
   sample_tube = Factory :empty_sample_tube, :name => tube_name
@@ -22,11 +25,11 @@ Given /^plate "([^"]*)" has QC results$/ do |barcode|
   plate = Plate.find_by_barcode(barcode)
   plate.wells.each_with_index do |well,index|
     well.well_attribute.update_attributes!(
-    :measured_volume => 5*index, 
-    :concentration => 10*index, 
-    :sequenom_count => index, 
+    :measured_volume => 5*index,
+    :concentration => 10*index,
+    :sequenom_count => index,
     :gel_pass => "OK"
     )
-  end 
+  end
 end
 

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013 Genome Research Ltd.
 Given /^I release the last completed batch$/ do
   batch =Batch.find(:last, :conditions => {:state => "Completed"})
   visit release_batch_path(batch)
@@ -34,7 +37,7 @@ Then /^all of the downstream requests from the "([^\"]+)" pipeline of the reques
   uuid     = Uuid.with_external_id(uuid).first or raise StandardError, "Cannot find UUID #{uuid.inspect}"
   requests = uuid.resource.next_requests(pipeline) { |request| true }
   raise StandardError, "There are no downstream requests of #{uuid.inspect} (#{uuid.resource.inspect})" if requests.empty?
-  assert(requests.all?(&:"#{state}?"), "Some of the requests are not #{state}") 
+  assert(requests.all?(&:"#{state}?"), "Some of the requests are not #{state}")
 end
 
 Then /^(\d+) of the downstream requests from the "([^\"]+)" pipeline of the request with UUID "([^\"]+)" should be "([^\"]+)"$/ do |count, name, uuid, state|
@@ -43,7 +46,7 @@ Then /^(\d+) of the downstream requests from the "([^\"]+)" pipeline of the requ
   requests = uuid.resource.next_requests(pipeline) { |request| true }
   raise StandardError, "There are no downstream requests of #{uuid.inspect} (#{uuid.resource.inspect})" if requests.empty?
 
-  assert_equal(count.to_i, requests.select(&:"#{state}?").length, "Some of the requests are not #{state}") 
+  assert_equal(count.to_i, requests.select(&:"#{state}?").length, "Some of the requests are not #{state}")
 end
 
 Given /^all requests for the "([^\"]+)" pipeline are in a batch$/ do |name|
@@ -51,4 +54,12 @@ Given /^all requests for the "([^\"]+)" pipeline are in a batch$/ do |name|
   requests = pipeline.request_type.requests.all
   raise StandardError, "There appear to be no #{pipeline.request_type.name.inspect} requests" if requests.empty?
   pipeline.batches.create!(:requests => requests)
+end
+
+When /^the batch is started$/ do
+  Batch.last.start!(User.last)
+end
+
+Then /^the customer should accept responsibility for all requests in the last batch$/ do
+  Batch.last.requests.all? {|r| r.request_metadata.customer_accepts_responsibility? }
 end

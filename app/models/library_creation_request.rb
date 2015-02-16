@@ -1,25 +1,7 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class LibraryCreationRequest < Request
-  LIBRARY_TYPES = [
-    "No PCR",
-    "High complexity and double size selected",
-    "Illumina cDNA protocol",
-    "Agilent Pulldown",
-    "Custom",
-    "High complexity",
-    "ChiP-seq",
-    "NlaIII gene expression",
-    "Standard",
-    "Long range",
-    "Small RNA",
-    "Double size selected",
-    "DpnII gene expression",
-    "TraDIS", 
-    "qPCR only",
-    "Pre-quality controlled",
-    "DSN_RNAseq"
-  ]
-
-  DEFAULT_LIBRARY_TYPE = 'Standard'
 
   # NOTE: Do not alter the order here:
   #
@@ -31,8 +13,10 @@ class LibraryCreationRequest < Request
   has_metadata :as => Request do
     # /!\ We don't check the read_length, because we don't know the restriction, that depends on the SequencingRequest
     attribute(:read_length, :integer => true) # meaning , so not required but some people want to set it
+    attribute(:gigabases_expected, :positive_float => true)
   end
 
+  include Request::CustomerResponsibility
   include Request::LibraryManufacture
 
   # When a library creation request passes it does the default behaviour of a request but also adds the
@@ -40,12 +24,14 @@ class LibraryCreationRequest < Request
   # an MX library is also a type of library that might have libraries coming into it, therefore we only update the
   # information that is missing.
   def on_started
-    super
-    target_asset.aliquots.each do |aliquot|
-      aliquot.library      ||= target_asset
-      aliquot.library_type ||= library_type
-      aliquot.insert_size  ||= insert_size
-      aliquot.save!
+    ActiveRecord::Base.transaction do
+      super
+      target_asset.aliquots.each do |aliquot|
+        aliquot.library      ||= target_asset
+        aliquot.library_type ||= library_type
+        aliquot.insert_size  ||= insert_size
+        aliquot.save!
+      end
     end
   end
 

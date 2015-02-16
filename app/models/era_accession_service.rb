@@ -1,8 +1,16 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2013 Genome Research Ltd.
 class EraAccessionService < AccessionService
+
+  def provider
+    :ERA
+  end
+
   def accession_from_ebi(submission_filename, submission_file_handle, type_filename, type_file_handle, type)
     generate_accession_from_ebi(submission_filename, submission_file_handle, type_filename, type_file_handle, type, configatron.era_accession_login)
   end
-  
+
   def accession_login
     configatron.era_accession_login or raise RuntimeError,  "Can't find ERA  accession login in configuration file"
   end
@@ -12,7 +20,7 @@ class EraAccessionService < AccessionService
     #sample_hold.blank? ? 'hold' : sample_hold
     Hold
   end
-  
+
   def study_visibility(study)
     #study_hold = study.study_sra_hold
     #study_hold.blank? ? 'hold' : study_hold
@@ -26,7 +34,7 @@ class EraAccessionService < AccessionService
   def dac_visibility(study)
     Hold
   end
-  
+
   def broker
     nil
   end

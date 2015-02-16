@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 Given /^I have a plate in study "([^"]*)" with samples with known sanger_sample_ids$/ do |study_name|
   study = Study.find_by_name(study_name)
   plate = PlatePurpose.stock_plate_purpose.create!(true, :barcode => "1234567", :location => Location.find_by_name("Sample logistics freezer"))
@@ -12,7 +15,7 @@ end
 
 Given /^all submissions have been built$/ do
   Submission.all.map(&:built!)
-  Given "all pending delayed jobs are processed"
+  step "all pending delayed jobs are processed"
 end
 
 When /^the state of the submission with UUID "([^"]+)" is "([^"]+)"$/ do |uuid, state|
@@ -22,7 +25,7 @@ end
 
 
 Then /^there should be no submissions to be processed$/ do
-  Then %Q{there should be no delayed jobs to be processed}
+  step %Q{there should be no delayed jobs to be processed}
 end
 
 Then /^the submission with UUID "([^\"]+)" is ready$/ do |uuid|
@@ -84,6 +87,7 @@ SENSIBLE_DEFAULTS_HISEQ = SENSIBLE_DEFAULTS_FOR_SEQUENCING.merge(
 SENSIBLE_DEFAULTS_FOR_REQUEST_TYPE = {
   # Non-HiSeq defaults
   "Library creation"             => SENSIBLE_DEFAULTS_STANDARD,
+  "Illumina-C Library creation"             => SENSIBLE_DEFAULTS_STANDARD,
   "Multiplexed library creation" => SENSIBLE_DEFAULTS_STANDARD,
   "Pulldown library creation"    => SENSIBLE_DEFAULTS_STANDARD,
   "Single ended sequencing"      => SENSIBLE_DEFAULTS_FOR_SEQUENCING,
@@ -93,8 +97,16 @@ SENSIBLE_DEFAULTS_FOR_REQUEST_TYPE = {
   "Single ended hi seq sequencing" => SENSIBLE_DEFAULTS_HISEQ,
   "HiSeq Paired end sequencing"    => SENSIBLE_DEFAULTS_HISEQ,
 
+  "Illumina-B Single ended sequencing"      => SENSIBLE_DEFAULTS_FOR_SEQUENCING,
+  "Illumina-B Paired end sequencing"        => SENSIBLE_DEFAULTS_FOR_SEQUENCING,
+
+  # HiSeq defaults
+  "Illumina-B Single ended hi seq sequencing" => SENSIBLE_DEFAULTS_HISEQ,
+  "Illumina-B HiSeq Paired end sequencing"    => SENSIBLE_DEFAULTS_HISEQ,
+
+
   # PacBio defaults
-  "PacBio Sample Prep" => {}
+  "PacBio Library Prep" => {}
 }
 
 def with_request_type_scope(name, &block)
@@ -139,20 +151,20 @@ end
 
 Given /^the sample tubes are part of submission "([^\"]*)"$/ do |submission_uuid|
   submission = Uuid.find_by_external_id(submission_uuid).resource or raise StandardError, "Couldnt find object for UUID"
-  Asset.all.map{ |asset| submission.orders.first.assets << asset } 
+  Asset.all.map{ |asset| submission.orders.first.assets << asset }
 end
 
 Then /^I create the order and submit the submission/ do
-  Then %q{I choose "build_submission_yes"}
-  Then %q{I press "Create Order"}
-  And %q{I press "Submit"}
+  step %q{I choose "build_submission_yes"}
+  step %q{I press "Create Order"}
+  step %q{I press "Submit"}
 end
 
 
 Given /^I have a "([^\"]*)" submission with the following setup:$/ do |template_name, table|
   submission_template = SubmissionTemplate.find_by_name(template_name)
   params = table.rows_hash
-  request_options = {} 
+  request_options = {}
   request_type_ids = submission_template.new_order.request_types
 
   params.each do |k,v|
@@ -161,12 +173,13 @@ Given /^I have a "([^\"]*)" submission with the following setup:$/ do |template_
       multiplier_hash = request_options[:multiplier]
       multiplier_hash = request_options[:multiplier]={} unless multiplier_hash
       index = $1.to_i-1
-      multiplier_hash[request_type_ids[index]]=v.to_i
+      multiplier_hash[request_type_ids[index].to_s]=v.to_i
     else
       key = k.underscore.gsub(/\W+/,"_")
       request_options[key]=v
     end
   end
+
   Submission.build!(
     :template=>submission_template,
     :project => Project.find_by_name(params['Project']),
@@ -177,5 +190,9 @@ Given /^I have a "([^\"]*)" submission with the following setup:$/ do |template_
     :request_options => request_options
   )
 
-  #And %Q{1 pending delayed jobs are processed}
+  #step(%Q{1 pending delayed jobs are processed})
+end
+
+Then /^the last submission should have a priority of (\d+)$/ do |priority|
+  Submission.last.update_attributes!(:priority=>priority)
 end

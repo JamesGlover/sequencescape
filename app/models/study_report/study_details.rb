@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 module StudyReport::StudyDetails
 
   # This will pull out all well ids from stock plates in the study
@@ -6,7 +9,7 @@ module StudyReport::StudyDetails
     handle_wells(
       "INNER JOIN requests ON requests.asset_id=assets.id",
       "requests.initial_study_id",
-      2,
+      PlatePurpose.find_all_by_name(['Stock Plate','Stock RNA Plate']).map(&:id),
       &block
     )
 
@@ -14,13 +17,12 @@ module StudyReport::StudyDetails
     handle_wells(
       "INNER JOIN aliquots ON aliquots.receptacle_id=assets.id",
       "aliquots.study_id",
-      [84,85,86,87,88],
+      PlatePurpose.find_all_by_name(['Aliquot 1','Aliquot 2','Aliquot 3','Aliquot 4','Aliquot 1']).map(&:id),
       &block
     )
   end
 
   def handle_wells(join, study_condition, plate_purpose_id, &block)
-    #TODO remove hardcoded plate purpose id
     Asset.find_in_batches(
       :select => 'DISTINCT assets.id',
       :joins => [
@@ -41,7 +43,7 @@ module StudyReport::StudyDetails
   def progress_report_header
     [
       "Status","Study","Supplier","Sanger Sample Name","Supplier Sample Name","Plate","Well","Supplier Volume",
-      "Supplier Gender", "Concentration","Measured Volume","Sequenome Count", "Sequenome Gender",
+      "Supplier Gender", "Concentration","Initial Volume","Measured Volume","Total Micrograms","Sequenome Count", "Sequenome Gender",
       "Pico","Gel", "Qc Status", "QC started date", "Pico date", "Gel QC date","Seq stamp date","Genotyping Status", "Genotyping Chip", "Genotyping Infinium Barcode", "Genotyping Barcode","Genotyping Well", "Cohort", "Country of Origin",
       "Geographical Region","Ethnicity","DNA Source","Is Resubmitted","Control"
       ]
@@ -67,7 +69,9 @@ module StudyReport::StudyDetails
                    asset_progress_data[:supplier_volume],
                    asset_progress_data[:supplier_gender],
                    asset_progress_data[:concentration],
+                   asset_progress_data[:initial_volume],
                    asset_progress_data[:measured_volume],
+                   asset_progress_data[:quantity],
                    asset_progress_data[:sequenom_count],
                    asset_progress_data[:sequenom_gender],
                    asset_progress_data[:pico],

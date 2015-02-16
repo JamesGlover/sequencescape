@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012 Genome Research Ltd.
 class BaitLibrary < ActiveRecord::Base
   module Associations
     def self.included(base)
@@ -32,6 +35,12 @@ class BaitLibrary < ActiveRecord::Base
   # Within a supplier we have a unique identifier for each bait library.  Custom bait libraries
   # do not have this identifier, so nil is permitted.
   validates_uniqueness_of :supplier_identifier, :scope => :bait_library_supplier_id, :allow_nil => true
+  before_validation :blank_as_nil
+
+  def blank_as_nil
+    self.supplier_identifier = nil if self.supplier_identifier.blank?
+  end
+  private :blank_as_nil
 
   # The names of the bait library are considered unique within the supplier
   validates_presence_of :name

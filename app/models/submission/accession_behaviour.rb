@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013,2014 Genome Research Ltd.
 module Submission::AccessionBehaviour
   def self.included(base)
     base.class_eval do
@@ -6,25 +9,38 @@ module Submission::AccessionBehaviour
   end
 
   def can_check_data_release_and_accession?
-    self.study.present?
+    self.study.present? && self.request_types_require_accessioning?
+  end
+
+  def request_types_require_accessioning?
+    RequestType.find(self.request_types).detect(&:accessioning_required?)
   end
 
   def check_data_release_and_accession_for_submission
     return if configatron.disable_accession_check == true
 
     if not study.valid_data_release_properties?
-      errors.add_to_base('Please fill in the study data release information')
+      errors.add(:study,"#{study.name}: Please fill in the study data release information")
     elsif not study.ena_accession_required?
       # Nothing to do here because the study does not require ENA accessioning
     elsif not study.accession_number?
-      errors.add_to_base('Study and all samples must have accession numbers')
+      errors.add(:study,"#{study.name} and all samples must have accession numbers")
     elsif not all_samples_have_accession_numbers?
-      errors.add_to_base('Study and all samples must have accession numbers')
+      errors.add_to_base("Samples #{unaccessioned_samples} are missing accession numbers")
     end
   end
 
-  def all_samples_have_accession_numbers?
-    AssetGroup.new(:assets => self.assets).all_samples_have_accession_numbers?
+  private
+
+  def test_asset_group
+    AssetGroup.new(:assets => self.assets)
   end
-  private :all_samples_have_accession_numbers?
+
+  def unaccessioned_samples
+    test_asset_group.unaccessioned_samples.map(&:name).to_sentence
+  end
+
+  def all_samples_have_accession_numbers?
+    test_asset_group.all_samples_have_accession_numbers?
+  end
 end

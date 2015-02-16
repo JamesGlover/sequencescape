@@ -1,9 +1,15 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 # An aliquot can be considered to be an amount of a material in a liquid.  The material could be the DNA
 # of a sample, or it might be a library (a combination of the DNA sample and a tag).
 class Aliquot < ActiveRecord::Base
   include Uuid::Uuidable
+  include Api::Messages::FlowcellIO::AliquotExtensions
+
   class Receptacle < Asset
     include Transfer::State
+    include Aliquot::Remover
 
     has_many :transfer_requests, :class_name => 'TransferRequest', :foreign_key => :target_asset_id
     has_many :transfer_requests_as_source, :class_name => 'TransferRequest', :foreign_key => :asset_id
@@ -23,8 +29,8 @@ class Aliquot < ActiveRecord::Base
     named_scope :with_aliquots, :joins => :aliquots
 
     # Provide some named scopes that will fit with what we've used in the past
-    named_scope :with_sample_id, lambda { |id|     { :conditions => { :aliquots => { :sample_id => Array(id)               } }, :joins => :aliquots } }
-    named_scope :with_sample,    lambda { |sample| { :conditions => { :aliquots => { :sample_id => Array(sample).map(&:id) } }, :joins => :aliquots } }
+    named_scope :with_sample_id, lambda { |id|     { :conditions => { :aliquots => { :sample_id => Array(id)     } }, :joins => :aliquots } }
+    named_scope :with_sample,    lambda { |sample| { :conditions => { :aliquots => { :sample_id => Array(sample) } }, :joins => :aliquots } }
 
     # TODO: Remove these at some point in the future as they're kind of wrong!
     has_one :sample, :through => :primary_aliquot
@@ -69,6 +75,7 @@ class Aliquot < ActiveRecord::Base
     end
 
     has_many :studies, :through => :aliquots
+    has_many :projects, :through => :aliquots
   end
 
   # Something that is aliquotable can be part of an aliquot.  So sample and tag are both examples.
@@ -79,7 +86,7 @@ class Aliquot < ActiveRecord::Base
 
         has_many :aliquots
         has_many :receptacles, :through => :aliquots, :uniq => true
-        has_one :primary_receptacle, :through => :aliquots, :source => :receptacle, :order => 'assets.created_at, assets.id ASC'
+        has_one :primary_receptacle, :through => :aliquots, :source => :receptacle, :order => 'aliquots.created_at, aliquots.id ASC'
 
         # Unfortunately we cannot use has_many :through because it ends up being a through through a through.  Really we want:
         #   has_many :requests, :through => :assets
@@ -131,6 +138,10 @@ class Aliquot < ActiveRecord::Base
     self.tag_id.nil? or self.tag_id == UNASSIGNED_TAG
   end
 
+  def tagged?
+    !self.untagged?
+  end
+
   def tag_with_unassigned_behaviour
     untagged? ? nil : tag_without_unassigned_behaviour
   end
@@ -139,7 +150,7 @@ class Aliquot < ActiveRecord::Base
   # It may have a bait library but not necessarily.
   belongs_to :bait_library
 
-  # An aliquot can represent a library, which is a processed sample that has been fragmented.  In which case it 
+  # An aliquot can represent a library, which is a processed sample that has been fragmented.  In which case it
   # has a receptacle that held the library aliquot and has an insert size describing the fragment positions.
   class InsertSize < Range
     alias_method :from, :first
@@ -182,6 +193,19 @@ class Aliquot < ActiveRecord::Base
   def =~(object)
     a, b = [self, object].map { |o| [o.tag_id, o.sample_id] }
     a.zip(b).all?  { |x, y|  (x || y) == (y || x)  }
+  end
+
+  def matches?(object)
+    # Note: This funtion is directional, and assumes that the downstream aliquot
+    # is checking the upstream aliquot (or the AliquotRecord)
+    case
+    when self.sample_id != object.sample_id                                                   then return false # The samples don't match
+    when object.library_id.present?      && (self.library_id      != object.library_id)       then return false # Our librarys don't match.
+    when object.bait_library_id.present? && (self.bait_library_id != object.bait_library_id)  then return false # We have different bait libraries
+    when self.untagged? && object.tagged?                                                     then raise StandardError, "Tag missing from downstream aliquot" # The downstream aliquot is untagged, but is tagged upstream. Something is wrong!
+    when object.untagged?                                                                     then return true # The upstream aliquot was untagged, we don't need to check tags
+    else self.tag_id == object.tag_id # Both aliquots are tagged, we need to check if they match
+    end
   end
 
 end

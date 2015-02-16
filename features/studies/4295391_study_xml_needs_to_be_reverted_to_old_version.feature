@@ -3,7 +3,7 @@ Feature: The XML for the sequencescape API
   Background:
     Given all of this is happening at exactly "2010-Oct-03 18:21:11+01:00"
     Given there is at least one administrator
-    
+
     Given the following user records
       | login   | first_name | last_name   |
       | owner   | I am       | The Owner   |
@@ -11,9 +11,11 @@ Feature: The XML for the sequencescape API
 
     Given I have an active study called "Study for XML"
     And the faculty sponsor for study "Study for XML" is "Jack Sponsor"
-    
+
     And the study "Study for XML" has samples contaminated with human DNA
     And the study "Study for XML" does not contain samples commercially available
+    And the study "Study for XML" has samples which need x and autosome data removed
+    And the study "Study for XML" has a data access group of "group1"
     And the study "Study for XML" has the following contacts
       | login   | role    |
       | owner   | owner   |
@@ -60,6 +62,14 @@ Feature: The XML for the sequencescape API
           </descriptor>
           <descriptor>
             <name>Does this study contain samples that are contaminated with human DNA which must be removed prior to analysis?</name>
+            <value>Yes</value>
+          </descriptor>
+          <descriptor>
+            <name>Does this study require y chromosome data to be separated from x and autosomal data before archival?</name>
+            <value>false</value>
+          </descriptor>
+          <descriptor>
+            <name>Does this study require the removal of X chromosome and autosome sequence?</name>
             <value>Yes</value>
           </descriptor>
           <descriptor>
@@ -155,7 +165,7 @@ Feature: The XML for the sequencescape API
             <value>Jack Sponsor</value>
           </descriptor>
           <descriptor>
-            <name>Please explain the reason for delaying release (e.g., pre-existing collaborative agreement)</name>
+            <name>Please explain the reason for delaying release</name>
             <value></value>
           </descriptor>
           <descriptor>
@@ -170,9 +180,11 @@ Feature: The XML for the sequencescape API
             <name>HMDMC approval number</name>
             <value></value>
           </descriptor>
+          <descriptor><name>Data access group</name><value>group1</value></descriptor>
           <descriptor><name>EGA DAC Accession Number</name></descriptor>
           <descriptor><name>EGA Policy Accession Number</name></descriptor>
-          <descriptor><name>Policy</name></descriptor>
+          <descriptor><name>Policy Url</name></descriptor>
+          <descriptor><name>Policy title</name></descriptor>
           <descriptor><name>ArrayExpress Accession Number</name></descriptor>
         </descriptors>
       </study>

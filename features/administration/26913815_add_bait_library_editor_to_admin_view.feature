@@ -32,12 +32,14 @@ Feature: Manage a list of bait libraries
     When I fill in "Name" with "Dragon all exon"
       And I select "Agilent" from "Supplier"
       And I fill in "Target species" with "Dracos"
+      And I fill in "Supplier Identifier" with ""
       And I select "Custom - Pipeline" from "Bait library type"
       And I press "Update"
     Then I should see "Bait Library was successfully updated."
       And I should be on the bait library management page
       And I should see "Dragon all exon"
       And I should see "Dracos"
+      And the supplier_identifier for "Dragon all exon" should be nil
       And I should see "Custom - Pipeline"
       And I should not see "Human all exon 50MB"
 
@@ -49,12 +51,14 @@ Feature: Manage a list of bait libraries
     When I fill in "Name" with "Centaur all exon"
       And I select "Agilent" from "Supplier"
       And I fill in "Target species" with "Centaur(Greek)"
+      And I fill in "Supplier Identifier" with "8675309"
       And I select "Custom - Customer" from "Bait library type"
       And I press "Create"
     Then I should see "Bait Library was successfully created."
       And I should see "Centaur all exon"
       And I should see "Centaur(Greek)"
       And I should see "Custom - Customer"
+      And I should see "8675309"
     When I follow "Delete Centaur all exon"
     Then I should see "Bait Library was successfully deleted."
       And I should not see "Centaur all exon"
@@ -187,6 +191,7 @@ Feature: Manage a list of bait libraries
     Given all HTTP requests to the API have the cookie "WTSISignOn" set to "I-am-authenticated"
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
     Given I have an "active" study called "Study A"
     And the UUID for the study "Study A" is "22222222-3333-4444-5555-000000000000"
@@ -196,15 +201,14 @@ Feature: Manage a list of bait libraries
 
     Given I have a project called "Testing submission creation"
     And the UUID for the project "Testing submission creation" is "22222222-3333-4444-5555-000000000001"
-    And project "Testing submission creation" has enough quotas
 
     Given the UUID for the request type "Cherrypicking for Pulldown" is "99999999-1111-2222-3333-000000000000"
     And the UUID for the request type "Pulldown Multiplex Library Preparation" is "99999999-1111-2222-3333-000000000001"
     And the UUID for the request type "HiSeq Paired end sequencing" is "99999999-1111-2222-3333-000000000002"
 
-    Given the UUID for the well "Well_1234567_1" is "44444444-2222-3333-4444-000000000001"
-    And the UUID for the well "Well_1234567_2" is "44444444-2222-3333-4444-000000000002"
-    And the UUID for the well "Well_1234567_3" is "44444444-2222-3333-4444-000000000003"
+    Given the UUID for well 1 on plate "1234567" is "44444444-2222-3333-4444-000000000001"
+    And the UUID for well 2 on plate "1234567" is "44444444-2222-3333-4444-000000000002"
+    And the UUID for well 3 on plate "1234567" is "44444444-2222-3333-4444-000000000003"
 
     Given I have a bait library called "Delete This"
     And the last bait library is hidden

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2014 Genome Research Ltd.
 # This may create invalid UUID external_id values but it means that we don't have to conform to the
 # standard in our features.
 def recursive_diff(h1, h2)
@@ -59,12 +62,12 @@ Given /^no cookies are set for HTTP requests to the API$/ do
   @cookies = {}
 end
 
-Given /^the WTSI single sign-on service recognises "([^\"]+)" as "([^\"]+)"$/ do |cookie, login|
-  FakeSingleSignOnService.instance.map_cookie_to_login(cookie, login)
+Given /^the WTSI single sign-on service recognises "([^\"]+)" as "([^\"]+)"$/ do |key, login|
+  User.find_or_create_by_login(login).update_attributes!(:api_key=>key)
 end
 
 Given /^the WTSI single sign-on service does not recognise "([^\"]+)"$/ do |cookie|
-  FakeSingleSignOnService.instance.unmap_cookie(cookie)
+  User.find_by_api_key(cookie).update_attributes!(:api_key=>nil)
 end
 
 def api_request(action, path, body)
@@ -88,7 +91,7 @@ Given /^I am using version "(\d+)" of the API$/ do |version|
 end
 
 Given /^I am using the latest version of the API$/ do
-  Given %Q{I am using version "#{::Core::Service::API_VERSION}" of the API}
+  step(%Q{I am using version "#{::Core::Service::API_VERSION}" of the API})
 end
 
 Given /^I am using version "([^\"]+)" of a legacy API$/ do |version|
@@ -133,8 +136,12 @@ When /^I make an authorised (POST|PUT) with the following JSON to the API path "
   end
 end
 
+Given /^I have a "(.*?)" authorised user with the key "(.*?)"$/ do |permission, key|
+  ApiApplication.new(:name=>'test_api',:key=>key,:privilege=>permission,:contact=>'none').save(false)
+end
+
 When /^I retrieve the JSON for all (studies|samples|requests)$/ do |model|
-  When %Q{I GET the API path "/#{model}"}
+  step(%Q{I GET the API path "/#{model}"})
 end
 
 When /^I retrieve the JSON for all requests related to the (sample|library) tube "([^\"]+)"$/ do |tube_type, name|
@@ -238,7 +245,7 @@ Then /^the HTTP response should be "([^\"]+)"$/ do |status|
   begin
   assert_equal(match[1].to_i, page.driver.status_code)
   rescue Test::Unit::AssertionFailedError => e
-    Then %Q{show me the HTTP response body}
+    step %Q{show me the HTTP response body}
     raise e
   end
 
@@ -274,17 +281,28 @@ end
 ##############################################################################
 # deprecated
 Given /^the sample named "([^\"]+)" exists with ID (\d+)$/ do |name, id|
-  Given %Q{a sample called "#{name}" with ID #{id}}
+  step(%Q{a sample called "#{name}" with ID #{id}})
 end
 
 # deprecated
 Given /^(\d+) samples exist with the core name "([^\"]+)" and IDs starting at (\d+)$/ do |count,name,id|
-  Given %Q{#{count} samples exist with names based on "#{name}" and IDs starting at #{id}}
+  step(%Q{#{count} samples exist with names based on "#{name}" and IDs starting at #{id}})
 end
 
-Given /^the (well|library tube|plate) "([^\"]+)" is a child of the (well|sample tube|plate) "([^\"]+)"$/ do |child_model, child_name, parent_model, parent_name|
+Given /^the (library tube|plate) "([^\"]+)" is a child of the (sample tube|plate) "([^\"]+)"$/ do |child_model, child_name, parent_model, parent_name|
   parent = parent_model.gsub(/\s+/, '_').classify.constantize.find_by_name(parent_name) or raise StandardError, "Cannot find the #{parent_model} #{parent_name.inspect}"
   child  = child_model.gsub(/\s+/, '_').classify.constantize.find_by_name(child_name) or raise StandardError, "Cannot find the #{child_model} #{child_name.inspect}"
+  parent.children << child
+  if [parent, child].all? {|a| a.is_a?(Aliquot::Receptacle)}
+    child.aliquots = []
+    RequestType.transfer.create!(:asset => parent, :target_asset => child)
+    child.save!
+  end
+end
+
+Given /^the well "([^\"]+)" is a child of the well "([^\"]+)"$/ do | child_name, parent_name|
+  parent = Uuid.find_by_external_id(parent_name).resource or raise StandardError, "Cannot find #{parent_name.inspect}"
+  child  = Uuid.find_by_external_id(child_name).resource or raise StandardError, "Cannot find #{child_name.inspect}"
   parent.children << child
   if [parent, child].all? {|a| a.is_a?(Aliquot::Receptacle)}
     child.aliquots = []
@@ -349,10 +367,15 @@ end
 
 Given /^the "([^\"]+)" action on samples requires authorisation$/ do |action|
   Core::Abilities::Application.unregistered { cannot(action.to_sym, TestSampleEndpoint::Model) }
-  Core::Abilities::Application.registered   { can(action.to_sym,    TestSampleEndpoint::Model) }
+  Core::Abilities::Application.full   { can(action.to_sym,    TestSampleEndpoint::Model) }
 end
 
 Given /^the "([^\"]+)" action on a sample requires authorisation$/ do |action|
   Core::Abilities::Application.unregistered { cannot(action.to_sym, TestSampleEndpoint::Instance) }
-  Core::Abilities::Application.registered   { can(action.to_sym,    TestSampleEndpoint::Instance) }
+  Core::Abilities::Application.full   { can(action.to_sym,    TestSampleEndpoint::Instance) }
+end
+
+Given /^the "(.*?)" action on samples requires tag_plates authorisation$/ do |action|
+  Core::Abilities::Application.unregistered { cannot(action.to_sym, TestSampleEndpoint::Model) }
+  Core::Abilities::Application.tag_plates   { can(action.to_sym,    TestSampleEndpoint::Model) }
 end

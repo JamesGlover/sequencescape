@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014,2015 Genome Research Ltd.
 require 'factory_girl'
 
 Factory.sequence :project_name do |n|
@@ -29,6 +32,10 @@ Factory.sequence :barcode do |n|
 end
 
 Factory.sequence :request_type_id do |n|
+  n
+end
+
+Factory.sequence :library_type_id do |n|
   n
 end
 
@@ -69,6 +76,7 @@ Factory.define :billing_event do |be|
   be.reference {|reference| Factory.next :billing_reference }
   be.created_by "abc123@example.com"
   be.project {|project| project.association(:project)}
+  be.request {|request| request.association(:request)}
 end
 
 Factory.define :comment do |c|
@@ -111,18 +119,19 @@ Factory.define :study do |p|
   p.state                "pending"
   p.enforce_data_release false
   p.enforce_accessioning false
-  p.reference_genome     ReferenceGenome.find_by_name("") 
+  p.reference_genome     ReferenceGenome.find_by_name("")
 
   p.after_build { |study| study.study_metadata = Factory(:study_metadata, :study => study) }
 end
 
 Factory.define :budget_division do |bd|
- bd.name { |a| Factory.next :budget_division_name }   
+ bd.name { |a| Factory.next :budget_division_name }
 end
 
 Factory.define :project_metadata, :class => Project::Metadata do |m|
   m.project_cost_code 'Some Cost Code'
-  m.budget_division {|budget| budget.association(:budget_division)} 
+  m.project_funding_model 'Internal'
+  m.budget_division {|budget| budget.association(:budget_division)}
 end
 
 Factory.define :project do |p|
@@ -159,12 +168,6 @@ Factory.define :order_template, :class => SubmissionTemplate do |submission_temp
   submission_template.submission_parameters({ :workflow_id => 1, :request_type_ids_list => [] })
 end
 
-Factory.define :project_quota, :class => Quota do |quota|
-  quota.project         {|project| project.association(:project)}
-  quota.request_type    {|request_type| request_type.association(:request_type)}
-  quota.limit           0
-end
-
 Factory.define :report do |r|
 end
 
@@ -181,6 +184,13 @@ Factory.define :request_metadata_for_standard_sequencing, :parent => :request_me
   m.fragment_size_required_to     21
   m.read_length                   76
 end
+
+Factory.define :request_metadata_for_standard_sequencing_with_read_length, :parent => :request_metadata, :class=>SequencingRequest::Metadata do |m|
+  m.fragment_size_required_from   1
+  m.fragment_size_required_to     21
+  m.read_length                   76
+end
+
 Factory.define(:request_metadata_for_single_ended_sequencing, :parent => :request_metadata_for_standard_sequencing) {}
 Factory.define(:request_metadata_for_paired_end_sequencing, :parent => :request_metadata_for_standard_sequencing) {}
 
@@ -193,6 +203,20 @@ end
 Factory.define(:request_metadata_for_hiseq_paired_end_sequencing, :parent => :request_metadata_for_hiseq_sequencing) {}
 Factory.define(:request_metadata_for_single_ended_hi_seq_sequencing, :parent => :request_metadata_for_hiseq_sequencing) {}
 
+
+('a'..'c').each do |p|
+  Factory.define(:"request_metadata_for_illumina_#{p}_single_ended_sequencing", :parent => :request_metadata_for_standard_sequencing) {}
+  Factory.define(:"request_metadata_for_illumina_#{p}_paired_end_sequencing", :parent => :request_metadata_for_standard_sequencing) {}
+  # HiSeq sequencing
+  Factory.define :"request_metadata_for_illumina_#{p}_hiseq_sequencing", :parent => :request_metadata do |m|
+    m.fragment_size_required_from   1
+    m.fragment_size_required_to     21
+    m.read_length                   100
+  end
+  Factory.define(:"request_metadata_for_illumina_#{p}_hiseq_paired_end_sequencing", :parent => :request_metadata_for_hiseq_sequencing) {}
+  Factory.define(:"request_metadata_for_illumina_#{p}_single_ended_hi_seq_sequencing", :parent => :request_metadata_for_hiseq_sequencing) {}
+end
+
 # Library manufacture
 Factory.define :request_metadata_for_library_manufacture, :parent => :request_metadata do |m|
   m.fragment_size_required_from   1
@@ -200,6 +224,7 @@ Factory.define :request_metadata_for_library_manufacture, :parent => :request_me
   m.library_type                  "Standard"
 end
 Factory.define(:request_metadata_for_library_creation, :parent => :request_metadata_for_library_manufacture) {}
+Factory.define(:request_metadata_for_illumina_c_library_creation, :parent => :request_metadata_for_library_manufacture) {}
 Factory.define(:request_metadata_for_multiplexed_library_creation, :parent => :request_metadata_for_library_manufacture) {}
 Factory.define(:request_metadata_for_mx_library_preparation_new, :parent => :request_metadata_for_library_manufacture) {}
 Factory.define(:request_metadata_for_illumina_b_multiplexed_library_creation, :parent => :request_metadata_for_library_manufacture) {}
@@ -243,12 +268,23 @@ Factory.define :request_with_submission, :class => Request do |request|
   end
 end
 
+Factory.define :sequencing_request, :class => SequencingRequest do |request|
+  request.request_type { |rt| rt.association(:request_type) }
+
+  # Ensure that the request metadata is correctly setup based on the request type
+  request.after_build do |request|
+    next if request.request_type.nil?
+    request.request_metadata = Factory.build(:"request_metadata_for_standard_sequencing_with_read_length") if request.request_metadata.new_record?
+    request.sti_type = request.request_type.request_class_name
+  end
+end
+
 #Factory.define :request_without_assets, :class => Request do |request|
 Factory.define :request_without_assets, :parent => :request_with_submission do |request|
   request.item              {|item|       item.association(:item)}
   request.project           {|pr|         pr.association(:project)}
   request.request_type      {|rt|         rt.association(:request_type)}
-  request.state             'pending'     
+  request.state             'pending'
   request.study             {|study|      study.association(:study)}
   request.user              {|user|       user.association(:user)}
   request.workflow          {|workflow|   workflow.association(:submission_workflow)}
@@ -258,6 +294,20 @@ Factory.define :request, :parent => :request_without_assets do |request|
   # the sample should be setup correctly and the assets should be valid
   request.asset        { |asset| asset.association(:sample_tube)  }
   request.target_asset { |asset| asset.association(:library_tube) }
+end
+
+Factory.define :request_with_sequencing_request_type, :parent => :request_without_assets do |request|
+  # the sample should be setup correctly and the assets should be valid
+  request.asset            { |asset|    asset.association(:library_tube)  }
+  request.request_metadata { |metadata| metadata.association(:request_metadata_for_standard_sequencing)}
+  request.request_type     { |rt|       rt.association(:sequencing_request_type)}
+end
+
+Factory.define :well_request, :parent => :request_without_assets do |request|
+  # the sample should be setup correctly and the assets should be valid
+  request.request_type {|rt|         rt.association(:well_request_type)}
+  request.asset        { |asset| asset.association(:well)  }
+  request.target_asset { |asset| asset.association(:well) }
 end
 
 Factory.define :request_suitable_for_starting, :parent => :request_without_assets do |request|
@@ -303,37 +353,77 @@ Factory.define :request_type do |rt|
   rt.name           "Request type #{rt_value}"
   rt.key            "request_type_#{rt_value}"
   rt.deprecated     false
+  rt.asset_type     'SampleTube'
   rt.request_class  Request
   rt.order          1
   rt.workflow    {|workflow| workflow.association(:submission_workflow)}
   rt.initial_state   "pending"
 end
 
+Factory.define :library_type do |lt|
+  lt_value = Factory.next :library_type_id
+  lt.name    "Standard"
+end
+
+Factory.define :library_types_request_type do |ltrt|
+  ltrt.library_type  {|library_type| library_type.association(:library_type)}
+  ltrt.is_default true
+end
+
+Factory.define :well_request_type, :parent => :request_type do |rt|
+  rt.asset_type     'Well'
+end
+
 Factory.define :library_creation_request_type, :class => RequestType do |rt|
   rt_value = Factory.next :request_type_id
-  rt.name           "Request type #{rt_value}"
+  rt.name           "LC Request type #{rt_value}"
   rt.key            "request_type_#{rt_value}"
+  rt.asset_type     "SampleTube"
+  rt.target_asset_type "LibraryTube"
   rt.request_class  LibraryCreationRequest
   rt.order          1
   rt.workflow    {|workflow| workflow.association(:submission_workflow)}
+  rt.after_build {|request_type|
+    request_type.library_types_request_types << Factory(:library_types_request_type,:request_type=>request_type)
+    request_type.request_type_validators << Factory(:library_request_type_validator, :request_type=>request_type)
+  }
 end
 Factory.define :sequencing_request_type, :class => RequestType do |rt|
   rt_value = Factory.next :request_type_id
   rt.name           "Request type #{rt_value}"
   rt.key            "request_type_#{rt_value}"
+  rt.asset_type     "LibraryTube"
   rt.request_class  SequencingRequest
   rt.order          1
   rt.workflow    {|workflow| workflow.association(:submission_workflow)}
+  rt.after_build {|request_type|
+    request_type.request_type_validators << Factory(:sequencing_request_type_validator, :request_type=>request_type)
+  }
+end
+
+Factory.define :sequencing_request_type_validator, :class => RequestType::Validator do |rtv|
+  rtv.request_option 'read_length'
+  rtv.valid_options { RequestType::Validator::ArrayWithDefault.new([37, 54, 76, 108],54) }
+end
+
+Factory.define :library_request_type_validator, :class => RequestType::Validator do |rtv|
+  rtv.request_option 'library_type'
+  rtv.valid_options {|rtva| RequestType::Validator::LibraryTypeValidator.new(rtva.request_type.id) }
 end
 
 Factory.define :multiplexed_library_creation_request_type, :class => RequestType do |rt|
   rt_value = Factory.next :request_type_id
-  rt.name               "Request type #{rt_value}"
+  rt.name               "MX Request type #{rt_value}"
   rt.key                "request_type_#{rt_value}"
   rt.request_class      MultiplexedLibraryCreationRequest
+  rt.asset_type         "SampleTube"
   rt.order              1
   rt.for_multiplexing   true
   rt.workflow           { |workflow| workflow.association(:submission_workflow)}
+    rt.after_build {|request_type|
+    request_type.library_types_request_types << Factory(:library_types_request_type,:request_type=>request_type)
+    request_type.request_type_validators << Factory(:library_request_type_validator, :request_type=>request_type)
+  }
 end
 
 Factory.define :sample do |s|
@@ -363,7 +453,7 @@ Factory.define :user do |u|
   u.last_name         "ln"
   u.login             "abc123"
   u.email             {|a| "#{a.login}@example.com".downcase }
-  u.roles             []   
+  u.roles             []
   u.workflow          {|workflow| workflow.association(:submission_workflow)}
   u.api_key           "123456789"
 end
@@ -435,7 +525,8 @@ Factory.define :fragment do |fragment|
 end
 
 Factory.define :multiplexed_library_tube do |a|
-  a.name                {|a| Factory.next :asset_name }
+  a.name    {|a| Factory.next :asset_name }
+  a.purpose Tube::Purpose.standard_mx_tube
 end
 
 Factory.define :pulldown_multiplexed_library_tube do |a|
@@ -444,23 +535,38 @@ Factory.define :pulldown_multiplexed_library_tube do |a|
 end
 
 Factory.define :stock_multiplexed_library_tube do |a|
-  a.name                {|a| Factory.next :asset_name }
+  a.name    {|a| Factory.next :asset_name }
+  a.purpose Tube::Purpose.stock_mx_tube
 end
 
 Factory.define(:empty_library_tube, :class => LibraryTube) do |library_tube|
   library_tube.qc_state ''
   library_tube.name     {|_| Factory.next :asset_name }
+  library_tube.purpose  Tube::Purpose.standard_library_tube
 end
 Factory.define :library_tube, :parent => :empty_library_tube do |library_tube|
   library_tube.after_create do |library_tube|
     library_tube.aliquots.create!(:sample => Factory(:sample))
   end
 end
+Factory.define :pac_bio_library_tube do
+end
 
 # A library tube is created from a sample tube through a library creation request!
 Factory.define :full_library_tube, :parent => :library_tube do |library_tube|
   library_tube.after_create { |tube| Factory(:library_creation_request, :target_asset => tube) }
 end
+
+Factory.define(:library_creation_request_for_testing_sequencing_requests, :class => Request::LibraryCreation) do |request|
+  request.request_type { |target| RequestType.find_by_name('Library creation') or raise StandardError, "Could not find 'Library creation' request type" }
+  request.asset        { |target| target.association(:well_with_sample_and_plate) }
+  request.target_asset { |target| target.association(:empty_well) }
+  request.after_build do |request|
+    request.request_metadata.fragment_size_required_from = 300
+    request.request_metadata.fragment_size_required_to   = 500
+  end
+end
+
 
 Factory.define :library_creation_request, :parent => :request do |request|
   request_type = RequestType.find_by_name('Library creation') or raise "Cannot find 'Library creation' request type"
@@ -477,13 +583,17 @@ Factory.define :library_creation_request, :parent => :request do |request|
   end
 end
 
-# A Multiplexed library tube comes from several library tubes, which are themselves created through a 
+# A Multiplexed library tube comes from several library tubes, which are themselves created through a
 # number of multiplexed library creation requests.  But the binding to these tubes comes from the parent-child
 # relationships.
 Factory.define :full_multiplexed_library_tube, :parent => :multiplexed_library_tube do |multiplexed_library_tube|
   multiplexed_library_tube.after_create do |tube|
     tube.parents << (1..5).map { |_| Factory(:multiplexed_library_creation_request).target_asset }
   end
+end
+
+Factory.define :broken_multiplexed_library_tube, :parent => :multiplexed_library_tube do |multiplexed_library_tube|
+
 end
 
 Factory.define :multiplexed_library_creation_request, :parent => :request do |request|
@@ -503,11 +613,13 @@ Factory.define :multiplexed_library_creation_request, :parent => :request do |re
 end
 
 Factory.define :stock_library_tube do |a|
-  a.name                {|a| Factory.next :asset_name }
+  a.name     {|a| Factory.next :asset_name }
+  a.purpose  Tube::Purpose.stock_library_tube
 end
 
 Factory.define :stock_sample_tube do |a|
-  a.name                {|a| Factory.next :asset_name }
+  a.name     {|a| Factory.next :asset_name }
+  a.purpose  Tube::Purpose.stock_sample_tube
 end
 
 Factory.define(:empty_lane, :class => Lane) do |lane|
@@ -520,7 +632,7 @@ end
 
 Factory.define :spiked_buffer do |a|
   a.name { |a| Factory.next :asset_name }
-  a.volume 50 
+  a.volume 50
 end
 
 Factory.define :reference_genome do |r|
@@ -538,14 +650,19 @@ Factory.define :sample_manifest do |a|
   a.count     1
 end
 
+Factory.define :db_file do |f|
+  f.data "blahblahblah"
+end
+
 Factory.define :pending_study_report, :class => 'StudyReport' do |a|
   a.study    {|wa| wa.association(:study)}
 end
 
 Factory.define :completed_study_report, :class => 'StudyReport' do |study_report|
-  study_report.study    {|wa| wa.association(:study)}
+  study_report.study      {|wa| wa.association(:study)}
+  study_report.report_filename   "progress_report.csv"
   study_report.after_build { |study_report_file|
-    study_report_file.report = Tempfile.open("progress_report.csv")
+    Factory :db_file, :owner => study_report_file, :data => Tempfile.open("progress_report.csv").read
   }
 end
 
@@ -567,5 +684,5 @@ Factory.define(:asset_audit) do |audit|
 end
 
 Factory.define(:faculty_sponsor) do |sponsor|
-  sponsor.name     { |a| Factory.next :faculty_sponsor_name } 
+  sponsor.name     { |a| Factory.next :faculty_sponsor_name }
 end

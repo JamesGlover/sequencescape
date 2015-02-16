@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 Given /^the study "([^\"]+)" has an asset group called "([^\"]+)"$/ do |study_name, group_name|
   study = Study.find_by_name(study_name) or raise StandardError, "Could not find study #{study_name.inspect}"
   study.asset_groups.create!(:name => group_name)
@@ -27,7 +30,7 @@ Then /^the assets in the asset group "([^\"]+)" should only be in that group$/ d
 end
 
 Then /^the asset group with the name from the last order UUID value contains the assets for the following samples:$/ do |table|
-  #TODO[mb14] rename 
+  #TODO[mb14] rename
   order  = Order.last or raise StandardError, "There are no order!"
   asset_group = AssetGroup.find_by_name(order.uuid) or raise StandardError, "Could not find the asset group for the last submission"
   assets      = Sample.all(:conditions => { :name => table.raw.map(&:first) }).map(&:assets).flatten

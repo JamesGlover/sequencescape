@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013 Genome Research Ltd.%>
 <div class="info">
   <h2>Lab View</h2>
   <%= Date.today %>
@@ -18,7 +21,7 @@
         <% end %>
       <% end %>
       <tr><td>Studies: </td></tr>
-      <% @asset.studies.each do |study| %>
+      <% @asset.studies.uniq.each do |study| %>
         <tr><td></td><td><%= link_to "#{study.id} - #{study.name}", :controller => :studies, :action => :show, :id => study.id %></td></tr>
       <% end %>
       <tr><td>&nbsp;</td></tr>
@@ -28,7 +31,7 @@
       <tr><td>&nbsp;</td></tr>
       <tr><td></td><td><%= submit_tag 'Update' %></td></tr>
     </table>
-    
+
     <% unless @asset.parents.empty? %>
       <div class="info">
         <%= pluralize @asset.parents.size, "Source" %>
@@ -58,7 +61,7 @@
               <th>Asset</th>
             </tr>
           </thead>
-          <tbody>        
+          <tbody>
             <% @asset.children.each do |child| %>
               <tr>
                 <td><%= link_to "#{(child.label or "").humanize} #{child.id}", :action => :lab_view, :barcode => child.barcode %></td>

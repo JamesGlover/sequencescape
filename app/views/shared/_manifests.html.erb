@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011 Genome Research Ltd.%>
 <table id="study_list" width="100%" class="sortable" cellpadding="4" cellspacing="0">
   <thead>
   <tr>
@@ -28,7 +31,7 @@
       </td>
       <td><%= link_to "Blank manifest", export_sample_manifest_path(manifest) %></td>
       <td>
-        <% if manifest.failed? || (! manifest.uploaded.data) %>
+        <% if manifest.failed? || (! manifest.uploaded_document) %>
           <%= link_to 'Upload manifest', sample_manifest_path(manifest) %>
         <% else %>
           <%= link_to 'Completed manifest', uploaded_spreadsheet_sample_manifest_path(manifest) %>
@@ -39,7 +42,7 @@
         <%= link_to 'Errors', sample_manifest_path(manifest), :title => "Errors for manifest for #{manifest.study.name}" %>
       <% end %>
       </td>
-      <td><% if ! manifest.uploaded.data %>
+      <td><% if ! manifest.uploaded_document %>
         No manifest uploaded
         <% else %>
           <%= manifest.state.titleize %>

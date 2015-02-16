@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013,2014,2015 Genome Research Ltd.
 require "test_helper"
 require 'requests_controller'
 
@@ -20,7 +23,7 @@ class RequestsControllerTest < ActionController::TestCase
         @controller.stubs(:logged_in?).returns(@user)
         @controller.stubs(:current_user).returns(@user)
       end
-      
+
       should "cancel request" do
          request = Factory :request, :user => @user, :request_type => Factory(:request_type), :study => Factory(:study, :name => "ReqCon2"), :workflow => Factory(:submission_workflow)
          get :cancel, :id => request.id
@@ -29,12 +32,12 @@ class RequestsControllerTest < ActionController::TestCase
          assert Request.find(request.id).cancelled?
          assert_response :redirect
       end
-      
+
       should "cancel started request" do
          request = Factory :request, :state => "started", :user => @user, :request_type => Factory(:request_type), :study => Factory(:study, :name => "ReqCon2"), :workflow => Factory(:submission_workflow)
          get :cancel, :id => request.id
 
-         assert_equal flash[:notice], "Request #{request.id} in progress. Can't be cancelled"
+         assert_equal flash[:error], "Request #{request.id} in progress. Can't be cancelled"
          assert_response :redirect
       end
 
@@ -47,7 +50,7 @@ class RequestsControllerTest < ActionController::TestCase
         @controller.stubs(:current_user).returns(@user)
         #@request_initial= Factory :request, :user => @user, :request_type => Factory(:request_type), :study => Factory(:study, :name => "ReqCon2"), :workflow => Factory(:submission_workflow)
       end
-      
+
       should "when quotas is copied and redirect" do
         @request_initial= Factory :request, :user => @user, :request_type => Factory(:request_type), :study => Factory(:study, :name => "ReqCon2"), :workflow => Factory(:submission_workflow)
          get :copy, :id => @request_initial.id
@@ -56,18 +59,16 @@ class RequestsControllerTest < ActionController::TestCase
          assert_equal flash[:notice], "Created request #{@new_request.id}"
          assert_response :redirect
       end
-      
-      should "when no quotas - copy failed" do
-        @project =  Factory(:project_with_order, :name => 'Prj1')
-        @request_initial_2= Factory :request, :user => @user, :request_type => Factory(:request_type), :study => Factory(:study, :name => "ReqCon XXX"), 
-          :workflow => Factory(:submission_workflow), :project => @project
-        @project.update_attributes!(:enforce_quotas=>true)
 
-         get :copy, :id => @request_initial_2.id
+      should "set failed requests to pending" do
+        @request_initial= Factory :request, :user => @user, :request_type => Factory(:request_type), :study => Factory(:study, :name => "ReqCon2"), :workflow => Factory(:submission_workflow), :state => 'failed'
+         get :copy, :id => @request_initial.id
 
          @new_request = Request.last
-         assert_equal flash[:error], "Insufficient quota."
+         assert_equal flash[:notice], "Created request #{@new_request.id}"
          assert_response :redirect
+
+         assert_equal 'pending', @new_request.state
       end
     end
 
@@ -102,14 +103,14 @@ class RequestsControllerTest < ActionController::TestCase
         end
       end
     end
-    
+
     context "#update rejected" do
       setup do
         @controller.stubs(:logged_in?).returns(@user)
         @controller.stubs(:current_user).returns(@user)
 
         @project =  Factory(:project_with_order, :name => 'Prj1')
-         @reqwest= Factory :request, :user => @user, :request_type => Factory(:request_type), :study => Factory(:study, :name => "ReqCon XXX"), 
+         @reqwest= Factory :request, :user => @user, :request_type => Factory(:request_type), :study => Factory(:study, :name => "ReqCon XXX"),
                                   :workflow => Factory(:submission_workflow), :project => @project
       end
 
@@ -117,10 +118,10 @@ class RequestsControllerTest < ActionController::TestCase
         setup do
           @params = { :request_metadata_attributes => { :read_length => "37" }, :state => 'invalid' }
           put :update, :id => @reqwest.id, :request => @params
-        end            
+        end
         should_redirect_to("request path") { request_path(@reqwest) }
       end
-      
+
 
       context "update to state 'failed'" do
         setup do
@@ -128,8 +129,10 @@ class RequestsControllerTest < ActionController::TestCase
           @params = { :request_metadata_attributes => { :read_length => "37" }, :state => 'failed' }
           put :update, :id => @reqwest.id, :request => @params
         end
-        should_set_the_flash_to Regexp.new("has been failed")
-        should_redirect_to("request path") { request_path(@reqwest) }
+        should "not update the state" do
+          # We really don't want arbitrary changing of state
+          assert @reqwest.state != 'failed'
+        end
       end
     end
   end

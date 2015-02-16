@@ -10,6 +10,7 @@ Feature: The API provides a lookup feature for legacy ID values to UUIDs
     And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
     Given there are no samples
 
@@ -27,7 +28,7 @@ Feature: The API provides a lookup feature for legacy ID values to UUIDs
     And the JSON should be:
       """
       {
-        "general": [ "no WTSISignOn cookie provided" ]
+        "general": [ "no authentication provided" ]
       }
       """
 
@@ -50,7 +51,7 @@ Feature: The API provides a lookup feature for legacy ID values to UUIDs
     And the JSON should be:
       """
       {
-        "general": [ "the WTSISignOn cookie is invalid" ]
+        "general": [ "could not be authenticated" ]
       }
       """
 
@@ -59,7 +60,7 @@ Feature: The API provides a lookup feature for legacy ID values to UUIDs
       | lookup  | { "model": "sample", "id": 1 }     |
       | bulk    | [ { "model": "sample", "id": 1 } ] |
 
-  @error @individual 
+  @error @individual
   Scenario: Looking up a single record that does not exist
     When I POST the following JSON to the API path "/uuids/lookup":
       """
@@ -163,8 +164,8 @@ Feature: The API provides a lookup feature for legacy ID values to UUIDs
       | lookup  | {"lookup":{"model":"", "id":1}}      | "model":["can't be blank"]                                                         |
       | lookup  | {}                                   | "lookup":["should be a tuple"],"model":["can't be blank"],"id":["is not a number"] |
       | lookup  |                                      | "lookup":["should be a tuple"],"model":["can't be blank"],"id":["is not a number"] |
-    
-    @bulk 
+
+    @bulk
     Scenarios: Bulk lookup
       | service | posted_json        | errors                                    |
       | bulk    | {"lookup":["foo"]} | "lookup":["should be a tuple"]            |
@@ -191,7 +192,7 @@ Feature: The API provides a lookup feature for legacy ID values to UUIDs
       }
       """
 
-    @individual 
+    @individual
     Scenarios: Individual lookup
       | service | method |
       | lookup  | GET    |

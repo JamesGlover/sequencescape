@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012 Genome Research Ltd.
 class ::Endpoints::TransferTemplates < ::Core::Endpoint::Base
   model do
 
@@ -18,7 +21,7 @@ class ::Endpoints::TransferTemplates < ::Core::Endpoint::Base
       response.status(201)
       build_transfer(request, &request.target.method(:create!))
     end
-    bind_action(:create, :as => 'preview', :to => 'preview') do |request,response|
+    bind_action(:create, :as => 'preview', :to => 'preview') do |_,request,response|
       response.status(200)
       build_transfer(request, &request.target.method(:preview!))
     end

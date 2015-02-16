@@ -1,4 +1,4 @@
-@api @json @study @allow-rescue @study_api 
+@api @json @study @allow-rescue @study_api
 Feature: Interacting with studies through the API
   Background:
     Given all of this is happening at exactly "16-September-2010 13:45:00+01:00"
@@ -36,6 +36,9 @@ Feature: Interacting with studies through the API
             "state": "active",
             "contaminated_human_dna": "No",
             "contains_human_dna": "No",
+            "alignments_in_bam": true,
+            "remove_x_and_autosomes": false,
+            "separate_y_chromosome_data": false,
             "commercially_available": "No",
             "data_release_sort_of_study": "genomic sequencing",
             "data_release_strategy": "open",
@@ -49,7 +52,7 @@ Feature: Interacting with studies through the API
 
             "id": 1,
             "created_at": "2010-09-16T13:45:00+01:00"
-          }
+          }, "lims": "SQSCP"
         }
       ]
       """
@@ -60,9 +63,9 @@ Feature: Interacting with studies through the API
 
   Scenario: Retrieving the JSON for a particular study
     Given I have an active study called "Testing the JSON API"
+    And the study "Testing the JSON API" has samples which need x and autosome data removed
     And the UUID for the study "Testing the JSON API" is "00000000-1111-2222-3333-444444444444"
     And the faculty sponsor for study "Testing the JSON API" is "John Smith"
-
     When I GET the API path "/studies/00000000-1111-2222-3333-444444444444"
     Then ignoring "updated_at|id" the JSON should be:
       """
@@ -81,6 +84,9 @@ Feature: Interacting with studies through the API
           "state": "active",
           "contaminated_human_dna": "No",
           "contains_human_dna": "No",
+          "alignments_in_bam": true,
+          "remove_x_and_autosomes": true,
+          "separate_y_chromosome_data": false,
           "commercially_available": "No",
           "study_visibility": "Hold",
           "data_release_sort_of_study": "genomic sequencing",
@@ -91,6 +97,6 @@ Feature: Interacting with studies through the API
 
           "id": 1,
           "created_at": "2010-09-16T13:45:00+01:00"
-        }
+        }, "lims": "SQSCP"
       }
       """

@@ -1,9 +1,12 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 # NOTE: The UUIDs for the requests are generated as sequential numbers from the study UUID
 def create_request(request_type, study, project, asset, target_asset, additional_options = {})
   request = Factory(:request,
     additional_options.merge(
       :study => study, :project => project,
-      :asset => asset, 
+      :asset => asset,
       :target_asset => target_asset,
       :request_type => request_type,
       :request_metadata_attributes => {
@@ -66,23 +69,23 @@ Given /^I have already made (\d+) "([^\"]+)" requests? with IDs starting at (\d+
 end
 
 Given /^I have already made a "([^\"]+)" request with ID (\d+) within the study "([^\"]+)" for the project "([^\"]+)"$/ do |type, id, study_name, project_name|
-  Given %Q{I have already made 1 "#{type}" request with IDs starting at #{id} within the study "#{study_name}" for the project "#{project_name}"}
+  step(%Q{I have already made 1 "#{type}" request with IDs starting at #{id} within the study "#{study_name}" for the project "#{project_name}"})
 end
 
-Given /^the project "([^\"]+)" has no "([^\"]+)" quota$/ do |name, type|
-  project      = Project.find_by_name(name) or raise StandardError, "Cannot find project with name #{ name.inspect }"
-  request_type = RequestType.find_by_name(type) or raise StandardError, "Cannot find request type #{ type.inspect }"
-  project.quotas.delete(*project.quotas.all(:conditions => { :request_type_id => request_type.id }))
-end
-
-Given /^the sample in sample tube "([^\"]+)" is registered under the study "([^\"]+)"$/ do |tube_name, study_name|
-  tube = SampleTube.find_by_name(tube_name) or raise StandardError, "Cannot find sample tube #{tube_name.inspect}"
+Given /^the sample in (well|sample tube) "([^\"]+)" is registered under the study "([^\"]+)"$/ do |_,asset_name, study_name|
+  asset = Asset.find_by_name(asset_name) or raise StandardError, "Cannot find asset #{tube_name.inspect}"
   study = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
-  study.samples << tube.aliquots.map(&:sample)
+  study.samples << asset.aliquots.map(&:sample)
+end
+
+Given /^the sample in the last (well|sample tube) is registered under the study "([^\"]+)"$/ do |_, study_name|
+  asset = Asset.last or raise StandardError, "Cannot find asset #{tube_name.inspect}"
+  study = Study.find_by_name(study_name) or raise StandardError, "Cannot find study #{study_name.inspect}"
+  study.samples << asset.aliquots.map(&:sample)
 end
 
 Given /^the study "([^\"]+)" has an asset group of (\d+) samples called "([^\"]+)"$/ do |study_name, count, group_name|
-  When %Q{the study "#{study_name}" has an asset group of #{count} samples in "sample tube" called "#{group_name}"}
+  step(%Q{the study "#{study_name}" has an asset group of #{count} samples in "sample tube" called "#{group_name}"})
 end
 
 Given /^the study "([^\"]+)" has an asset group of (\d+) samples in "([^\"]+)" called "([^\"]+)"$/ do |study_name, count, asset_type, group_name|
@@ -90,11 +93,13 @@ Given /^the study "([^\"]+)" has an asset group of (\d+) samples in "([^\"]+)" c
 
   assets = (1..count.to_i).map do |i|
     sample_name = "#{group_name} sample #{i}".gsub(/\s+/, '_').downcase
-    Factory(asset_type.gsub(/[^a-z0-9_-]+/, '_'), :name => "#{ group_name }, #{ asset_type } #{ i }").tap do |asset|
+    param = asset_type == 'well' ? {:id=>90+i} : {:name => "#{ group_name }, #{ asset_type } #{ i }"}
+    Factory(asset_type.gsub(/[^a-z0-9_-]+/, '_'), param ).tap do |asset|
       if asset.primary_aliquot.present?
         asset.primary_aliquot.sample.tap { |s| s.name = sample_name ; s.save(false) }
       else
-        asset.aliquots.create!(:sample => Factory(:sample, :name => sample_name))
+        asset.aliquots.create!(:sample => Factory(:sample, :name => sample_name), :study=>study)
+        asset.aliquots.each {|a| study.samples << a.sample}
       end
     end
   end

@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012 Genome Research Ltd.%>
 <%= render_title "Edit '#{@task.name}'" %>
 <%= render_help 'Update your task definition here.'%>
 
@@ -43,7 +46,7 @@
             choices = choices.call if choices.is_a? Proc
             select_options = ( options[:options] || {})
        %>
-       <strong><%= pretty_name %></strong> <%= f.select att_name, choices, select_options %> 
+       <strong><%= pretty_name %></strong> <%= f.select att_name, choices, select_options %>
         <% else %>
 <strong><%=pretty_name %></strong> <%= f.text_field pretty_name %>
         <%end%>

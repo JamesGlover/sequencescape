@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013 Genome Research Ltd.
 Given /^no order templates exist$/ do
   SubmissionTemplate.destroy_all
 end
@@ -18,6 +21,7 @@ Given /^I have an order created with the following details based on the template
       when 'asset_group_name' then v
       when 'request_options' then Hash[v.split(',').map { |p| p.split(':').map(&:strip) }]
       when 'assets' then Uuid.lookup_many_uuids(v.split(',').map(&:strip)).map(&:resource)
+      when 'pre_cap_group' then v
       else Uuid.include_resource.lookup_single_uuid(v).resource
       end
     [ k.to_sym, v ]
@@ -35,15 +39,15 @@ Given /^an order template called "([^\"]+)" with UUID "([^"]+)"$/ do |name, uuid
 end
 
 Given /^the UUID for the order template "([^\"]+)" is "([^\"]+)"$/ do |name,uuid_value|
-  object = SubmissionTemplate.find_by_name(name) or raise "Cannot find order template #{ name.inspect }"
+  object = SubmissionTemplate.find_by_name!(name)
   set_uuid_for(object, uuid_value)
 end
 
 Then /^the (string |)request options for the order with UUID "([^\"]+)" should be:$/ do |string,uuid, options_table|
   order = Uuid.with_external_id(uuid).first.try(:resource) or raise StandardError, "Could not find order with UUID #{uuid.inspect}"
+  stringified_options = order.request_options.stringify_keys # Needed because of inconsistencies in keys (symbols & strings)
   options_table.rows_hash.each do |k,v|
-    opt = string==("string ") ? k : k.to_sym
-    assert_equal(v, order.request_options[opt].to_s, "Request option #{k.inspect} is unexpected")
+    assert_equal(v, stringified_options[k].to_s, "Request option #{k.inspect} is unexpected")
   end
 end
 

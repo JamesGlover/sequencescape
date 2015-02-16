@@ -1,5 +1,8 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 class Study < ActiveRecord::Base
-  acts_as_audited :on => [:destroy, :update]
+
 
   include StudyReport::StudyDetails
   include ModelExtensions::Study
@@ -78,7 +81,7 @@ class Study < ActiveRecord::Base
 
   has_many :aliquots
   has_many :assets_through_aliquots, :class_name => "Asset", :through => :aliquots, :source => :receptacle, :uniq => :true
-  has_many :assets_through_requests, :class_name => "Asset", :through => :requests, :source => :asset, :uniq => :true
+  has_many :assets_through_requests, :class_name => "Asset", :through => :initial_requests, :source => :asset, :uniq => :true
 
   has_many :items , :through => :requests, :uniq => true
 
@@ -106,6 +109,7 @@ class Study < ActiveRecord::Base
 
   validates_presence_of :name
   validates_uniqueness_of :name, :on => :create, :message => "already in use (#{self.name})"
+  validates_length_of :name, :maximum => 200
   validates_format_of :abbreviation, :with => /^[\w_-]+$/i, :allow_blank => false, :message => 'cannot contain spaces or be blank'
 
   validate :validate_ethically_approved
@@ -128,7 +132,7 @@ class Study < ActiveRecord::Base
   end
   private :set_default_ethical_approval
 
-  named_scope :for_search_query, lambda { |query|
+  named_scope :for_search_query, lambda { |query,with_includes|
     { :conditions => [ 'name LIKE ? OR id=?', "%#{query}%", query ] }
   }
 
@@ -196,6 +200,8 @@ class Study < ActiveRecord::Base
 
     attribute(:study_description, :required => true)
     attribute(:contaminated_human_dna, :required => true, :in => YES_OR_NO)
+    attribute(:remove_x_and_autosomes, :required => true, :default => 'No', :in => YES_OR_NO)
+    attribute(:separate_y_chromosome_data, :required => true, :default=> false, :boolean => true)
     attribute(:study_project_id)
     attribute(:study_abstract)
     attribute(:study_study_title)
@@ -218,7 +224,8 @@ class Study < ActiveRecord::Base
       required.attribute(:data_release_delay_reason_comment)
     end
 
-    attribute(:dac_policy)
+    attribute(:dac_policy, :default => configatron.default_policy_text, :if => :managed?)
+    attribute(:dac_policy_title, :default => configatron.default_policy_title, :if => :managed?)
     attribute(:ega_dac_accession_number)
     attribute(:ega_policy_accession_number)
     attribute(:array_express_accession_number)
@@ -233,6 +240,8 @@ class Study < ActiveRecord::Base
       required.attribute(:data_release_prevention_reason_comment)
     end
 
+    attribute(:data_access_group, :with=> /\A[a-z_][a-z0-9_-]{0,31}\Z/)
+
     # SNP information
     attribute(:snp_study_id, :integer => true)
     attribute(:snp_parent_study_id, :integer => true)
@@ -243,6 +252,7 @@ class Study < ActiveRecord::Base
 
     REMAPPED_ATTRIBUTES = {
       :contaminated_human_dna     => YES_OR_NO,
+      :remove_x_and_autosomes     => YES_OR_NO,
       :study_sra_hold             => STUDY_SRA_HOLDS,
       :contains_human_dna         => YES_OR_NO,
       :commercially_available     => YES_OR_NO
@@ -264,6 +274,10 @@ class Study < ActiveRecord::Base
 
   end
   class Metadata
+    def remove_x_and_autosomes?
+      remove_x_and_autosomes == YES
+    end
+
     def managed?
       self.data_release_strategy == DATA_RELEASE_STRATEGY_MANAGED
     end
@@ -291,6 +305,16 @@ class Study < ActiveRecord::Base
     validates_presence_of :data_release_non_standard_agreement, :if => :non_standard_agreement?
     validates_associated  :data_release_non_standard_agreement, :if => :non_standard_agreement?
 
+    validate :valid_policy_url?
+
+    validate :sanity_check_y_separation, :if => :separate_y_chromosome_data?
+
+    def sanity_check_y_separation
+      self.errors.add(:separate_y_chromosome_data,'cannot be selected with remove x and autosomes.') if remove_x_and_autosomes?
+      !remove_x_and_autosomes?
+    end
+
+
     before_validation do |record|
       if not record.non_standard_agreement? and not record.data_release_non_standard_agreement.nil?
         record.data_release_non_standard_agreement.delete
@@ -304,6 +328,22 @@ class Study < ActiveRecord::Base
 
     def study_type_valid?
       self.errors.add(:study_type, "is not specified")  if study_type.name == "Not specified"
+    end
+
+    def valid_policy_url?
+      # Rails 2.3 has no inbuilt URL validation, but rather than rolling our own, we'll
+      # use the inbuilt ruby URI parser, a bit like here:
+      # http://www.simonecarletti.com/blog/2009/04/validating-the-format-of-an-url-with-rails/
+      return true if dac_policy.blank?
+      dac_policy.insert(0,"http://") if /:\/\//.match(dac_policy).nil? # Add an http protocol if no protocol is defined
+      begin
+        uri = URI.parse(dac_policy)
+        raise URI::InvalidURIError if configatron.invalid_policy_url_domains.include?(uri.host)
+      rescue URI::InvalidURIError
+        self.errors.add(:dac_policy, ": #{dac_policy} is not a valid URL")
+        return false
+      end
+      return true
     end
 
     with_options(:if => :validating_ena_required_fields?) do |ena_required_fields|
@@ -332,6 +372,12 @@ class Study < ActiveRecord::Base
   end
   alias_method_chain(:validating_ena_required_fields=, :enforce_data_release)
 
+  def warnings
+    if study_metadata.managed? && study_metadata.data_access_group.blank?
+      "No user group specified for a managed study. Please specify a valid Unix user group to ensure study data is visible to the correct people."
+    end
+  end
+
   def mark_deactive
     unless self.inactive?
       logger.warn "Study deactivation failed! #{self.errors.map{|e| e.to_s} }"
@@ -344,9 +390,13 @@ class Study < ActiveRecord::Base
     end
   end
 
-  def completed
-    if (self.requests.size - self.requests.failed.size - self.requests.cancelled.size) > 0
-      completed_percent = ((self.requests.passed.size.to_f / (self.requests.size - self.requests.failed.size - self.requests.cancelled.size).to_f)*100)
+  def completed(workflow=nil)
+    rts = workflow.present? ? workflow.request_types.map(&:id) : RequestType.all.map(&:id)
+    total = self.requests.request_type(rts).count
+    failed = self.requests.failed.request_type(rts).count
+    cancelled = self.requests.cancelled.request_type(rts).count
+    if (total - failed - cancelled) > 0
+      completed_percent = ((self.requests.passed.request_type(rts).count.to_f / (total - failed - cancelled).to_f)*100)
       completed_percent.to_i
     else
       return 0
@@ -358,7 +408,7 @@ class Study < ActiveRecord::Base
   end
 
   def orders_for_workflow(workflow)
-    self.orders.select {|s| s.workflow.id == workflow.id}
+    self.orders.find(:all,:conditions=>{:workflow_id=>workflow})
   end
   # Yields information on the state of all request types in a convenient fashion for displaying in a table.
   def request_progress(&block)
@@ -368,14 +418,14 @@ class Study < ActiveRecord::Base
   # Yields information on the state of all assets in a convenient fashion for displaying in a table.
   def asset_progress(assets = nil, &block)
     conditions = { }
-    conditions[:having] = "asset_id IN (#{assets.map(&:id).join(',')})" unless assets.blank?
+    conditions[:conditions] = "asset_id IN (#{assets.map(&:id).join(',')})" unless assets.blank?
     yield(self.initial_requests.asset_statistics(conditions))
   end
 
   # Yields information on the state of all samples in a convenient fashion for displaying in a table.
   def sample_progress(samples = nil, &block)
     conditions = { }
-    conditions[:having] = "sample_id IN (#{samples.map(&:id).join(',')})" unless samples.blank?
+    conditions[:conditions] = ["sample_id IN (#{samples.map(&:id).join(',')})"] unless samples.blank?
     yield(self.requests.sample_statistics(conditions))
   end
 
@@ -481,12 +531,25 @@ class Study < ActiveRecord::Base
     }
   }
 
+  named_scope :with_remove_x_and_autosomes, {
+    :joins => :study_metadata,
+    :conditions => {
+      :study_metadata => {
+        :remove_x_and_autosomes => Study::YES
+      }
+    }
+  }
+
   def self.all_awaiting_ethical_approval
     self.awaiting_ethical_approval
   end
 
   def self.all_contaminated_with_human_dna
     self.contaminated_with_human_dna
+  end
+
+  def self.all_with_remove_x_and_autosomes
+    self.with_remove_x_and_autosomes
   end
 
   def ebi_accession_number
@@ -627,7 +690,6 @@ class Study < ActiveRecord::Base
       true
     end
   end
-
 
   private
   # beware , this method change the study of an object but doesn't look at some

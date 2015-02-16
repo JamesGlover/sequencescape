@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2012,2013 Genome Research Ltd.
 class Admin::ProjectsController < ApplicationController
   before_filter :admin_login_required
 
@@ -8,18 +11,6 @@ class Admin::ProjectsController < ApplicationController
 
   def show
     @project = Project.find(params[:id])
-
-    # Filter the RequestTypes to hide Controls
-    @request_types = RequestType.all(
-      :order => 'name ASC',
-      :conditions  => ['request_class_name != ?', 'ControlRequest']
-    )
-
-    unless @project.quotas.empty?
-      @project.quotas.each do |p|
-        @request_types.delete_if{|t| t.id == p.request_type_id}
-      end
-    end
   end
 
   def update
@@ -63,24 +54,12 @@ class Admin::ProjectsController < ApplicationController
     when "closed"
       @projects = @projects.reject { |p| p.active? }
     end
-     @request_types = RequestType.all.sort_by{|r| r.name}
     render :partial => "filtered_projects"
   end
 
   def managed_update
     @project = Project.find(params[:id])
     redirect_if_not_owner_or_admin(@project)
-    @request_types = RequestType.all(:order => "name ASC")
-    # Cleans submitted quotas. Does not accept 0 quotas
-
-    quota_updates = {}
-    if params[:quota]
-      quota_updates = params[:quota].delete_if{|g,k| k == "0"}
-    end
-    params.delete(:quota)
-
-    existing_quota_changes = params[:project].delete(:quotas)||{}
-    quota_updates.merge!(existing_quota_changes)
 
     unless params[:project][:uploaded_data].blank?
       document_settings = {}
@@ -96,11 +75,6 @@ class Admin::ProjectsController < ApplicationController
     if @project.update_attributes(params[:project])
       if pre_approved == false && @project.approved == true
         EventFactory.project_approved(@project, current_user)
-      end
-
-      unless @project.compare_quotas( quota_updates )
-        @project.add_quotas(quota_updates)
-        EventFactory.quota_updated(@project, current_user)
       end
 
       flash[:notice] = "Your project has been updated"
@@ -120,12 +94,6 @@ class Admin::ProjectsController < ApplicationController
       @projects = @projects.sort_by { |project| project.user_id }
     end
     render :partial => "projects"
-  end
-
-  def reset_quota
-    Quota.delete_all("request_type_id = #{params[:request_type]} AND project_id = #{params[:id]}")
-    flash[:notice] = "Project's quota was updated"
-    redirect_to :action => "update", :id => params[:id]
   end
 
   private

@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 Given /^a supplier called "(.*)" exists$/ do |supplier_name|
   Supplier.create!({:name => supplier_name })
 end
@@ -23,7 +26,7 @@ Given /^sample information is updated from the manifest for study "([^"]*)"$/ do
   end
 end
 
-Given /^the last sample has been updated by a manifest$/ do 
+Given /^the last sample has been updated by a manifest$/ do
   sample = Sample.last or raise StandardError, "There appear to be no samples"
   sample.update_attributes!(:updated_by_manifest => true)
 end
@@ -44,7 +47,7 @@ def sequence_sanger_sample_ids_for(plate)
 end
 
 Given /^I reset all of the sanger sample ids to a known number sequence$/ do
-  raise StandardError, "Only works for plate manifests!" if Plate.count == 0
+  # raise StandardError, "Only works for plate manifests!" if Plate.count == 0
 
   index = 0
   Plate.all(:order => 'id ASC').each do |plate|
@@ -52,6 +55,9 @@ Given /^I reset all of the sanger sample ids to a known number sequence$/ do
       "sample_#{index+well_index}"
     end
     index += plate.size
+  end
+  SampleTube.all(:order => 'id ASC').each_with_index do |tube, idx|
+    tube.aliquots.first.sample.update_attributes!(:sanger_sample_id=>"tube_sample_#{idx+1}")
   end
 end
 
@@ -89,26 +95,37 @@ Then /^the samples table should look like:$/ do |table|
       assert_equal(expected_data[:sample_taxon_id].to_i, sample.sample_metadata.sample_taxon_id, "Sample taxon ID invalid for #{sanger_sample_id}")
     end
 
-    unless expected_data[:common_name].blank?
-      assert_equal(expected_data[:common_name], sample.sample_metadata.sample_common_name, "Sample common name invalid for #{sanger_sample_id}")
+    expected_data.each do |k,v|
+      next if v.blank?
+      next if [:sanger_sample_id,:empty_supplier_sample_name,:supplier_name,:sample_taxon_id].include?(:"#{k}")
+      assert_equal(v,sample.sample_metadata.send(k), "Sample #{k} invalid for #{sanger_sample_id}")
     end
+
+  end
+end
+
+Then /^the sample accession numbers should be:$/ do |table|
+  table.hashes.each do |expected_data|
+    sanger_sample_id = expected_data[:sanger_sample_id]
+    sample = Sample.find_by_sanger_sample_id(sanger_sample_id) or raise StandardError, "Could not find sample #{sanger_sample_id}"
+    assert_equal(expected_data[:accession_number],sample.sample_metadata.sample_ebi_accession_number)
   end
 end
 
 Given /^a manifest has been created for "([^"]*)"$/ do |study_name|
-  When %Q{I follow "Create manifest for plates"}
-	When %Q{I select "#{study_name}" from "Study"}
-  When %Q{I select "default layout" from "Template"}
-	And %Q{I select "Test supplier name" from "Supplier"}
-	And %Q{I select "xyz" from "Barcode printer"}
-	And %Q{I fill in the field labeled "Count" with "1"}
-  And %Q{I select "default layout" from "Template"}
-	When %Q{I press "Create manifest and print labels"}
-	Then %Q{I should see "Manifest_"}
-	Then %Q{I should see "Download Blank Manifest"}
-	Given %Q{3 pending delayed jobs are processed}
-	Then %Q{study "#{study_name}" should have 96 samples}
-	Given %Q{I reset all of the sanger sample ids to a known number sequence}
+  step(%Q{I follow "Create manifest for plates"})
+	step(%Q{I select "#{study_name}" from "Study"})
+  step(%Q{I select "default layout" from "Template"})
+	step(%Q{I select "Test supplier name" from "Supplier"})
+	step(%Q{I select "xyz" from "Barcode printer"})
+	step(%Q{I fill in the field labeled "Count" with "1"})
+  step(%Q{I select "default layout" from "Template"})
+	step(%Q{I press "Create manifest and print labels"})
+	step %Q{I should see "Manifest_"}
+	step %Q{I should see "Download Blank Manifest"}
+	step(%Q{3 pending delayed jobs are processed})
+	step %Q{study "#{study_name}" should have 96 samples}
+	step(%Q{I reset all of the sanger sample ids to a known number sequence})
 end
 
 Then /^the sample controls and resubmits should look like:$/ do |table|
@@ -137,17 +154,18 @@ end
 Then /^the last created sample manifest should be:$/ do |table|
   offset = 9
   Tempfile.open('testfile.xls') do |tempfile|
-    tempfile.write(SampleManifest.last.generated.data)
+    tempfile.write(SampleManifest.last.generated_document.current_data)
     tempfile.flush
     tempfile.open
 
     spreadsheet = Spreadsheet.open(tempfile.path)
     @worksheet   =spreadsheet.worksheets.first
   end
-  
+
   table.rows.each_with_index do |row,index|
-    assert_equal Barcode.barcode_to_human(Barcode.calculate_barcode(Plate.prefix, row[0].to_i)), @worksheet[offset+index,0]
-    assert_equal row[1], @worksheet[offset+index,1]
+    expected = [ Barcode.barcode_to_human(Barcode.calculate_barcode(Plate.prefix, row[0].to_i)), row[1] ]
+    got      = [ @worksheet[offset+index,0], @worksheet[offset+index,1] ]
+    assert_equal(expected, got, "Unexpected manifest row #{index}")
   end
 end
 
@@ -176,5 +194,9 @@ end
 Given /^the sample manifest with ID (\d+) has been processed$/ do |id|
   manifest = SampleManifest.find(id)
   manifest.generate
-  Given %Q{3 pending delayed jobs are processed}
+  step(%Q{3 pending delayed jobs are processed})
+end
+
+Given /^sample tubes are expected by the last manifest$/ do
+  SampleManifest.last.update_attributes(:barcodes=>SampleTube.all.map(&:sanger_human_barcode))
 end

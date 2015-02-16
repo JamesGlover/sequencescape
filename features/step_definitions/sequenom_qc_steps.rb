@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012 Genome Research Ltd.
 # TODO: Remove these methods from Plate because it's bad to do this in a test
 class Plate
   def add_wells_to_plate(number_of_wells)
@@ -37,9 +40,9 @@ Given /^I have a source plate which contains samples which have no gender inform
 end
 
 When /^I try to create a Sequenom QC plate from the input plate$/ do
-  When %Q{I fill in "Plate 1" with "1220125054743"}
-  And %Q{I fill in "User barcode" with "2470000100730"}
-  And %Q{I press "Create new Plate"}
+  step(%Q{I fill in "Plate 1" with "1220125054743"})
+  step(%Q{I fill in "User barcode" with "2470000100730"})
+  step(%Q{I press "Create new Plate"})
 end
 
 

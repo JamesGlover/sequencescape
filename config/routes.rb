@@ -1,15 +1,12 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013,2014 Genome Research Ltd.
 ActionController::Routing::Routes.draw do |map|
   map.resources :reference_genomes
   map.resources :barcode_printers
-  map.resources :submission_workflows
-  map.resources :request_types
 
   map.resources :robot_verifications, :collection => {:submission => [:post, :get], :download => [:post]}
   map.resources :projects, :has_many => :studies, :member => { :related_studies => :get, :collaborators => :get, :follow => :get, :grant_role => :post, :remove_role => :post  } do |project|
-    project.resources :workflows, :only => :none  do |workflow|
-      workflow.resources :quotas, :controller => "projects/workflows/quotas", :only => [],
-                         :collection => { :all => :get, :send_request => :post, :update_request => :get }
-    end
     project.resources :billing_events, :controller => "projects/billing_events", :only => [:index, :show, :new, :create]
   end
 
@@ -39,7 +36,7 @@ ActionController::Routing::Routes.draw do |map|
   # Main objects
   map.resources :events
   map.resources :sources
-  map.resources :samples, :has_many => :assets, :member => {:filtered_move => :get, :move => :post, :history => :get }, :collection =>{ :move_spreadsheet => :get, :move_upload => :post, :move_upload_do => :post}
+  map.resources :samples, :has_many => :assets, :member => {:history => :get }
   map.resources :samples, :collection => { :upload => :get, :review => :post } do |sample|
     sample.resources :comments, :controller => "samples/comments"
     sample.resources :studies, :controller => "samples/studies"
@@ -48,7 +45,6 @@ ActionController::Routing::Routes.draw do |map|
   map.connect '/taxon_lookup_by_term/:term', :controller => "samples", :action => "taxon_lookup"
   map.connect '/taxon_lookup_by_id/:id', :controller => "samples", :action => "taxon_lookup"
 
-  map.resources :sample_group
   map.connect '/studies/:study_id/workflows/:workflow_id/summary_detailed/:id', :controller => "studies/workflows", :action => "summary_detailed"
   map.connect 'studies/accession/:id', :controller =>"studies", :action =>"accession"
   map.connect 'studies/policy_accession/:id', :controller =>"studies", :action =>"policy_accession"
@@ -74,9 +70,7 @@ ActionController::Routing::Routes.draw do |map|
 
     study.resources :requests, :member => { :reset => :post, :cancel => :get }
     study.resources :comments, :controller => "studies/comments"
-    study.resources :sample_groups, :controller => "studies/sample_groups", :collection => {:sort => :get}, :member => {:manage => :get, :add_samples => :post, :remove_samples => :delete, :find => [:get, :post]} do |sample_group|
-      sample_group.resources :comments, :controller => "sample_groups/comments"
-    end
+
     study.resources :asset_groups, :controller => "studies/asset_groups", :member => {:search => :post, :add => :post, :print => :get, :print_labels => :post, :printing => :get}
 
     study.resources :plates, :controller => "studies/plates", :except => [:destroy], :collection => {:view_wells => :post, :asset_group => :post, :show_asset_group => :get}, :member => {:remove_wells => :post} do |plate|
@@ -84,38 +78,26 @@ ActionController::Routing::Routes.draw do |map|
     end
 
     study.resources :workflows, :controller => "studies/workflows", :member => { :summary => :get, :show_summary => :get} do |workflow|
-      workflow.resources :submissions, :controller => "studies/workflows/submissions",
-        :collection => { :info => [:get, :put], 
-          :template_chooser => :get, :new => [:get, :put] , :asset_inputs => :get } 
       workflow.resources :assets, :collection => { :print => :post }
     end
 
-    study.resources :documents, :controller => "studies/documents", :only => [:index, :new, :create, :show, :destroy]
+    study.resources :documents, :controller => "studies/documents", :only => [:show, :destroy]
 
   end
-  
+
   # TODO (jr16) move to a more appropriate location
   map.connect "bulk_submissions", :controller => "bulk_submissions", :action => "new"
 
   map.resources :submissions, :collection => { :study_assets => :get, :order_fields => :get, :project_details => :get }
-  map.resources :orders, :only => [:destroy]
+  map.resources :orders, :only => [:destroy, :update]
 
-  map.resources :properties  do |property|
-    property.resources :documents, :controller => "properties/documents", :only => [:show]
-  end
+  map.resources :documents, :only => [ :show ]
 
-  map.resources :documents, :controller => 'properties/documents', :only => [ :show ]
 
-  
   #Same path but two different actions. GET for put parameter in the form and show the error. PUT for the action.
   map.filter_change_decision_request 'requests/:id/change_decision', :controller => 'requests', :action => 'filter_change_decision', :conditions => { :method => :get }
   map.change_decision_request        'requests/:id/change_decision', :controller => 'requests', :action => 'change_decision',        :conditions => { :method => :put }
 
-  #Same path but two different actions. GET for put parameter in the form and show the error. PUT for the action.
-  map.filter_change_name_rename      'renames/:id/change_name', :controller => 'renames', :action => 'filter_change_name', :conditions => { :method => :get }
-  map.change_name_rename             'renames/:id/change_name', :controller => 'renames', :action => 'change_name',        :conditions => { :method => :put }
-
-  
   map.resources :requests,
                 :has_many => :batches,
                 :member => { :copy => :get, :cancel => :get, :print => :get, :history => :get },
@@ -127,25 +109,23 @@ ActionController::Routing::Routes.draw do |map|
     item.resource :request, :only => [:new, :create]
   end
 
-  map.resources :annotations
-
   map.study_workflow_status "studies/:study_id/workflows/:id", :controller => "study_workflows", :action => "show"
 
   map.resources :searches, :only => [:index]
 
   # Administrative things
   map.admin "admin", :controller => "admin", :action => "index"
-  map.resources :custom_texts, :controller => "admin/custom_texts", :path_prefix => "/admin"
-  map.resources :settings, :controller => "admin/settings", :path_prefix => "/admin", :collection => { :reset => :get, :apply => :get }
-  map.resources :studies, :controller => "admin/studies", :path_prefix => "/admin", :member => { :managed_update => :put }, :collection => {:index => :get, :reset_quota => :post}
-  map.resources :projects, :controller => "admin/projects", :path_prefix => "/admin", :member => { :managed_update => :put }, :collection => {:index => :get, :reset_quota => :post}
-  map.resources :plate_purposes, :controller => "admin/plate_purposes", :path_prefix => "/admin"
+  map.resources :custom_texts,     :controller => "admin/custom_texts",     :path_prefix => "/admin"
+  map.resources :settings,         :controller => "admin/settings",         :path_prefix => "/admin", :collection => { :reset => :get, :apply => :get }
+  map.resources :studies,          :controller => "admin/studies",          :path_prefix => "/admin", :member => { :managed_update => :put }, :collection => {:index => :get, :filer => :post}
+  map.resources :projects,         :controller => "admin/projects",         :path_prefix => "/admin", :member => { :managed_update => :put }, :collection => {:index => :get, :filer => :post}
+  map.resources :plate_purposes,   :controller => "admin/plate_purposes",   :path_prefix => "/admin", :only => [:index,:edit,:new,:create,:update]
+  map.resources :delayed_jobs,     :controller => "admin/delayed_jobs",     :path_prefix => "/admin", :only => [:index]
   map.resources :faculty_sponsors, :controller => "admin/faculty_sponsors", :path_prefix => "/admin"
-  map.resources :change_tags, :controller => "admin/change_tags", :path_prefix => "/admin", :collection => { :lookup => :get, :bulk_update => :put}
-
-  map.resources :users, :controller => "admin/users", :path_prefix => "/admin",
-    :collection => { :filter => :get }, :member => { :switch => :get, :grant_user_role => :post, :remove_user_role => :post }
-  map.resources :profile, :controller => "users",:member => {:study_reports => :get, :projects => :get }, :only => [:show, :edit, :update, :projects]
+  map.resources :delayed_jobs,     :controller => "admin/delayed_jobs",     :path_prefix => "/admin", :only => [:index]
+  map.resources :users,            :controller => "admin/users",            :path_prefix => "/admin",
+    :collection => { :filter => :post }, :member => { :switch => :get, :grant_user_role => :post, :remove_user_role => :post }
+  map.resources :profile,          :controller => "users",:member => {:study_reports => :get, :projects => :get }, :only => [:show, :edit, :update, :projects]
   map.resources :roles, :path_prefix => "/admin", :shallow => true do |role|
     role.resources :users, :controller => "roles/users"
   end
@@ -208,20 +188,20 @@ ActionController::Routing::Routes.draw do |map|
   map.connect 'assets/make_plate_from_rack', :controller => 'assets', :action => 'make_plate_from_rack'
 
   map.controller 'assets/find_by_barcode', :controller => 'assets', :action => 'find_by_barcode'
-  
-  map.lab_view "lab_view", :controller => 'assets', :action => 'lab_view'  
+
+  map.lab_view "lab_view", :controller => 'assets', :action => 'lab_view'
 
   map.resources :families
   map.resources :tag_groups, :except => [:destroy] do |tag|
-    tag.resources :tags, :except => [:destroy, :index, :create, :new]
+    tag.resources :tags, :except => [:destroy, :index, :create, :new, :edit]
   end
-  
-  
 
-  map.resources :assets, :has_many => :assets, :collection => { :snp_register => :get, :reception => :get, :print_labels => :post}, :member => { :parent_assets => :get, :child_assets => :get, :show_plate => :get, :new_request => :get, :create_request => :post, :summary => :get, :close => :get, :print => :get, :print_items => :post, :submit_wells => :get, :create_wells_group => :post, :history => :get, :filtered_move => :get, :move => :post, :move_to_2D => :get,  :complete_move_to_2D => :post} do |asset|
+
+
+  map.resources :assets, :has_many => :assets, :collection => { :snp_register => :get, :reception => :get, :print_labels => :post}, :member => { :parent_assets => :get, :child_assets => :get, :show_plate => :get, :new_request => :get, :create_request => :post, :summary => :get, :close => :get, :print => :get, :print_items => :post, :history => :get, :filtered_move => :get, :move => :post, :move_to_2D => :get,  :complete_move_to_2D => :post} do |asset|
     asset.resources :comments, :controller => "assets/comments"
   end
-  
+
   map.resources :plates, :collection => { :upload_pico_results => :post, :create => :post, :to_sample_tubes => :get, :create_sample_tubes => :post }
 
 
@@ -236,22 +216,13 @@ ActionController::Routing::Routes.draw do |map|
     sequenom.sequenom_update 'sequenom/:id', :action => 'update', :conditions => { :method => :put }, :requirements => { :id => /\d+/ }
     sequenom.sequenom_quick_update 'sequenom/quick', :action => 'quick_update', :conditions => { :method => :post }
   end
-  
+
   map.resources :sequenom_qc_plates, :only => [ :new, :create, :index]
-  
+
   map.resources :pico_dilutions
 
   map.resources :study_reports
   map.resources :sample_logistics, :collection => { :lab => :get, :qc_overview => :get }
-
-  ### Pulldown ###
-  map.with_options(:namespace => "pulldown/", :path_prefix => "/pulldown") do |pulldown|
-    pulldown.resources :plates, :collection => { :lookup_plate_purposes => :get }
-    pulldown.resources :validates, :collection => { :source_plate_type => :get, :target_plate_type => :get, :validate_plates => :post }
-  end
-
-  
-  
 
   ### Standard routes
   # You can have the root of your site routed with map.root -- just remember to delete public/index.html.
@@ -276,7 +247,6 @@ ActionController::Routing::Routes.draw do |map|
       read_only.asset :pulldown_multiplexed_library_tubes, :controller => "api/pulldown_multiplexed_library_tubes"
       read_only.model :plate_purposes, :controller => "api/plate_purposes"
       read_only.asset :plates, :controller => "api/plates"
-      read_only.model :quotas, :controller => "api/quotas"
       read_only.asset :sample_tubes, :controller => "api/sample_tubes" do |sample_tube|
         sample_tube.asset :library_tubes, :controller => "api/library_tubes"
         sample_tube.model :requests, :controller => "api/requests"
@@ -295,7 +265,7 @@ ActionController::Routing::Routes.draw do |map|
     api.with_options(:read_only => false) do |crud|
       crud.model :projects, :controller => "api/projects" do |project|
         project.model :studies, :controller => "api/studies"
-      end  
+      end
       crud.model :requests, :controller => "api/requests"
       crud.model :samples, :controller => "api/samples" do |smp|
         smp.asset :sample_tubes, :controller => "api/sample_tubes", :read_only => true
@@ -303,14 +273,14 @@ ActionController::Routing::Routes.draw do |map|
       crud.model :studies, :controller => "api/studies" do |study|
         study.model :samples, :controller => "api/samples"
         study.model :projects, :controller => "api/projects"
-      end  
+      end
     end
 
     # ... and some are specialised (but should not be!)
-    
+
   end
   #### API end ####
-  
+
   ### SDB ###
   map.with_options(:namespace => "sdb/", :path_prefix => "/sdb") do |sdb|
     sdb.resources :sample_manifests, :collection => {:upload => :post} ,:member => {:export => :get, :uploaded_spreadsheet => :get}
@@ -318,8 +288,8 @@ ActionController::Routing::Routes.draw do |map|
     sdb.resources :suppliers, :member => {:sample_manifests => :get, :studies => :get}
     sdb.connect "/", :controller => "home"
   end
-  
-  
+
+
   # Install the default routes as the lowest priority.
   map.connect ":controller/:action/:id"
   map.connect ":controller/:action/:id.:format"

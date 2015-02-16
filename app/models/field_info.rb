@@ -1,9 +1,13 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2013 Genome Research Ltd.
 # There no subclasses at the moment, because we want to keep things simple
 # # (especially no need to use a factory)
 class FieldInfo
   SELECTION = 'Selection'
   TEXT      = 'Text'
-  Kind      = [ SELECTION, TEXT ]
+  BOOLEAN   = 'Boolean'
+  Kind      = [ SELECTION, TEXT, BOOLEAN ]
   attr_accessor :display_name, :key, :kind, :default_value, :parameters
 
   def initialize(args)
@@ -13,7 +17,7 @@ class FieldInfo
     self.default_value = args.delete(:default_value) || args.delete("default_value")
     params = args.delete(:parameters)  || args.delete("parameters")
     args.merge!(params) if params
-    self.parameters= args 
+    self.parameters= args
   end
 
   def old_initialize(display_name, key, kind, args = {})

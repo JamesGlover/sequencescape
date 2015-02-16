@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012 Genome Research Ltd.
 # Picks the specified wells from one plate into the wells of another.  In this case transfers
 # is a hash from source to destination well location and destination is the target plate for
 # the transfers.
@@ -8,13 +11,17 @@ class Transfer::BetweenPlates < Transfer
 
   include TransfersBySchema
   include TransfersToKnownDestination
+  include BuildsStockWellLinks
+
+  include Asset::Ownership::ChangesOwner
+  set_target_for_owner(:destination)
 
   # The values in the transfers must be a hash and must be valid well positions on both the
   # source and destination plates.
   validates_each(:transfers) do |record, attribute, value|
     if not value.is_a?(Hash)
       record.errors.add(:transfers, 'must be a map from source to destination location')
-    elsif record.source.present? and not record.source.valid_positions?(value.keys) 
+    elsif record.source.present? and not record.source.valid_positions?(value.keys)
       record.errors.add(:transfers, 'are not valid positions for the source plate')
     elsif record.destination.present? and not record.destination.valid_positions?(value.values)
       record.errors.add(:transfers, 'are not valid positions for the destination plate')
@@ -44,5 +51,11 @@ class Transfer::BetweenPlates < Transfer
     transfers.delete_if { |k,_| transfers_we_did_not_make.include?(k) }
   end
   private :each_transfer
+
+  # Request type for transfers is based on the plates, not the wells we're transferring
+  def request_type_between(ignored_a, ignored_b)
+    destination.transfer_request_type_from(source)
+  end
+  private :request_type_between
 end
 

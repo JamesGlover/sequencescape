@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012,2013,2014 Genome Research Ltd.
 module SampleManifest::PlateBehaviour
   module ClassMethods
     def create_for_plate!(attributes, *args, &block)
@@ -109,7 +112,7 @@ module SampleManifest::PlateBehaviour
     def updated_by!(user, samples)
       # It's more efficient to look for the wells with the samples than to look for the assets from the samples
       # themselves as the former can use named_scopes where as the latter is an array that needs iterating over.
-      Well.with_sample(samples).map(&:plate).uniq.compact.each do |plate|
+      Plate.with_sample(samples).each do |plate|
         plate.events.updated_using_sample_manifest!(user)
       end
     end
@@ -135,11 +138,13 @@ module SampleManifest::PlateBehaviour
   end
 
   def generate_wells_asynchronously(well_data_with_ids, plate_id)
-    # Ensure the order of the wells are maintained
-    maps      = Hash[Map.find(well_data_with_ids.map(&:first)).map { |map| [ map.id, map ] }]
-    well_data = well_data_with_ids.map { |map_id,sample_id| [ maps[map_id], sample_id ] }
+    ActiveRecord::Base.transaction do
+      # Ensure the order of the wells are maintained
+      maps      = Hash[Map.find(well_data_with_ids.map(&:first)).map { |map| [ map.id, map ] }]
+      well_data = well_data_with_ids.map { |map_id,sample_id| [ maps[map_id], sample_id ] }
 
-    generate_wells(well_data, Plate.find(plate_id))
+      generate_wells(well_data, Plate.find(plate_id))
+    end
   end
   handle_asynchronously :generate_wells_asynchronously
 
@@ -161,16 +166,14 @@ module SampleManifest::PlateBehaviour
         end
       end
     end
-
     core_behaviour.generate_wells(well_data, plates)
     self.barcodes = plates.map(&:sanger_human_barcode)
-    RequestFactory.create_assets_requests(plates.map(&:id), self.study.id)
 
     save!
   end
 
   def generate_wells(wells_for_plate, plate)
-    study_samples_data = wells_for_plate.map do |map,sanger_sample_id|
+    study.samples << wells_for_plate.map do |map,sanger_sample_id|
       create_sample(sanger_sample_id).tap do |sample|
         plate.wells.create!(:map => map, :well_attribute => WellAttribute.new).tap do |well|
           well.aliquots.create!(:sample => sample)
@@ -178,10 +181,9 @@ module SampleManifest::PlateBehaviour
       end
     end
 
-    generate_study_samples(study_samples_data.map { |sample| [ study.id, sample.id ] })
     plate.events.created_using_sample_manifest!(self.user)
 
-    RequestFactory.create_assets_requests(plate.wells.map(&:id), study.id)
+    RequestFactory.create_assets_requests(plate.wells, study)
   end
   private :generate_wells
 end

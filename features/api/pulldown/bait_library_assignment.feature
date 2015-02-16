@@ -8,6 +8,7 @@ Feature: Assigning bait libraries to a plate
       And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
+And I have a "full" authorised user with the key "cucumber"
 
     Given a user with UUID "99999999-8888-7777-6666-555555555555" exists
 
@@ -15,6 +16,8 @@ Feature: Assigning bait libraries to a plate
 
     Given the plate barcode webservice returns "1000001"
       And the plate barcode webservice returns "1000002"
+
+    Given transfers between "SC stock DNA" and "SC hyb" plates are done by "Transfer" requests
 
     # Setup the plates so that they flow appropriately.  This is a bit of a cheat in that it's only
     # a direct link and that we're faking out the pipeline work but it suffices.
@@ -30,7 +33,7 @@ Feature: Assigning bait libraries to a plate
       | read_length       | 100            |
       | bait_library_name | Mouse all exon |
 
-    Given a "SC hyb" plate called "Target for bait libraries" exists
+    Given a "SC hyb" plate called "Target for bait libraries" exists as a child of "Testing bait libraries"
       And the "Transfer columns 1-12" transfer template has been used between "Testing bait libraries" and "Target for bait libraries"
       And the UUID for the plate "Target for bait libraries" is "00000000-1111-2222-3333-000000000002"
 

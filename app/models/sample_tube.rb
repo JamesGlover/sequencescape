@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2014 Genome Research Ltd.
 class SampleTube < Tube
   include Api::SampleTubeIO::Extensions
   include ModelExtensions::SampleTube
@@ -16,7 +19,7 @@ class SampleTube < Tube
     end
   end
   after_create do |record|
-    record.barcode = record.id.to_s                     if record.two_dimensional_barcode.blank? and record.barcode.blank?
+    record.barcode = AssetBarcode.new_barcode           if record.two_dimensional_barcode.blank? and record.barcode.blank?
     record.name    = record.primary_aliquot.sample.name if record.name.blank? and not record.primary_aliquot.try(:sample).nil?
 
     record.save! if record.barcode_changed? or record.name_changed?
@@ -61,4 +64,9 @@ class SampleTube < Tube
       :of_interest_to => "administrators"
     )
   end
+
+  def can_be_created?
+    true
+  end
+
 end

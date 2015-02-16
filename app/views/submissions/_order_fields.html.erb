@@ -1,3 +1,6 @@
+<%#This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2012,2013 Genome Research Ltd.%>
 <% if @presenter.order.present? -%>
   <h2><%= @presenter.order.template_name %> template</h2>
   <%= custom_text("submission_info") %>
@@ -15,7 +18,10 @@
 
   <script type="text/javascript">
   (function(window,$,undefined) {
-    SCAPE.submission.is_a_sequencing_order = <%= @presenter.order.is_a_sequencing_order? %>;
+    SCAPE.submission.is_a_sequencing_order  = <%= @presenter.order.is_a_sequencing_order? %>;
+    SCAPE.submission.pre_capture_plex_level = <%= (@presenter.template.submission_parameters[:request_options]||{})['pre_capture_plex_level']||'null' %>;
+    SCAPE.submission.pre_capture_plex_group = null;
+    SCAPE.submission.show_gigabses_expected = <%= @presenter.order.collect_gigabases_expected? %>;
 
     <% unless @presenter.order.new_record? -%>
     $(function(){

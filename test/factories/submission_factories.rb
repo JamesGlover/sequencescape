@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2011,2012 Genome Research Ltd.
 Factory.define :submission__ do |submission|
   #raise "call Factory::submission instead "
 end
@@ -16,7 +19,7 @@ class Factory
     state = options.delete(:state)
     message = options.delete(:message)
     submission = Factory(:order_with_submission, options).submission
-    #trying to skip StateMachine 
+    #trying to skip StateMachine
     if submission_options.present?
       submission.update_attributes!(submission_options)
     end

@@ -1,12 +1,16 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2007-2011,2011,2012,2013 Genome Research Ltd.
 class Accessionable::Policy < Accessionable::Base
 
-  attr_reader :policy_text, :dac_accession_number, :title
+  attr_reader :policy_url, :dac_accession_number, :title
 
   def initialize(study)
     @study = study
 
     @name = "Policy for study - #{study.name} - ##{study.id}"
-    @policy_text = study.study_metadata.dac_policy
+    @policy_url = study.study_metadata.dac_policy
+    @title = study.study_metadata.dac_policy_title
     #@dac_refname = study.dac_refname
     @dac_accession_number = study.dac_accession_number
     super(study.policy_accession_number)
@@ -28,15 +32,15 @@ class Accessionable::Policy < Accessionable::Base
                  :center_name => self.center_name) {
       xml.TITLE self.title
       xml.DAC_REF(:accession => self.dac_accession_number)
-      xml.POLICY_TEXT self.policy_text
+      xml.POLICY_FILE self.policy_url
     }
     }
     return xml.target!
   end
 
   def update_accession_number!(user, accession_number)
-    add_updated_event(user, "Policy for Study #{@study.id}", @study) if @accession_number
     @accession_number = accession_number
+    add_updated_event(user, "Policy for Study #{@study.id}", @study) if @accession_number
     @study.study_metadata.ega_policy_accession_number = accession_number
     @study.save!
   end
