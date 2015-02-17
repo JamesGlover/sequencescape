@@ -97,8 +97,7 @@ class PlateTransferTaskTest < ActiveSupport::TestCase
       context 'when spanning multiple plates' do
         setup do
           plate_b = Factory :plate
-          plate_b.wells << Factory(:well_with_sample_and_without_plate).tap do |w|
-            w.map = Map.find_by_description_and_asset_size('A1',96)
+          plate_b.wells << Factory(:well_with_sample_and_without_plate, :map=>Map.find_by_description_and_asset_size('A1',96)).tap do |w|
             request = Factory :request
             w.requests << request
             @batch.requests << request

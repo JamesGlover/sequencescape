@@ -130,12 +130,12 @@ class WellTest < ActiveSupport::TestCase
     context "with a plate" do
       setup do
         @plate = Factory :plate
-        @plate.add_and_save_well @well
+        @plate.add_and_save_well(@well, 1, 1)
       end
       should "have a parent plate" do
         parent = @well.plate
-        assert parent.is_a?(Plate)
-        assert_equal parent.id,@plate.id
+        assert parent.is_a?(Plate), "Parent isn't a plate"
+        assert_equal parent.id,@plate.id, "Parent is the wrong plate"
       end
 
       context "for a tecan" do
@@ -144,8 +144,8 @@ class WellTest < ActiveSupport::TestCase
             @well.map = Map.first
           end
           should "return true" do
-            assert !@well.map.nil?
-            assert @well.valid_well_on_plate
+            assert @well.map.present?, "Well isn't on a plate!"
+            assert @well.valid_well_on_plate, "Well position isn't valid"
           end
         end
 

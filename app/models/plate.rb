@@ -259,18 +259,19 @@ WHERE c.container_id=?
   def add_well_holder(well)
     children << well
     well.plate = self
+    # ContainerAssociation.create!(:content=>well,:container=>self)
   end
 
   def add_well(well, row=nil, col=nil)
-    add_well_holder(well)
     if row
       well.map = find_map_by_rowcol(row, col)
     end
+    add_well_holder(well)
   end
 
   def add_well_by_map_description(well,map_description)
-    add_well_holder(well)
     well.map = Map.find_by_description_and_asset_size(map_description,size)
+    add_well_holder(well)
     well.save!
   end
 
@@ -318,9 +319,9 @@ WHERE c.container_id=?
   end
 
   def control_well_exists?
-		Request.into_by_id(well_ids).any? do |request|
-			request.asset.plate.is_a?(ControlPlate)
-		end
+    Request.into_by_id(well_ids).any? do |request|
+      request.asset.plate.is_a?(ControlPlate)
+    end
   end
 
   # A plate has a sample with the specified name if any of its wells have that sample.

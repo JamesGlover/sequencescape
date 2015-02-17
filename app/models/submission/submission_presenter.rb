@@ -315,7 +315,7 @@ class SubmissionCreater < PresenterSkeleton
   end
 
   def templates
-    @templates ||= SubmissionTemplate.visible
+    @templates ||= SubmissionTemplate.visible.include_for_submission_creation
   end
 
   def product_lines

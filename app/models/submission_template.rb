@@ -26,6 +26,7 @@ class SubmissionTemplate < ActiveRecord::Base
 
   named_scope :hidden, :order => 'product_line_id ASC', :conditions => [ 'superceded_by_id != ?', LATEST_VERSION ]
   named_scope :visible, :order => 'product_line_id ASC', :conditions => { :superceded_by_id => LATEST_VERSION }
+  named_scope :include_for_submission_creation, :include => [:product_line]
 
   def visible
     self.superceded_by_id == LATEST_VERSION

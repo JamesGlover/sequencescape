@@ -5,13 +5,17 @@ class ContainerAssociation < ActiveRecord::Base
   #We don't define the class, so will get an error if being used directly
   # in fact , the class need to be definend otherwise, eager loading through doesn't work
   belongs_to :container , :class_name => "Asset"
-  belongs_to :content , :class_name => "Asset"
+  belongs_to :content , :class_name => "Well", :inverse_of => :container_association
 
-  before_save :ensure_position_copied
+  before_validation :ensure_position_copied
   def ensure_position_copied
-    position_id = content.map_id if position_id != content.map_id
+    self.position_id = content.map_id
+    true
   end
   private :ensure_position_copied
+
+  validates_presence_of :position_id
+  validates_uniqueness_of :position_id, :scope => :container_id
 
   # NOTE: This was originally on the content asset but this causes massive performance issues.
   # It causes the plate and it's metadata to be loaded for each well, which would be cached if
@@ -27,7 +31,7 @@ class ContainerAssociation < ActiveRecord::Base
   module Extension
     def contains(content_name, options = {}, &block)
       class_name = content_name ? content_name.to_s.classify : Asset.name
-      has_many :container_associations, :foreign_key => :container_id
+      has_many :container_associations, :foreign_key => :container_id, :inverse_of => :container
       has_many :contents, options.merge(:class_name => class_name, :through => :container_associations)
       has_many(content_name, options.merge(:class_name => class_name, :through => :container_associations, :source => :content)) do
         # Provide bulk importing abilities.  Inside a transaction we can guarantee that the information in the DB is
@@ -54,7 +58,7 @@ class ContainerAssociation < ActiveRecord::Base
 
         def attach(records)
           ActiveRecord::Base.transaction do
-            records.each { |r| ContainerAssociation.create!(:container_id => proxy_owner.id, :content_id => r['id'], :map_id => r['map_id']) }
+            records.each { |r| ContainerAssociation.create!(:container_id => proxy_owner.id, :content_id => r['id'], :position_id => r['map_id']) }
           end
         end
 
@@ -86,10 +90,15 @@ class ContainerAssociation < ActiveRecord::Base
 
     def contained_by(container_name, &block)
       class_name = container_name.to_s.singularize.capitalize
-      has_one :container_association, :foreign_key => :content_id
+      has_one :container_association, :foreign_key => :content_id, :inverse_of => :content
       has_one :container, :class_name => class_name, :through => :container_association
       has_one(container_name, :class_name => class_name, :through => :container_association, :source => :container, &block)
 
+      define_method(:"#{container_name}=") do |container|
+        # We define a custom method so that we don't need to reload the content object
+        raise ActiveRecord::AssociationTypeMismatch unless container.is_a?(class_name.constantize)
+        ContainerAssociation.create!(:container=>container,:content=>self)
+      end
       #delegate :location, :to => :container
     end
   end

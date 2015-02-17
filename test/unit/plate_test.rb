@@ -16,13 +16,13 @@ class PlateTest < ActiveSupport::TestCase
         assert_equal "AAA", @plate.infinium_barcode
       end
     end
-    
+
     context "#fluidigm_barcode" do
       def create_plate_with_fluidigm(fluidigm_barcode)
         barcode = "12345678"
         PlatePurpose.find_by_name("Cherrypicked").create!(:do_not_create_wells,{:name => "Cherrypicked #{barcode}", :size => 192,:barcode => barcode,:plate_metadata_attributes=>{:fluidigm_barcode=>fluidigm_barcode}})
-      end      
-      
+      end
+
       should "check that I cannot create a plate with a fluidigm barcode different from 10 characters" do
         assert_raises(ActiveRecord::RecordInvalid) { create_plate_with_fluidigm("12345678") }
       end
@@ -182,7 +182,7 @@ class PlateTest < ActiveSupport::TestCase
 
       [@plate1, @plate2,@plate3].each do |plate|
         2.times do
-          plate.add_and_save_well(Well.new)
+          plate.add_and_save_well(Well.new, 1, 1)
         end
       end
     end

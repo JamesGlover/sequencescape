@@ -49,6 +49,7 @@ class Well < Aliquot::Receptacle
   named_scope :located_at_position, lambda { |position| { :joins => :map, :readonly => false, :conditions => { :maps => { :description => position } } } }
 
   contained_by :plate
+
   delegate :location, :location_id, :location_id=, :to => :container , :allow_nil => true
   @@per_page = 500
 
@@ -185,13 +186,10 @@ class Well < Aliquot::Receptacle
   end
 
   def valid_well_on_plate
-    return false unless self.is_a?(Well)
-    well_plate = plate
-    return false unless well_plate.is_a?(Plate)
-    return false if well_plate.barcode.blank?
+    return false unless plate.is_a?(Plate)
+    return false if plate.barcode.blank?
     return false if map_id.nil?
     return false unless map.description.is_a?(String)
-
     true
   end
 
