@@ -9,11 +9,20 @@ class Barcode
         before_create :set_default_prefix
         class_inheritable_accessor :prefix
         self.prefix = "NT"
+        after_save :broadcast_barcode, :if => :barcode_changed?
       end
     end
 
     def generate_barcode
       self.barcode = AssetBarcode.new_barcode
+    end
+
+    def broadcast_barcode
+      AmqpObserver.instance << Messenger.new(:template=>'BarcodeIO',:root=>'barcode',:target=>self)
+    end
+
+    def barcode_type
+      'SangerEan13'
     end
 
     def set_default_prefix
