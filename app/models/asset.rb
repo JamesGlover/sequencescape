@@ -524,4 +524,6 @@ class Asset < ActiveRecord::Base
     nil
   end
 
+  def contained_samples; []; end
+
 end
