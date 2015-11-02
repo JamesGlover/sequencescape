@@ -2,11 +2,12 @@ class AddHistoricEvents < ActiveRecord::Migration
   def self.up
     say "Adding Library Start Events"
 
-    start_purpose_id = PlatePurpose.find_by_name('Shear').id
+    start_purpose_id = Purpose.find_by_name('Shear').id
     ActiveRecord::Base.transaction do
       StateChange.find_each(:joins=>:target,:conditions=>{:previous_state=>'pending',:target_state=>['started','passed'],:assets=>{:plate_purpose_id=>start_purpose_id}}) do |sc|
         print sc.id
         plate = sc.target
+        next if BroadcastEvent::LibraryStart.find_by_seed(plate).present?
         user = sc.user
         orders = Set.new
         sc.target.wells.each do |well|
@@ -23,27 +24,29 @@ class AddHistoricEvents < ActiveRecord::Migration
     # Strictly speaking we don't need these yet, but it ensures consistency with start events
     # If we made start events Xten only it would be a pain
     say 'Adding MX Library complete'
-    mx_library_purpose_id = PlatePurpose.find_by_name('Lib Norm 2').id
+    mx_library_purpose_id = Purpose.find_by_name('Lib Norm 2').id
 
     ActiveRecord::Base.transaction do
       StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>mx_library_purpose_id}}) do |sc|
         print sc.id
         tube = sc.target
+        next if BroadcastEvent::LibraryStart.find_by_seed(tube).present?
         user = sc.user
         orders = target.requests_as_target.map(&:order_id).compact.uniq
         orders.each do |order_id|
-          BroadcastEvent::LibraryComplete.create!(:seed=>plate,:user=>user,:properties=>{:order_id=>order_id},:created_at=>sc.created_at)
+          BroadcastEvent::LibraryComplete.create!(:seed=>tube,:user=>user,:properties=>{:order_id=>order_id},:created_at=>sc.created_at)
         end
         print '.'
       end
     end
 
     say 'Adding Plate Library complete'
-    plate_library_purpose_id = PlatePurpose.find_all_ny_name('Lib Norm 2')
+    plate_library_purpose_id = Purpose.find_all_by_name('Lib Norm 2')
     ActiveRecord::Base.transaction do
       StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>mx_library_purpose_id}}) do |sc|
         print sc.id
         plate = sc.target
+        next if BroadcastEvent::LibraryStart.find_by_seed(plate).present?
         user = sc.user
         orders = Set.new
         sc.target.wells.each do |well|
@@ -55,6 +58,18 @@ class AddHistoricEvents < ActiveRecord::Migration
           BroadcastEvent::PlateLibraryComplete.create!(:seed=>plate,:user=>user,:properties=>{:order_id=>order_id},:created_at=>sc.created_at)
         end
         print '.'
+      end
+    end
+
+    say 'Adding Sequencing'
+    pipeline = Pipeline.find_all_by_name(['HiSeq X PE (no controls)','HiSeq X PE (spiked in controls)','HiSeq X PE (spiked in controls) from strip-tubes'])
+    ActiveRecord::Base.transaction do
+      SequencingPipeline.find_each do |pipeline|
+        pipeline.batches.find_each(:conditions=>'state != "pending" OR state != "discarded"') do |batch|
+          next if BroadcastEvent::LibraryStart.find_by_seed(batch).present?
+          time = batch.requests.first.request_events.find(:first,:conditions=>{:to_state => 'started'},:order=>'id ASC').created_at
+          BroadcastEvent::SequencingStart.create!(:seed=>batch,:user=>batch.user,:properties=>{},:created_at=>time)
+        end
       end
     end
   end
