@@ -223,7 +223,7 @@ class Batch < ActiveRecord::Base
       #requests.target_asset_id = assets.id and
       #assets.holder_id = plate_assets.id group by plate_assets.barcode")
   end
-  
+
   ## WARNING! This method is used in the sanger barcode gem. Do not remove it without
   ## refactoring the sanger barcode gem.
   def output_plate_purpose
@@ -295,6 +295,15 @@ class Batch < ActiveRecord::Base
 
   def assets
     requests.map(&:target_asset)
+  end
+
+  def source_assets
+    requests.map(&:asset)
+  end
+
+  # Source Labware returns the physical pieces of lawbare (ie. a plate for wells, but stubes for tubes)
+  def source_labware
+    requests.map(&:target_asset).map(&:labware).uniq
   end
 
   def verify_tube_layout(barcodes, user = nil)
