@@ -25,14 +25,14 @@ class AddHistoricEvents < ActiveRecord::Migration
     # Strictly speaking we don't need these yet, but it ensures consistency with start events
     # If we made start events Xten only it would be a pain
     say 'Adding MX Library complete'
-    mx_library_purpose_id = Purpose.find_by_name('Lib Norm 2').id
+    mx_library_purpose_id = Purpose.find_all_by_name(['Lib Pool Norm','Lib Pool SS-XP-Norm']).map(&:id)
 
     ActiveRecord::Base.transaction do
       StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>mx_library_purpose_id}}) do |sc|
         print ','
         print sc.id
         tube = sc.target
-        next if BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(tube.id,'Asset').present?
+        next if BroadcastEvent::LibraryComplete.find_by_seed_id_and_seed_type(tube.id,'Asset').present?
         user = sc.user
         orders = sc.target.requests_as_target.map(&:order_id).compact.uniq
         orders.each do |order_id|
@@ -45,7 +45,7 @@ class AddHistoricEvents < ActiveRecord::Migration
     say 'Adding Plate Library complete'
     plate_library_purpose_id = Purpose.find_all_by_name('Lib Norm 2')
     ActiveRecord::Base.transaction do
-      StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>mx_library_purpose_id}}) do |sc|
+      StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>plate_library_purpose_id}}) do |sc|
         print ','
         print sc.id
         plate = sc.target
