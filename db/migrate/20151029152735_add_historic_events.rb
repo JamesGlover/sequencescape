@@ -70,9 +70,11 @@ class AddHistoricEvents < ActiveRecord::Migration
       SequencingPipeline.find_each do |pipeline|
         pipeline.batches.find_each(:conditions=>'state != "pending" OR state != "discarded"') do |batch|
           next if BroadcastEvent::SequencingStart.find_by_seed_id_and_seed_type(batch.id,'Batch').present?
-          r = batch.requests.first.request_events.find(:first,:conditions=>{:to_state => 'started'},:order=>'id ASC')
+          r = batch.requests.first
           next if r.nil?
-          time = r.current_from
+          re = r.request_events.find(:first,:conditions=>{:to_state => 'started'},:order=>'id ASC')
+          next if r.nil?
+          time = re.current_from
           BroadcastEvent::SequencingStart.create!(:seed=>batch,:user=>batch.user,:properties=>{},:created_at=>time)
         end
       end
