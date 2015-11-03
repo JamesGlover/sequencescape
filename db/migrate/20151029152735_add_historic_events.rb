@@ -5,6 +5,7 @@ class AddHistoricEvents < ActiveRecord::Migration
     start_purpose_id = Purpose.find_by_name('Shear').id
     ActiveRecord::Base.transaction do
       StateChange.find_each(:joins=>:target,:conditions=>{:previous_state=>'pending',:target_state=>['started','passed'],:assets=>{:plate_purpose_id=>start_purpose_id}}) do |sc|
+        print ','
         print sc.id
         plate = sc.target
         next if BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(plate.id,'Asset').present?
@@ -28,11 +29,12 @@ class AddHistoricEvents < ActiveRecord::Migration
 
     ActiveRecord::Base.transaction do
       StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>mx_library_purpose_id}}) do |sc|
+        print ','
         print sc.id
         tube = sc.target
         next if BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(tube.id,'Asset').present?
         user = sc.user
-        orders = target.requests_as_target.map(&:order_id).compact.uniq
+        orders = sc.target.requests_as_target.map(&:order_id).compact.uniq
         orders.each do |order_id|
           BroadcastEvent::LibraryComplete.create!(:seed=>tube,:user=>user,:properties=>{:order_id=>order_id},:created_at=>sc.created_at)
         end
@@ -44,6 +46,7 @@ class AddHistoricEvents < ActiveRecord::Migration
     plate_library_purpose_id = Purpose.find_all_by_name('Lib Norm 2')
     ActiveRecord::Base.transaction do
       StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>mx_library_purpose_id}}) do |sc|
+        print ','
         print sc.id
         plate = sc.target
         next if BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(plate.id,'Asset').present?
