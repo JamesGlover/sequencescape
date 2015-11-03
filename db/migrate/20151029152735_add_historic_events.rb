@@ -49,7 +49,7 @@ class AddHistoricEvents < ActiveRecord::Migration
         print ','
         print sc.id
         plate = sc.target
-        next if BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(plate.id,'Asset').present?
+        next if BroadcastEvent::PlateLibraryComplete.find_by_seed_id_and_seed_type(plate.id,'Asset').present?
         user = sc.user
         orders = Set.new
         sc.target.wells.each do |well|
@@ -69,8 +69,10 @@ class AddHistoricEvents < ActiveRecord::Migration
     ActiveRecord::Base.transaction do
       SequencingPipeline.find_each do |pipeline|
         pipeline.batches.find_each(:conditions=>'state != "pending" OR state != "discarded"') do |batch|
-          BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(batch.id,'Batch').present?
-          time = batch.requests.first.request_events.find(:first,:conditions=>{:to_state => 'started'},:order=>'id ASC').current_from
+          next if BroadcastEvent::SequencingStart.find_by_seed_id_and_seed_type(batch.id,'Batch').present?
+          r = batch.requests.first.request_events.find(:first,:conditions=>{:to_state => 'started'},:order=>'id ASC')
+          next if time.nil?
+          time = r.current_from
           BroadcastEvent::SequencingStart.create!(:seed=>batch,:user=>batch.user,:properties=>{},:created_at=>time)
         end
       end
