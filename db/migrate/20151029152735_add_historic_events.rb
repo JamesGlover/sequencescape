@@ -7,7 +7,7 @@ class AddHistoricEvents < ActiveRecord::Migration
       StateChange.find_each(:joins=>:target,:conditions=>{:previous_state=>'pending',:target_state=>['started','passed'],:assets=>{:plate_purpose_id=>start_purpose_id}}) do |sc|
         print sc.id
         plate = sc.target
-        next if BroadcastEvent::LibraryStart.find_by_seed(plate).present?
+        next if BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(plate.id,'Asset').present?
         user = sc.user
         orders = Set.new
         sc.target.wells.each do |well|
@@ -30,7 +30,7 @@ class AddHistoricEvents < ActiveRecord::Migration
       StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>mx_library_purpose_id}}) do |sc|
         print sc.id
         tube = sc.target
-        next if BroadcastEvent::LibraryStart.find_by_seed(tube).present?
+        next if BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(tube.id,'Asset').present?
         user = sc.user
         orders = target.requests_as_target.map(&:order_id).compact.uniq
         orders.each do |order_id|
@@ -46,7 +46,7 @@ class AddHistoricEvents < ActiveRecord::Migration
       StateChange.find_each(:joins=>:target,:conditions=>{:target_state=>'passed',:assets=>{:plate_purpose_id=>mx_library_purpose_id}}) do |sc|
         print sc.id
         plate = sc.target
-        next if BroadcastEvent::LibraryStart.find_by_seed(plate).present?
+        next if BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(plate.id,'Asset').present?
         user = sc.user
         orders = Set.new
         sc.target.wells.each do |well|
@@ -66,7 +66,7 @@ class AddHistoricEvents < ActiveRecord::Migration
     ActiveRecord::Base.transaction do
       SequencingPipeline.find_each do |pipeline|
         pipeline.batches.find_each(:conditions=>'state != "pending" OR state != "discarded"') do |batch|
-          next if BroadcastEvent::LibraryStart.find_by_seed(batch).present?
+          BroadcastEvent::LibraryStart.find_by_seed_id_and_seed_type(batch.id,'Batch').present?
           time = batch.requests.first.request_events.find(:first,:conditions=>{:to_state => 'started'},:order=>'id ASC').created_at
           BroadcastEvent::SequencingStart.create!(:seed=>batch,:user=>batch.user,:properties=>{},:created_at=>time)
         end
