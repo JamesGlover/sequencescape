@@ -1,6 +1,6 @@
 #This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
 #Please refer to the LICENSE and README files for information on licensing and authorship of this file.
-#Copyright (C) 2007-2011,2014,2015 Genome Research Ltd.
+#Copyright (C) 2007-2011,2014,2015,2016 Genome Research Ltd.
 
 class ReceptionsController < ApplicationController
   before_filter :find_asset_by_id, :only => [:print, :snp_register]
@@ -84,7 +84,7 @@ class ReceptionsController < ApplicationController
           @asset = Asset.find(asset_id)
           @asset.update_attributes(params[:asset])
           asset_count += 1
-          @asset.events.create_scanned_into_lab!(location)
+          @asset.events.create_scanned_into_lab!(location,current_user)
         rescue
           @errors << "Sample not found with asset ID #{asset_id}"
         end

@@ -46,22 +46,26 @@ class LabwhereReception
       unless scan.valid?
         errors.add(:scan, scan.error)
         return false
-      end 
+      end
 
     rescue LabWhereClient::LabwhereException => exception
       errors.add(:base, "Could not connect to Labwhere. Sequencescape location has still been updated")
-      return false 
+      return false
     end
 
     assets.each do |asset|
       asset.location = location
-      asset.events.create_scanned_into_lab!(location)
+      asset.events.create_scanned_into_lab!(location,user)
     end
 
     valid?
   end
 
   private
+
+  def user
+    User.with_swipecard_code(user_code)||User.find_by_barcode(Barcode.barcode_to_human!(user_code, User.prefix))
+  end
 
   def assets
     @assets ||= Asset.with_machine_barcode(asset_barcodes)
