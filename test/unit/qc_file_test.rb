@@ -19,7 +19,27 @@ class QcFileTest < ActiveSupport::TestCase
         @plate.expects(:update_qc_values_with_parser).with(@parser)
         QcFile.create!(:asset=>@plate)
       end
+
+      should "create a qc_uploaded event" do
+        qc_event_count = BroadcastEvent::QcUploaded.count
+        @plate.expects(:update_qc_values_with_parser).with(@parser)
+        qc_file = QcFile.create!(:asset=>@plate)
+        assert_equal 1, BroadcastEvent::QcUploaded.count - qc_event_count
+        assert_equal qc_file, BroadcastEvent::QcUploaded.last.seed
+      end
+
     end
+
+      should "have a friendly name" do
+        begin
+          file = Tempfile.new('example')
+          @plate = build :plate
+          qc=QcFile.new(:asset=>@plate,:uploaded_data=>{file:file,filename:'example'},filename:'example')
+          assert_equal 'example', qc.friendly_name
+        ensure
+          file.delete
+        end
+      end
   end
 
 end

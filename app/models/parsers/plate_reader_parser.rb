@@ -2,8 +2,12 @@
 #Please refer to the LICENSE and README files for information on licensing and authorship of this file.
 #Copyright (C) 2015 Genome Research Ltd.
 
-class Parsers::ISCXTenParser
+class Parsers::PlateReaderParser
   class InvalidFile < StandardError; end
+
+
+  class_attribute :name
+  self.name = 'plate_reader_file'
 
   def headers
     @content[0]
@@ -49,7 +53,7 @@ class Parsers::ISCXTenParser
   end
 
   def self.is_isc_xten_file?(content)
-    parser = Parsers::ISCXTenParser.new(content)
+    parser = Parsers::PlateReaderParser.new(content)
     [:row, :col, :content, :raw_data, :concentration].each_with_index.map do |sym, pos|
       parser.get_column_for_header(sym) == pos
     end.all?

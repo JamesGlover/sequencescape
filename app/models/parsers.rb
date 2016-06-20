@@ -14,7 +14,7 @@ module Parsers
     csv = CSV.parse(cleaned_content)
     return Parsers::QuantParser.new(csv) if Parsers::QuantParser.is_quant_file?(csv)
     return Parsers::BioanalysisCsvParser.new(csv) if Parsers::BioanalysisCsvParser.is_bioanalyzer?(csv)
-    return Parsers::ISCXTenParser.new(csv) if Parsers::ISCXTenParser.is_isc_xten_file?(csv)
+    return Parsers::PlateReaderParser.new(csv) if Parsers::PlateReaderParser.is_isc_xten_file?(csv)
     nil
   end
 

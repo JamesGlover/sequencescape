@@ -5,6 +5,9 @@
 
 class Parsers::BioanalysisCsvParser
 
+  class_attribute :name
+  self.name = 'bioanalyzer_file'
+
   class InvalidFile < StandardError; end
 
   attr_reader :content
@@ -12,6 +15,7 @@ class Parsers::BioanalysisCsvParser
   def initialize(content)
     @content = content
   end
+
 
   def field_name_for(sym_name)
     {

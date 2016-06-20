@@ -1,6 +1,10 @@
 class Parsers::QuantParser
   class InvalidFile < StandardError; end
 
+
+  class_attribute :name
+  self.name = 'standard_quant_file'
+
   def initialize(content)
     @content = content
   end

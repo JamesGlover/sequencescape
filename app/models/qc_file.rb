@@ -57,6 +57,10 @@ class QcFile < ActiveRecord::Base
     end
   end
 
+  def friendly_name
+    filename
+  end
+
   private
 
   def parser
@@ -66,6 +70,7 @@ class QcFile < ActiveRecord::Base
   def store_file_extracted_data
     return if parser.nil?
     asset.update_qc_values_with_parser(parser)
+    BroadcastEvent::QcUploaded.create!(seed:self)
   end
 
   # Save Size/content_type Metadata
