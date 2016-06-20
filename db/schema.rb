@@ -1837,6 +1837,7 @@ ActiveRecord::Schema.define(:version => 20160519124121) do
     t.float    "measured_volume"
     t.float    "initial_volume"
     t.float    "molarity"
+    t.float    "rin"
   end
 
   add_index "well_attributes", ["well_id"], :name => "index_well_attributes_on_well_id"

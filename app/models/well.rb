@@ -32,6 +32,21 @@ class Well < Aliquot::Receptacle
     end
   end
 
+  def self.hash_stock_with_targets(wells, purpose_names)
+    return {} unless purpose_names
+    purposes = PlatePurpose.where(:name => purpose_names)
+    # We might need to be careful about this line in future.
+    target_wells = Well.target_wells_for(wells).on_plate_purpose(purposes).preload(:well_attribute).with_concentration
+
+    target_wells.group_by(&:stock_well_id)
+
+  end
+
+  scope :with_concentration, ->() {
+    joins(:well_attribute).
+    where("well_attributes.concentration IS NOT NULL")
+  }
+
   has_many :qc_metrics, :inverse_of => :asset, :foreign_key => :asset_id
 
   # hams_many due to eager loading requirement and can't have a has one through a has_many
@@ -82,6 +97,15 @@ class Well < Aliquot::Receptacle
       }
     }}
 
+  scope :target_wells_for, ->(wells) {
+    select('assets.*, well_links.source_well_id AS stock_well_id').
+    joins(:stock_well_links).where({
+      :well_links =>{
+        :source_well_id => wells
+        }
+    })
+  }
+
   scope :located_at_position, ->(position) { joins(:map).readonly(false).where(:maps => { :description => position }) }
 
   contained_by :plate
@@ -101,17 +125,19 @@ class Well < Aliquot::Receptacle
   scope :pooled_as_target_by, ->(type) {
     joins('LEFT JOIN requests patb ON assets.id=patb.target_asset_id').
     where([ '(patb.sti_type IS NULL OR patb.sti_type IN (?))', [ type, *type.descendants ].map(&:name) ]).
-    select('DISTINCT assets.*, patb.submission_id AS pool_id')
+    select('assets.*, patb.submission_id AS pool_id').uniq
   }
   scope :pooled_as_source_by, ->(type) {
     joins('LEFT JOIN requests pasb ON assets.id=pasb.asset_id').
     where([ '(pasb.sti_type IS NULL OR pasb.sti_type IN (?)) AND pasb.state IN (?)', [ type, *type.descendants ].map(&:name), Request::Statemachine::OPENED_STATE  ]).
-    select('DISTINCT assets.*, pasb.submission_id AS pool_id')
+    select('assets.*, pasb.submission_id AS pool_id').uniq
   }
-  scope :in_column_major_order,         -> { joins(:map).order('column_order ASC') }
-  scope :in_row_major_order,            -> { joins(:map).order('row_order ASC') }
-  scope :in_inverse_column_major_order, -> { joins(:map).order('column_order DESC') }
-  scope :in_inverse_row_major_order,    -> { joins(:map).order('row_order DESC') }
+
+  # It feels like we should be able to do this with just includes and order, but oddly this causes more disruption downstream
+  scope :in_column_major_order,         -> { joins(:map).order('column_order ASC').select('assets.*, column_order') }
+  scope :in_row_major_order,            -> { joins(:map).order('row_order ASC').select('assets.*, row_order') }
+  scope :in_inverse_column_major_order, -> { joins(:map).order('column_order DESC').select('assets.*, column_order') }
+  scope :in_inverse_row_major_order,    -> { joins(:map).order('row_order DESC').select('assets.*, row_order') }
 
   scope :in_plate_column, ->(col,size) {  joins(:map).where(:maps => {:description => Map::Coordinate.descriptions_for_column(col,size), :asset_size => size }) }
   scope :in_plate_row,    ->(row,size) {  joins(:map).where(:maps => {:description => Map::Coordinate.descriptions_for_row(row,size), :asset_size =>size }) }
@@ -170,6 +196,7 @@ class Well < Aliquot::Receptacle
   delegate_to_well_attribute(:gel_pass)
   delegate_to_well_attribute(:study_id)
   delegate_to_well_attribute(:gender)
+  delegate_to_well_attribute(:rin)
 
   delegate_to_well_attribute(:concentration)
   alias_method(:get_pico_result, :get_concentration)
@@ -192,6 +219,16 @@ class Well < Aliquot::Receptacle
   writer_for_well_attribute_as_float(:picked_volume)
 
   delegate_to_well_attribute(:gender_markers)
+
+  def update_qc_values_with_hash(updated_data)
+    ActiveRecord::Base.transaction do
+      unless updated_data.nil? || !(updated_data.values.all?{|v| v.nil? || v.downcase.strip.match(/^\d/) })
+        updated_data.each do|method_name, value|
+          send(method_name, value.strip) unless (value.nil? || value.blank?)
+        end
+      end
+    end
+  end
 
   def update_gender_markers!(gender_markers, resource)
     if self.well_attribute.gender_markers == gender_markers

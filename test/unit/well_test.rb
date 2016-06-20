@@ -75,6 +75,38 @@ class WellTest < ActiveSupport::TestCase
       end
     end
 
+    should "return a correct hash of target wells" do
+      purposes = create_list :plate_purpose, 4
+      stock_plate = create :plate, { :wells => create_list(:well, 96) }
+      norm_plates = create_list :plate, 4
+      norm_plates.each_with_index do |plate, index|
+        plate.update_attributes(:plate_purpose => purposes[index], :wells => create_list(:well, 96))
+        plate.wells.each do |w|
+          w.well_attribute.update_attributes(:concentration => nil)
+        end
+      end
+
+      stock_plate.wells.each_with_index do |stock_well, index|
+        4.times do |norm_plate_index|
+          stock_well.target_wells << norm_plates[norm_plate_index].wells[index]
+        end
+      end
+
+      norm_plates[0].wells[0].set_concentration(50)
+      norm_plates[0].wells[1].set_concentration(30)
+      norm_plates[1].wells[0].set_concentration(40)
+      norm_plates[1].wells[2].set_concentration(10)
+
+      norm_plates[2].wells[0].set_concentration(60)
+
+      result = Well.hash_stock_with_targets(stock_plate.wells, purposes.map(&:name))
+
+      assert_equal result.count, 3
+      assert_equal result[stock_plate.wells[1].id].count, 1
+      assert_equal result[stock_plate.wells[2].id].count, 1
+      assert_equal result[stock_plate.wells[0].id].count, 3
+    end
+
     should "have pico pass" do
       @well.well_attribute.pico_pass = "Yes"
       assert_equal "Yes", @well.get_pico_pass
@@ -246,27 +278,27 @@ class WellTest < ActiveSupport::TestCase
       context "with no source concentration" do
         should "raise an error" do
           assert_raises Cherrypick::ConcentrationError do
-            @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(1.1, 2.2, 0.0)
-            @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(1.2, 2.2, "")
+            @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(1.1, 2.2, 0.0,20)
+            @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(1.2, 2.2, "",20)
           end
         end
       end
 
       should "return volume to pick" do
-        assert_equal 1.25, @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(5.0, 50.0, 200.0)
-        assert_equal 3.9,  @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(13.0, 30.0, 100.0)
+        assert_equal 1.25, @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(5.0, 50.0, 200.0,20)
+        assert_equal 3.9,  @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(13.0, 30.0, 100.0,20)
         assert_equal 9.1,  @well.get_buffer_volume
       end
 
       should "sets the buffer volume" do
-        vol_to_pick = @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(5.0, 50.0, 200.0)
+        vol_to_pick = @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(5.0, 50.0, 200.0,20)
         assert_equal 3.75, @well.get_buffer_volume
-        vol_to_pick = @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(13.0, 30.0, 100.0)
+        vol_to_pick = @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(13.0, 30.0, 100.0,20)
         assert_equal 9.1,  @well.get_buffer_volume
       end
 
       should "sets buffer and volume_to_pick correctly" do
-        vol_to_pick = @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(5.0, 50.0, 200.0)
+        vol_to_pick = @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(5.0, 50.0, 200.0,20)
         assert_equal @well.get_picked_volume, vol_to_pick
         assert_equal 5.0, @well.get_buffer_volume + vol_to_pick
       end
@@ -282,9 +314,8 @@ class WellTest < ActiveSupport::TestCase
       ].each do |volume_required, concentration_required, source_concentration, source_volume, robot_minimum_pick_volume, volume_obtained, buffer_volume_obtained, scenario|
         context "when testing #{scenario}" do
           setup do
-            @well.well_attribute.current_volume = source_volume
             @result_volume = ("%.1f" % @well.volume_to_cherrypick_by_nano_grams_per_micro_litre(volume_required,
-                  concentration_required, source_concentration, robot_minimum_pick_volume)).to_f
+                  concentration_required, source_concentration, source_volume, robot_minimum_pick_volume)).to_f
             @result_buffer_volume = ("%.1f" % @well.get_buffer_volume).to_f
           end
           should "gets correct volume quantity" do
