@@ -46,7 +46,7 @@ class BioanalysisCsvParserTest < ActiveSupport::TestCase
         @content = read_file @filename
       end
 
-      should "return a BioanalysisCsvParser" do
+      should "not return a BioanalysisCsvParser" do
         assert_equal nil, Parsers.parser_for(@filename,nil,@content)
       end
     end

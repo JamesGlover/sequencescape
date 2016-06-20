@@ -1,3 +1,6 @@
+#This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
+#Please refer to the LICENSE and README files for information on licensing and authorship of this file.
+#Copyright (C) 2016 Genome Research Ltd.
 class Parsers::QuantParser
   class InvalidFile < StandardError; end
 
@@ -44,6 +47,7 @@ class Parsers::QuantParser
   end
 
   def self.is_quant_file?(content)
+    return false unless content[0].respond_to?(:[])
     (content[0][0] == 'Assay Plate Barcode') && self.headers_index(content)
   end
 

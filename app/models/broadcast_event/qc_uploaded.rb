@@ -18,6 +18,6 @@ class BroadcastEvent::QcUploaded < BroadcastEvent
   has_subjects(:stock_plate) {|qc_file,be| qc_file.asset.original_stock_plates }
   has_subjects(:sample) { |qc_file,be| qc_file.asset.contained_samples }
 
-  has_metadata(:file_type) {|qc_file,be| qc_file.parser.name }
+  has_metadata(:file_type) {|qc_file,be| qc_file.parser_name }
 
 end

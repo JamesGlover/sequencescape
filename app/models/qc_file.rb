@@ -1,11 +1,16 @@
 #This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
 #Please refer to the LICENSE and README files for information on licensing and authorship of this file.
-#Copyright (C) 2013,2014,2015 Genome Research Ltd.
+#Copyright (C) 2013,2014,2015,2016 Genome Research Ltd.
 
 class QcFile < ActiveRecord::Base
 
   extend DbFile::Uploader
   include Uuid::Uuidable
+
+  class_attribute :subject_type
+  self.subject_type = 'qc_file'
+
+  UNKNOWN_PARSER = 'UNKNOWN'
 
   module Associations
     # Adds accessors for named fields and attaches documents to them
@@ -57,6 +62,10 @@ class QcFile < ActiveRecord::Base
     end
   end
 
+  def parser_name
+    parser.try(:name)||UNKNOWN_PARSER
+  end
+
   def friendly_name
     filename
   end
@@ -64,7 +73,7 @@ class QcFile < ActiveRecord::Base
   private
 
   def parser
-    @parser ||= Parsers.parser_for(uploaded_data.filename, content_type, current_data)
+    @parser ||= Parsers.parser_for(filename||uploaded_data.filename, content_type, current_data)
   end
 
   def store_file_extracted_data
