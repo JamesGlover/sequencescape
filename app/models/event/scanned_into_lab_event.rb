@@ -8,6 +8,8 @@ class Event::ScannedIntoLabEvent < Event
 
   alias_method :asset, :eventful
 
+  attr_writer :user
+
   def self.create_for_asset!(asset, location, user=nil)
     self.create!(
       :eventful => asset,
@@ -15,9 +17,14 @@ class Event::ScannedIntoLabEvent < Event
       :content => Date.today.to_s,
       :family => "scanned_into_lab",
       :location => location.name,
-      :created_by => user.try(:login)
-    )
+      :created_by => user.try(:login)||'UNKNOW'
+    ).tap do |e|
+      e.user = user
+    end
+  end
 
+  def user
+    @user ||= User.where(login:created_by).first
   end
 
   def read_location

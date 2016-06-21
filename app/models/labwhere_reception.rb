@@ -64,7 +64,9 @@ class LabwhereReception
   private
 
   def user
-    User.with_swipecard_code(user_code).first||User.find_by_barcode(Barcode.barcode_to_human!(user_code, User.prefix))
+    swipe = User.with_swipecard_code(user_code).first
+    return swipe unless swipe.nil?
+    User.lookup_by_barcode(user_code)
   end
 
   def assets
