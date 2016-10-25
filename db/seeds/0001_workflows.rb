@@ -1577,7 +1577,7 @@ end
         control_request_type_id: 0,
         min_size: 8
       ) do |pipeline|
-        pipeline.request_types = RequestType.where("`key` LIKE 'illumina_%_hiseq_4000_paired_end_sequencing'")
+        pipeline.request_types = RequestType.where("key LIKE 'illumina_%_hiseq_4000_paired_end_sequencing'")
         pipeline.build_workflow(name: 'HiSeq 4000 PE').tap do |wf|
           build_4000_tasks_for(wf, true)
         end
@@ -1596,7 +1596,7 @@ end
         control_request_type_id: 0,
         min_size: 8
       ) do |pipeline|
-        pipeline.request_types = RequestType.where("`key` LIKE 'illumina_%_hiseq_4000_single_end_sequencing'")
+        pipeline.request_types = RequestType.where("key LIKE 'illumina_%_hiseq_4000_single_end_sequencing'")
         pipeline.build_workflow(name: 'HiSeq 4000 SE').tap do |wf|
           build_4000_tasks_for(wf)
         end

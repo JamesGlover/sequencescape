@@ -376,7 +376,7 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
   end
 
   create_table "db_files", force: :cascade do |t|
-    t.binary  "data",                limit: 4294967295
+    t.column     "data",      :oid,          null: false
     t.integer "owner_id",            limit: 4
     t.string  "owner_type",          limit: 25,         default: "Document", null: false
     t.string  "owner_type_extended", limit: 255
@@ -438,21 +438,6 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
 
   add_index "documents", ["documentable_id", "documentable_type"], name: "index_documents_on_documentable_id_and_documentable_type", using: :btree
   add_index "documents", ["documentable_type", "documentable_id"], name: "index_documents_on_documentable_type_and_documentable_id", using: :btree
-
-  create_table "documents_shadow", force: :cascade do |t|
-    t.integer "documentable_id",   limit: 4
-    t.integer "size",              limit: 4
-    t.string  "content_type",      limit: 255
-    t.string  "filename",          limit: 255
-    t.integer "height",            limit: 4
-    t.integer "width",             limit: 4
-    t.integer "parent_id",         limit: 4
-    t.string  "thumbnail",         limit: 255
-    t.integer "db_file_id",        limit: 4
-    t.string  "documentable_type", limit: 50
-  end
-
-  add_index "documents_shadow", ["documentable_id", "documentable_type"], name: "index_documents_on_documentable_id_and_documentable_type", using: :btree
 
   create_table "equipment", force: :cascade do |t|
     t.string "name",           limit: 255
@@ -705,8 +690,6 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.integer  "workflow_id",       limit: 4
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "state_to_delete",   limit: 20
-    t.string   "message_to_delete", limit: 255
     t.integer  "user_id",           limit: 4
     t.text     "item_options",      limit: 65535
     t.text     "request_types",     limit: 65535
@@ -723,8 +706,7 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.integer  "product_id",        limit: 4
   end
 
-  add_index "orders", ["state_to_delete"], name: "index_submissions_on_state", using: :btree
-  add_index "orders", ["study_id"], name: "index_submissions_on_project_id", using: :btree
+  add_index "orders", ["study_id"], name: "index_orders_on_project_id", using: :btree
 
   create_table "pac_bio_library_tube_metadata", force: :cascade do |t|
     t.integer  "smrt_cells_available",    limit: 4
@@ -1298,7 +1280,7 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.string   "state",       limit: 255
     t.text     "barcodes",    limit: 65535
     t.integer  "user_id",     limit: 4
-    t.string   "password"  
+    t.string   "password"
   end
 
   add_index "sample_manifests", ["asset_type"], name: "index_sample_manifests_on_asset_type", using: :btree
@@ -1631,7 +1613,6 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
 
   add_index "submissions", ["name"], name: "index_submissions_on_name", using: :btree
   add_index "submissions", ["state"], name: "index_submissions_on_state", using: :btree
-  add_index "submissions", ["study_id_to_delete"], name: "index_submissions_on_project_id", using: :btree
 
   create_table "submitted_assets", force: :cascade do |t|
     t.integer  "order_id",   limit: 4

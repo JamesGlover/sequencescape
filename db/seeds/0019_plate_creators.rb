@@ -15,21 +15,21 @@ ActiveRecord::Base.transaction do
   end
 
   # Additional plate purposes required
-  ['Pico dilution', 'Working dilution'].each do |name|
+  ['Pico Dilution', 'Working Dilution'].each do |name|
     plate_purpose = PlatePurpose.find_by_name(name) or raise StandardError, "Cannot find #{name.inspect} plate purpose"
     Plate::Creator.create!(name: name, plate_purpose: plate_purpose, plate_purposes: [plate_purpose])
   end
 
   plate_purpose = PlatePurpose.find_by_name!("Pre-Extracted Plate")
   creator = Plate::Creator.create!(name: "Pre-Extracted Plate", plate_purpose: plate_purpose, plate_purposes: [plate_purpose])
-  creator.parent_plate_purposes << Purpose.find_by_name!("Stock plate")
+  creator.parent_plate_purposes << Purpose.find_by_name!("Stock Plate")
 
 
   purposes_config = [
-      [Plate::Creator.find_by_name!("Working dilution"),  Purpose.find_by_name!("Stock plate")],
-      [Plate::Creator.find_by_name!("Pico dilution"),     Purpose.find_by_name!("Working dilution")],
-      [Plate::Creator.find_by_name!("Pico Assay Plates"), Purpose.find_by_name!("Pico dilution")],
-      [Plate::Creator.find_by_name!("Pico Assay Plates"), Purpose.find_by_name!("Working dilution")],
+      [Plate::Creator.find_by_name!("Working Dilution"),  Purpose.find_by_name!("Stock Plate")],
+      [Plate::Creator.find_by_name!("Pico Dilution"),     Purpose.find_by_name!("Working Dilution")],
+      [Plate::Creator.find_by_name!("Pico Assay Plates"), Purpose.find_by_name!("Pico Dilution")],
+      [Plate::Creator.find_by_name!("Pico Assay Plates"), Purpose.find_by_name!("Working Dilution")],
     ]
 
 
@@ -39,8 +39,8 @@ ActiveRecord::Base.transaction do
 
   # Valid options: Dilution Factors:
   [
-    ["Working dilution", [12.5, 20.0, 15.0, 50.0]],
-    ["Pico dilution", [4.0]]
+    ["Working Dilution", [12.5, 20.0, 15.0, 50.0]],
+    ["Pico Dilution", [4.0]]
   ].each do |name, values|
     c = Plate::Creator.find_by_name!(name)
     c.update_attributes!(valid_options: {

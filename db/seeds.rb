@@ -26,9 +26,9 @@ END_OF_MESSAGE
 end
 
 ActiveRecord::Base.transaction do
-
   # Here is a proc that will do the seeding.
   handler = lambda do |seed_data_file|
+    puts "Loading seed data from #{seed_data_file} ... pu"
     Rails.logger.info("Loading seed data from #{seed_data_file} ...")
     require seed_data_file
     Rails.logger.info("Seed data loaded from #{seed_data_file}")

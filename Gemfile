@@ -14,6 +14,7 @@ group :default do
   # Legacy support for parsing XML into params
   gem 'actionpack-xml_parser'
 
+  gem "jdbc-postgres"
   gem "activerecord-jdbc-adapter", :platforms => :jruby
   gem "activeresource", require: 'active_resource'
   gem "jdbc-mysql", :platforms => :jruby
@@ -23,7 +24,7 @@ group :default do
   # Will paginate clashes awkwardly with bootstrap
   gem "will_paginate-bootstrap"
   gem 'net-ldap'
-  gem 'carrierwave'
+  gem 'carrierwave-postgresql'
 
   # Provides eg. error_messages_for previously in rails 2, now deprecated.
   gem 'dynamic_form'
