@@ -23,7 +23,7 @@ module Core::Service::ErrorHandling
         buffer = [exception_thrown.message, exception_thrown.backtrace].join("\n")
         Rails.logger.error("API[error]: #{buffer}")
 
-        self.general_error(501)
+        general_error(501)
       end
     end
   end
@@ -34,7 +34,7 @@ module Core::Service::ErrorHandling
         @error = error
       end
 
-      def each(&block)
+      def each
         yield JSON.generate(@error)
         # Yajl::Encoder.new.encode(@error, &block)
       end
@@ -45,6 +45,7 @@ module Core::Service::ErrorHandling
     end
 
     def general_error(code, errors = nil)
+      Rails.logger.error(exception_thrown.backtrace.join("\n"))
       errors ||= [exception_thrown.message]
       error(code, JsonError.new(general: errors))
     end
@@ -82,7 +83,7 @@ end
 
 class ActiveRecord::RecordInvalid
   def api_error(response)
-    io_handler = ::Core::Io::Registry.instance.lookup_for_object(self.record)
+    io_handler = ::Core::Io::Registry.instance.lookup_for_object(record)
     response.content_error(422, errors_grouped_by_attribute { |attribute| io_handler.json_field_for(attribute) })
   end
 

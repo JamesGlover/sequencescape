@@ -4,19 +4,18 @@
 # authorship of this file.
 # Copyright (C) 2012,2015 Genome Research Ltd.
 
-
 require "#{Rails.root}/app/models/illumina_b/plate_purposes"
 
 class Search::FindIlluminaBTubes < Search
   def scope(criteria)
     # We find all plates that do not have transfers where they are the source.  Once a plate has been transferred (or marked
     # for transfer) the destination plate becomes the end of the chain.
-    Tube.include_purpose.
-      with_purpose(illumina_b_tube_purposes).
-      with_no_outgoing_transfers.
-      in_state(criteria['state']).
-      without_finished_tubes(illumina_b_final_tube_purpose).
-      recent_first
+    Tube.include_purpose
+      .with_purpose(illumina_b_tube_purposes)
+      .with_no_outgoing_transfers
+      .in_state(criteria['state'])
+      .without_finished_tubes(illumina_b_final_tube_purpose)
+      .recent_first
   end
 
   def self.illumina_b_tube_purposes
@@ -28,5 +27,4 @@ class Search::FindIlluminaBTubes < Search
     Tube::Purpose.where(name: IlluminaB::PlatePurposes::TUBE_PURPOSE_FLOWS.map(&:last))
   end
   delegate :illumina_b_final_tube_purpose, to: 'self.class'
-
 end

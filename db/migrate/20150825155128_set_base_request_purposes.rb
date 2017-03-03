@@ -5,7 +5,6 @@
 # Copyright (C) 2015 Genome Research Ltd.
 
 class SetBaseRequestPurposes < ActiveRecord::Migration
-
   class RequestType < ActiveRecord::Base
     self.table_name = 'request_types'
   end
@@ -35,7 +34,7 @@ class SetBaseRequestPurposes < ActiveRecord::Migration
     return purpose('qc')        if qc_type?(rt)
     return purpose('control')   if control_request?(rt)
     return purpose('internal')  if internal?(rt)
-    return purpose('standard')
+    purpose('standard')
   end
 
   def self.up

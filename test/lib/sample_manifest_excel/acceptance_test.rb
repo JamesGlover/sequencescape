@@ -1,17 +1,15 @@
 require 'test_helper'
 
 class AcceptanceTest < ActiveSupport::TestCase
-
   attr_reader :download, :sample_manifest
 
   def setup
-
     SampleManifestExcel.configure do |config|
-      config.folder = File.join("test", "data", "sample_manifest_excel", "extract")
+      config.folder = File.join('test', 'data', 'sample_manifest_excel', 'extract')
       config.load!
     end
 
-    barcode = mock("barcode")
+    barcode = mock('barcode')
     barcode.stubs(:barcode).returns(23)
     PlateBarcode.stubs(:create).returns(barcode)
 
@@ -24,7 +22,7 @@ class AcceptanceTest < ActiveSupport::TestCase
     download.save('test.xlsx')
   end
 
-  test "should create a worksheet" do
+  test 'should create a worksheet' do
     assert File.file?('test.xlsx')
     assert download.password
   end
@@ -32,5 +30,4 @@ class AcceptanceTest < ActiveSupport::TestCase
   def teardown
     SampleManifestExcel.reset!
   end
-
 end

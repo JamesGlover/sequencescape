@@ -4,12 +4,10 @@
 # authorship of this file.
 # Copyright (C) 2011,2012,2013,2015,2016 Genome Research Ltd.
 
-
 # We require all the plate and tube purpose files here as Rails eager loading does not play nicely with single table
 # inheritance
 
 module Pulldown::PlatePurposes
-
   ISCH_PURPOSE_FLOWS = [[
       'Lib PCR-XP',
       'ISCH lib pool',
@@ -85,7 +83,6 @@ module Pulldown::PlatePurposes
     'ISC cap lib PCR-XP'
   ]
 
-
   PLATE_PURPOSES_TO_REQUEST_CLASS_NAMES = [
     ['Lib PCR-XP',   'ISCH lib pool', 'TransferRequest::InitialTransfer'],
     ['Lib PCRR-XP',  'ISCH lib pool', 'TransferRequest::InitialTransfer']
@@ -94,10 +91,9 @@ module Pulldown::PlatePurposes
   STOCK_PLATE_PURPOSES = ['WGS stock DNA', 'SC stock DNA', 'ISC stock DNA']
 
   class << self
-
     def create_purposes(branch_o)
       branch = branch_o.clone
-      initial = Purpose.find_by_name!(branch.shift)
+      initial = Purpose.find_by!(name: branch.shift)
       branch.inject(initial) do |parent, new_purpose_name|
         Pulldown::PlatePurposes::PLATE_PURPOSE_TYPE[new_purpose_name].create!(name: new_purpose_name).tap do |child_purpose|
           parent.child_relationships.create!(child: child_purpose, transfer_request_type: request_type_between(parent, child_purpose))
@@ -113,12 +109,9 @@ module Pulldown::PlatePurposes
       RequestType.create!(name: request_type_name, key: request_type_name.gsub(/\W+/, '_'), request_class_name: request_class, asset_type: 'Well', order: 1)
     end
     private :request_type_between
-
   end
-
 end
 
-
-['initial_downstream_plate', 'initial_plate', 'library_plate', 'stock_plate'].each do |type|
+%w(initial_downstream_plate initial_plate library_plate stock_plate).each do |type|
   require_dependency "app/models/pulldown/#{type}_purpose"
 end

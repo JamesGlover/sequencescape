@@ -4,7 +4,6 @@
 # authorship of this file.
 # Copyright (C) 2013,2015 Genome Research Ltd.
 
-
 require "#{Rails.root}/app/models/illumina_c/plate_purposes"
 
 class Search::FindIlluminaCPlates < Search
@@ -21,7 +20,7 @@ class Search::FindIlluminaCPlates < Search
   private :illumina_c_plate_purposes
 
   def freezer
-    Location.find_by_name!('Library creation freezer')
+    Location.find_by!(name: 'Library creation freezer')
   end
   private :freezer
 end

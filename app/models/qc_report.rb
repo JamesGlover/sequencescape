@@ -4,9 +4,7 @@
 # authorship of this file.
 # Copyright (C) 2015,2016 Genome Research Ltd.
 
-
 class QcReport < ActiveRecord::Base
-
   # :id => The primary key for internal use only
   # :report_identifier => A unique identifier exposed to customers
   # :state => Tracks report processing and return
@@ -14,7 +12,6 @@ class QcReport < ActiveRecord::Base
   include AASM
 
   module StateMachine
-
     module ClassMethods
       def available_states
         QcReport.aasm.states.map { |state| state.name.to_s }
@@ -23,12 +20,10 @@ class QcReport < ActiveRecord::Base
 
     def self.included(base)
       base.class_eval do
-
         # When adding new states, please make sure you update the config/locals/en.yml file
         # with decriptions.
 
         aasm column: :state, whiny_persistence: true do
-
         # A report has just been created and is awaiting processing. There is probably a corresponding delayed job
         state :queued, initial: true
 
@@ -67,7 +62,6 @@ class QcReport < ActiveRecord::Base
           event :proceed_decision do
             transitions from: [:complete, :awaiting_proceed], to: :complete
           end
-
         end
 
         def available?
@@ -75,9 +69,7 @@ class QcReport < ActiveRecord::Base
         end
 
         extend ClassMethods
-
       end
-
     end
   end
 
@@ -92,6 +84,9 @@ class QcReport < ActiveRecord::Base
     def generate_report
       begin
         study.each_well_for_qc_report_in_batches(exclude_existing, product_criteria) do |assets|
+          # If there are some wells of interest, we get them in a list
+          connected_wells = Well.hash_stock_with_targets(assets, product_criteria.target_plate_purposes)
+
           # This transaction is inside the block as otherwise large reports experience issues
           # with high memory usage. In the event that an exception is raised the most
           # recent set of decisions will be rolled back, and the report will be re-queued.
@@ -99,7 +94,7 @@ class QcReport < ActiveRecord::Base
           # metric on complete reports (Although wont help if, say, the database connection fails)
           ActiveRecord::Base.transaction do
             assets.each do |asset|
-              criteria = product_criteria.assess(asset)
+              criteria = product_criteria.assess(asset, connected_wells[asset.id])
               QcMetric.create!(asset: asset, qc_decision: criteria.qc_decision, metrics: criteria.metrics, qc_report: self)
             end
           end
@@ -129,9 +124,9 @@ class QcReport < ActiveRecord::Base
   after_create :generate!
 
   scope :for_report_page, ->(conditions) {
-      order("id desc").
-      where(conditions).
-      joins(:product_criteria)
+      order('id desc')
+      .where(conditions)
+      .joins(:product_criteria)
   }
 
   validates_presence_of :product_criteria, :study, :state
@@ -157,7 +152,7 @@ class QcReport < ActiveRecord::Base
   private
 
   def identifier_required?
-    self.report_identifier.nil?
+    report_identifier.nil?
   end
 
   # Note: You won't be able to generate two reports for the
@@ -172,7 +167,6 @@ class QcReport < ActiveRecord::Base
     ].compact.join('_').downcase.gsub(/[^\w]/, '_')
     self.report_identifier = rid
   end
-
 end
 
 require_dependency 'qc_report/file'

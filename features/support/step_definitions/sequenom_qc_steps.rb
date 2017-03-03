@@ -20,13 +20,11 @@ class Plate
 
       # Unless we say otherwise give the first sample on the plate
       plate.wells.first.primary_aliquot.sample.sample_metadata.update_attributes!(
-        gender: "male"
+        gender: 'male'
       ) if first_well_gender
     end
   end
 end
-
-
 
 Given /^I am setup for sequenome QC$/ do
   @source_plate_barcodes = %w{1220125054743 1220125056761 1220125069815 1220125048766}
@@ -36,7 +34,6 @@ end
 Given /^I am setup for sequenome QC using plates "([^"]*)"$/ do |barcodes_string|
   Plate.create_source_plates(barcodes_string.split("\s"), true, 2)
 end
-
 
 Given /^I have a source plate which contains samples which have no gender information$/ do
   Plate.create_source_plates(%w{1220125054743}, false)
@@ -48,9 +45,8 @@ When /^I try to create a Sequenom QC plate from the input plate$/ do
   step('I press "Create new Plate"')
 end
 
-
 When /^plate "([^"]*)" should have a size of (\d+)$/ do |plate_barcode, plate_size|
-  assert_equal plate_size.to_i, Plate.find_by_barcode(plate_barcode).size
+  assert_equal plate_size.to_i, Plate.find_by(barcode: plate_barcode).size
 end
 
 When /^well "([^"]*)" should come from well "([^"]*)" on plate "([^"]*)"$/ do |seq_well_description, source_well_description, plate_barcode|

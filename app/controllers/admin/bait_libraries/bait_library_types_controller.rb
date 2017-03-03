@@ -25,7 +25,7 @@ class Admin::BaitLibraries::BaitLibraryTypesController < ApplicationController
         flash[:notice] = 'Bait Library Type was successfully created.'
         format.html { redirect_to(admin_bait_libraries_path) }
       else
-        format.html { render action: "new" }
+        format.html { render action: 'new' }
       end
     end
   end
@@ -36,7 +36,7 @@ class Admin::BaitLibraries::BaitLibraryTypesController < ApplicationController
         flash[:notice] = 'Bait Library Type was successfully updated.'
         format.html { redirect_to(admin_bait_libraries_path) }
       else
-        format.html { render action: "edit" }
+        format.html { render action: 'edit' }
       end
     end
   end
@@ -56,7 +56,9 @@ class Admin::BaitLibraries::BaitLibraryTypesController < ApplicationController
       end
     end
   end
+
   private
+
   def discover_bait_library_type
     @bait_library_type = BaitLibraryType.find(params[:id])
   end

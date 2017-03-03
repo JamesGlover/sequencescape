@@ -4,19 +4,18 @@
 # authorship of this file.
 # Copyright (C) 2012,2013,2015 Genome Research Ltd.
 
-
 module IlluminaB::PlatePurposes
   PLATE_PURPOSE_FLOWS = [
-    [
-      'ILB_STD_INPUT',
-      'ILB_STD_COVARIS',
-      'ILB_STD_SH',
-      'ILB_STD_PREPCR',
-      'ILB_STD_PCR',
-      'ILB_STD_PCRR',
-      'ILB_STD_PCRXP',
-      'ILB_STD_PCRRXP'
-    ]
+    %w(
+ILB_STD_INPUT
+ILB_STD_COVARIS
+ILB_STD_SH
+ILB_STD_PREPCR
+ILB_STD_PCR
+ILB_STD_PCRR
+ILB_STD_PCRXP
+ILB_STD_PCRRXP
+)
   ]
 
   TUBE_PURPOSE_FLOWS = [
@@ -27,8 +26,8 @@ module IlluminaB::PlatePurposes
   ]
 
   BRANCHES = [
-    ['ILB_STD_INPUT', 'ILB_STD_COVARIS', 'ILB_STD_SH', 'ILB_STD_PREPCR', 'ILB_STD_PCR', 'ILB_STD_PCRXP', 'ILB_STD_STOCK', 'ILB_STD_MX'],
-    ['ILB_STD_PREPCR', 'ILB_STD_PCRR', 'ILB_STD_PCRRXP', 'ILB_STD_STOCK']
+    %w(ILB_STD_INPUT ILB_STD_COVARIS ILB_STD_SH ILB_STD_PREPCR ILB_STD_PCR ILB_STD_PCRXP ILB_STD_STOCK ILB_STD_MX),
+    %w(ILB_STD_PREPCR ILB_STD_PCRR ILB_STD_PCRRXP ILB_STD_STOCK)
   ]
 
   STOCK_PLATE_PURPOSE = 'ILB_STD_INPUT'
@@ -61,14 +60,12 @@ module IlluminaB::PlatePurposes
   }
 
   def self.request_type_prefix
-    "Illumina-B"
+    'Illumina-B'
   end
 
   extend IlluminaHtp::PlatePurposes::PurposeHelpers
-
 end
-
 
 # We require all the plate and tube purpose files here as Rails eager loading does not play nicely with single table
 # inheritance
-require_dependency "app/models/illumina_b/mx_tube_purpose"
+require_dependency 'app/models/illumina_b/mx_tube_purpose'

@@ -17,8 +17,6 @@ class WellAttribute < ActiveRecord::Base
   end
 
   aasm column: :pico_pass, whiny_persistence: true do
-
-
     state :ungraded, initial: true
     # These states are originally used in SNP
     state :Pass
@@ -33,7 +31,6 @@ class WellAttribute < ActiveRecord::Base
       transitions to: :Fail, from: [:Repeat, :Fail, :Pass]
       transitions to: :Repeat, from: [:ungraded]
     end
-
   end
   # TODO Remvoe 'Too Low To Normalise' from the pico_pass column
   # The state of 'Too Low To Normalise' exists in the database (from SNP?)
@@ -44,7 +41,7 @@ class WellAttribute < ActiveRecord::Base
   # to use a different transition name.
   def pico_pass
     case self[:pico_pass]
-    when 'Too Low To Normalise' then "Fail"
+    when 'Too Low To Normalise' then 'Fail'
     when nil, '' then 'ungraded'
     else self[:pico_pass]
     end
@@ -52,7 +49,12 @@ class WellAttribute < ActiveRecord::Base
 
   def measured_volume=(volume)
     self.initial_volume = volume
+    self.current_volume = volume
     super
+  end
+
+  def estimated_volume
+    (current_volume || measured_volume).try(:to_f)
   end
 
   def initial_volume=(volume)
@@ -60,16 +62,20 @@ class WellAttribute < ActiveRecord::Base
   end
 
   def quantity_in_nano_grams
-    return nil if measured_volume.nil? || concentration.nil?
-    return nil if measured_volume < 0 || concentration < 0
+    return nil if estimated_volume.nil? || concentration.nil?
+    return 0   if estimated_volume < 0 || concentration < 0
 
-    (measured_volume * concentration).to_i
+    (estimated_volume * concentration).to_i
   end
 
   def quantity_in_micro_grams
-    return nil if measured_volume.nil? || concentration.nil?
-    return nil if measured_volume < 0 || concentration < 0
-    (measured_volume * concentration) / 1000
+    return nil if estimated_volume.nil? || concentration.nil?
+    return 0   if estimated_volume < 0 || concentration < 0
+    (estimated_volume * concentration) / 1000
   end
 
+  def current_volume=(current_volume)
+    current_volume = 0.0 if current_volume.to_f < 0
+    super
+  end
 end

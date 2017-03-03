@@ -4,7 +4,6 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
 
-
 require 'aasm'
 
 module Submission::StateMachine
@@ -17,16 +16,15 @@ module Submission::StateMachine
       configure_named_scopes
 
       def editable?
-        state == "building"
+        state == 'building'
       end
-
     end
   end
 
   module InstanceMethods
     # TODO[xxx]: This should be a guard but what the heck ...
     def left_building_state?
-      not self.building? or !!@leaving_building_state
+      not building? or !!@leaving_building_state
     end
 
     def valid_for_leaving_building_state
@@ -79,15 +77,13 @@ module Submission::StateMachine
   end
 
   def configure_state_machine
-
     aasm column: :state, whiny_persistence: true do
-
-      state :building,    initial: true,               exit: :valid_for_leaving_building_state
+      state :building,    initial: true, exit: :valid_for_leaving_building_state
       state :pending,     enter: :complete_building
       state :processing,  enter: :process_submission!, exit: :process_callbacks!
       state :ready,       enter: :broadcast_events
       state :failed
-      state :cancelled,   enter: :cancel_all_requests
+      state :cancelled, enter: :cancel_all_requests
 
       event :built do
         transitions to: :pending, from: [:building]
@@ -109,14 +105,13 @@ module Submission::StateMachine
         transitions to: :failed, from: [:processing, :failed, :pending]
       end
     end
-
   end
   private :configure_state_machine
 
-  UnprocessedStates = ["building", "pending", "processing"]
+  UnprocessedStates = ['building', 'pending', 'processing']
   def configure_named_scopes
    scope :unprocessed, -> { where(state: UnprocessedStates) }
-   scope :processed, -> { where(state: ["ready", "failed"]) }
+   scope :processed, -> { where(state: ['ready', 'failed']) }
   end
 
   private :configure_named_scopes

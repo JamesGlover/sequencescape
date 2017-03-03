@@ -14,7 +14,7 @@ class TagLayout < ActiveRecord::Base
   include Uuid::Uuidable
   include ModelExtensions::TagLayout
 
-  self.inheritance_column = "sti_type"
+  self.inheritance_column = 'sti_type'
 
   # The user performing the layout
   belongs_to :user
@@ -54,23 +54,23 @@ class TagLayout < ActiveRecord::Base
       'inverse column' => 'TagLayout::InInverseColumns',
       'inverse row'    => 'TagLayout::InInverseRows'
     }[new_direction]
-    errors.add(:base, "#{new_direction} is not a valid direction") if self.direction_algorithm.nil?
-    raise(ActiveRecord::RecordInvalid, self) if self.direction_algorithm.nil?
+    errors.add(:base, "#{new_direction} is not a valid direction") if direction_algorithm.nil?
+    raise(ActiveRecord::RecordInvalid, self) if direction_algorithm.nil?
     extend(direction_algorithm.constantize)
   end
 
   def walking_by=(walk)
     self.walking_algorithm = {
-      'wells in pools'  => 'TagLayout::WalkWellsByPools',
-      'wells of plate'  => 'TagLayout::WalkWellsOfPlate',
-      'manual by pool'  => 'TagLayout::WalkManualWellsByPools',
-      'manual by plate' => 'TagLayout::WalkManualWellsOfPlate'
+      'wells in pools'     => 'TagLayout::WalkWellsByPools',
+      'wells of plate'     => 'TagLayout::WalkWellsOfPlate',
+      'manual by pool'     => 'TagLayout::WalkManualWellsByPools',
+      'as group by plate'  => 'TagLayout::AsGroupByPlate',
+      'manual by plate'    => 'TagLayout::WalkManualWellsOfPlate'
     }[walk]
-    errors.add(:base, "#{walk} is not a recognised walking method") if self.walking_algorithm.nil?
-    raise(ActiveRecord::RecordInvalid, self) if self.walking_algorithm.nil?
+    errors.add(:base, "#{walk} is not a recognised walking method") if walking_algorithm.nil?
+    raise(ActiveRecord::RecordInvalid, self) if walking_algorithm.nil?
     extend(walking_algorithm.constantize)
   end
-
 
   def wells_in_walking_order
     plate.wells.send(:"in_#{direction.tr(' ', '_')}_major_order")
@@ -88,7 +88,7 @@ class TagLayout < ActiveRecord::Base
     tag_map_id_to_tag = ActiveSupport::OrderedHash[tag_group.tags.sort_by(&:map_id).map { |tag| [tag.map_id.to_s, tag] }]
     tags              = tag_map_id_to_tag.map { |k, tag| substitutions.key?(k) ? tag_map_id_to_tag[substitutions[k]] : tag }
     walk_wells do |well, index|
-      tags[(index + initial_tag) % tags.length].tag!(well) unless well.aliquots.empty?
+      apply_tag(tags[(index + initial_tag) % tags.length], well)
     end
 
     # We can now check that the pools do not contain duplicate tags.
@@ -100,4 +100,9 @@ class TagLayout < ActiveRecord::Base
   end
   private :layout_tags_into_wells
 
+  # Over-ridden in the as group by plate module to allow the application of multiple tags.
+  def apply_tag(tag, well)
+    tag.tag!(well) unless well.aliquots.empty?
+  end
+  private :apply_tag
 end

@@ -4,7 +4,6 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
 
-
 require 'carrierwave'
 
 class Document < ActiveRecord::Base
@@ -17,7 +16,7 @@ class Document < ActiveRecord::Base
       # Options
       #  differentiator - this is a string used to separate multiple documents related to your model
       #     for example, you can have both a "generated" and an "uploaded" document in one Sample Manifest
-      differentiator = options.fetch(:differentiator, "#{field}")
+      differentiator = options.fetch(:differentiator, field.to_s)
 
       line = __LINE__ + 1
       class_eval(%Q{
@@ -33,15 +32,13 @@ class Document < ActiveRecord::Base
         end
       }, __FILE__, line)
     end
-
-
   end
 
   # Polymorphic relationship
   belongs_to :documentable, polymorphic: true
 
   # CarrierWave uploader - gets the uploaded_data file, but saves the identifier to the "filename" column
-  has_uploaded :uploaded_data, { serialization_column: "filename" }
+  has_uploaded :uploaded_data, serialization_column: 'filename'
 
   # Method provided for backwards compatibility
   def current_data

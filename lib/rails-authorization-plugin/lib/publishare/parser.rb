@@ -1,7 +1,6 @@
 module Authorization
   module Base
-
-    VALID_PREPOSITIONS = ['of', 'for', 'in', 'on', 'to', 'at', 'by']
+    VALID_PREPOSITIONS = %w(of for in on to at by)
     BOOLEAN_OPS = ['not', 'or', 'and']
     VALID_PREPOSITIONS_PATTERN = VALID_PREPOSITIONS.join('|')
 
@@ -48,7 +47,7 @@ module Authorization
         role_regex = '\s*(\'\s*(.+?)\s*\'|(\w+))\s+'
         model_regex = '\s+(:*\w+)'
         parse_regex = Regexp.new(role_regex + '(' + VALID_PREPOSITIONS.join('|') + ')' + model_regex)
-        str.gsub(parse_regex) do |match|
+        str.gsub(parse_regex) do |_match|
           @replacements.push " process_role_of_model('#{$2 || $3}', '#{$5}') "
           " <#{@replacements.length - 1}> "
         end
@@ -67,7 +66,7 @@ module Authorization
       end
 
       def replace_role_of_model(str)
-        str.gsub(/<(\d+)>/) do |match|
+        str.gsub(/<(\d+)>/) do |_match|
           @replacements[$1.to_i]
         end
       end
@@ -83,7 +82,6 @@ module Authorization
         raise(UserDoesntImplementRoles, "User doesn't implement #has_role?") if not @current_user.respond_to? :has_role?
         @current_user.has_role?(role_name)
       end
-
     end
 
     # Parses and evaluates an authorization expression and returns <tt>true</tt> or <tt>false</tt>.
@@ -107,7 +105,6 @@ module Authorization
     # It also won't handle some types of expressions (A or B) and C, which has to be rewritten as
     # C and (A or B) so the parenthetical expressions are in the tail.
     module RecursiveDescentParser
-
       OPT_PARENTHESES_PATTERN = '(([^()]|\(([^()]|\(([^()]|\(([^()]|\(([^()]|\(([^()])*\))*\))*\))*\))*\))*)'
       PARENTHESES_PATTERN = '\(' + OPT_PARENTHESES_PATTERN + '\)'
       NOT_PATTERN = '^\s*not\s+' + OPT_PARENTHESES_PATTERN + '$'
@@ -126,7 +123,7 @@ module Authorization
       def parse_authorization_expression(str)
         @stack = []
         raise AuthorizationExpressionInvalid, "Cannot parse authorization (#{str})" if not parse_expr(str)
-        return @stack.pop
+        @stack.pop
       end
 
       def parse_expr(str)
@@ -204,7 +201,6 @@ module Authorization
           false
         end
       end
-
     end
   end
 end

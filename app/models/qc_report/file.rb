@@ -5,7 +5,6 @@
 # Copyright (C) 2015,2016 Genome Research Ltd.
 
 class QcReport::File
-
   ACCEPTED_MIMETYPE = 'text/csv'
   ACCEPTED_EXTENSTION = 'csv'
   FILE_VERSION_KEY = 'Sequencescape QC Report'
@@ -55,7 +54,7 @@ class QcReport::File
 
   # The report to which the file corresponds
   def qc_report
-    @qc_report ||= QcReport.find_by_report_identifier(report_identifier)
+    @qc_report ||= QcReport.find_by(report_identifier: report_identifier)
   end
 
   # A hash of the header section
@@ -105,8 +104,8 @@ class QcReport::File
   end
 
   def process_line(line)
-    qc_decision = (line[:qc_decision] || "").strip
-    proceed = (line[:proceed] || "").strip
+    qc_decision = (line[:qc_decision] || '').strip
+    proceed = (line[:proceed] || '').strip
     { qc_decision: qc_decision, proceed: proceed }
   end
 
@@ -141,5 +140,4 @@ class QcReport::File
     invalid('Please make sure there is an empty line before the column headers.') if lines_read >= MAXIMUM_HEADER_SIZE
     @headers = headers
   end
-
 end

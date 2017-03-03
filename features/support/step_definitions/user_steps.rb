@@ -5,7 +5,7 @@
 # Copyright (C) 2007-2011,2014,2015 Genome Research Ltd.
 
 Given /^user "([^"]*)" exists$/ do |user_name|
-  FactoryGirl.create :user, login: user_name, first_name: user_name.titlecase, last_name: "Smith"
+  FactoryGirl.create :user, login: user_name, first_name: user_name.titlecase, last_name: 'Smith'
 end
 
 Given /^a user with an api key of "([^"]*)" exists$/ do |api_key|
@@ -21,10 +21,9 @@ Then /^the role list table should look like:$/ do |expected_results_table|
   expected_results_table.diff!(table(fetch_table('table#roles_table')))
 end
 
-Then /^the user "([^"]*)" roles should look like:$/ do |user, role_table|
-  user = User.find_by_login(user) || User.find_by_email(user)
-  user_role_table = role_table.class.new([["role"], user.roles.map { |r| r.name }])
-  role_table.diff!(user_role_table)
+Then /^the user "([^"]*)" should have just the role "([^"]*)"$/ do |user, role|
+  user = User.find_by!(email: user)
+  assert_equal user.roles.pluck(:name), [role]
 end
 
 Given /^user "([^"]*)" exists with barcode "([^"]*)"$/ do |user_name, barcode|
@@ -38,7 +37,6 @@ end
 Given /^the user with login "([^\"]+)" exists$/ do |login|
   User.find_by(login: login) || FactoryGirl.create(:user, login: login)
 end
-
 
 Then /^the user (\d+) should validate the swipecard code "([^\"]+)"/ do |user_id, code|
   user = User.find(user_id)

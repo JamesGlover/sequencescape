@@ -14,7 +14,6 @@ module SampleManifest::SampleTubeBehaviour
   end
 
   class Core
-
     include SampleManifest::CoreBehaviour::NoSpecializedValidation
 
     def initialize(manifest)
@@ -41,7 +40,7 @@ module SampleManifest::SampleTubeBehaviour
       # Does nothing at the moment
     end
 
-    def details(&block)
+    def details
       samples.each do |sample|
         yield({
           barcode: sample.assets.first.sanger_human_barcode,
@@ -61,7 +60,7 @@ module SampleManifest::SampleTubeBehaviour
       end
     end
 
-    def validate_sample_container(sample, row, &block)
+    def validate_sample_container(sample, row)
       manifest_barcode, primary_barcode = row['SANGER TUBE ID'], sample.primary_receptacle.sanger_human_barcode
       return if primary_barcode == manifest_barcode
       yield("You cannot move samples between tubes or modify their barcodes: #{sample.sanger_sample_id} should be in '#{primary_barcode}' but the manifest is trying to put it in '#{manifest_barcode}'")
@@ -70,7 +69,6 @@ module SampleManifest::SampleTubeBehaviour
     def printables
       samples.map { |sample| sample.assets.first }
     end
-
   end
 
   # There is no reason for this to need a rapid version as it should be reasonably
@@ -86,5 +84,4 @@ module SampleManifest::SampleTubeBehaviour
   def generate_1dtubes
     generate_tubes(Tube::Purpose.standard_sample_tube)
   end
-
 end

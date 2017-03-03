@@ -3,7 +3,7 @@
 # authorship of this file.
 # Copyright (C) 2011,2012 Genome Research Ltd.
 FactoryGirl.define do
-  factory :submission__ do |submission|
+  factory :submission__ do |_submission|
     # raise "call FactoryHelp::submission instead "
     factory :submission_without_order do
       user
@@ -12,9 +12,9 @@ FactoryGirl.define do
 
   # TODO move in a separate file
   # easier to keep it here at the moment because we are moving stuff between both
-  factory :order do |order|
+  factory :order do |_order|
     study
-    workflow              { |workflow| workflow.association(:submission_workflow) }
+    workflow { |workflow| workflow.association(:submission_workflow) }
     project
     user
     item_options          {}
@@ -25,7 +25,6 @@ FactoryGirl.define do
     factory :order_with_submission do
       after(:build) { |o| o.create_submission(user_id: o.user_id) }
     end
-
   end
 end
 

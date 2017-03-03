@@ -4,10 +4,10 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
 
-require "test_helper"
+require 'test_helper'
 
 class SequencingQcBatchTest < ActiveSupport::TestCase
-  STATES = ['qc_pending', 'qc_submitted', 'qc_manual', 'qc_manual_in_progress', 'qc_completed']
+  STATES = %w(qc_pending qc_submitted qc_manual qc_manual_in_progress qc_completed)
 
   context SequencingQcBatch do
     context '.included' do
@@ -24,7 +24,7 @@ class SequencingQcBatchTest < ActiveSupport::TestCase
 
     setup do
       @batch = Object.new
-      @batch.extend(SequencingQcBatch)  # Avoids the self.included callback
+      @batch.extend(SequencingQcBatch) # Avoids the self.included callback
     end
 
     context '#qc_states' do

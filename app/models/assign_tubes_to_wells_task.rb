@@ -16,7 +16,7 @@ class AssignTubesToWellsTask < Task
   end
 
   def partial
-    "assign_tubes_to_wells_batches"
+    'assign_tubes_to_wells_batches'
   end
 
   def render_task(workflow, params)
@@ -27,6 +27,4 @@ class AssignTubesToWellsTask < Task
   def do_task(workflow, params)
     workflow.do_assign_tubes_to_wells_task(self, params)
   end
-
-
 end

@@ -16,7 +16,7 @@ class PrepKitBarcodeTask < Task
   end
 
   def partial
-    "prep_kit_barcode_batches"
+    'prep_kit_barcode_batches'
   end
 
   def render_task(workflow, params)
@@ -35,5 +35,4 @@ class PrepKitBarcodeTask < Task
   def do_task(workflow, params)
     workflow.do_prep_kit_barcode_task(self, params)
   end
-
 end

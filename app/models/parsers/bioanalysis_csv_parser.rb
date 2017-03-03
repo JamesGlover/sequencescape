@@ -6,7 +6,6 @@
 # encoding: utf-8
 
 class Parsers::BioanalysisCsvParser
-
   class InvalidFile < StandardError; end
 
   attr_reader :content
@@ -17,17 +16,17 @@ class Parsers::BioanalysisCsvParser
 
   def field_name_for(sym_name)
     {
-      concentration: "Conc. [ng/µl]",
-      molarity: "Molarity [nmol/l]"
+      concentration: 'Conc. [ng/µl]',
+      molarity: 'Molarity [nmol/l]'
     }[sym_name]
   end
 
   def concentration(plate_position)
-    return get_parsed_attribute(plate_position, field_name_for(:concentration))
+    get_parsed_attribute(plate_position, field_name_for(:concentration))
   end
 
   def molarity(plate_position)
-    return get_parsed_attribute(plate_position, field_name_for(:molarity))
+    get_parsed_attribute(plate_position, field_name_for(:molarity))
   end
 
   def table_content_hash(group)
@@ -69,7 +68,6 @@ class Parsers::BioanalysisCsvParser
     group_contents = get_group_content(range)
 
     group_contents.each_with_index do |line, pos|
-
       if line[0].present? && line[0].match(regexp) && group.empty?
         group.push(pos)
       elsif (line.empty? && group.one?)
@@ -129,13 +127,13 @@ class Parsers::BioanalysisCsvParser
       end
       [group[0], next_index]
     end.reduce({}) do |memo, group|
-      memo.merge(self.parse_sample group)
+      memo.merge(parse_sample group)
     end
   end
 
   def parsed_content
     @parsed_content ||= parse_samples
-  rescue NoMethodError => e  # Ugh! I want to catch these where they happen
+  rescue NoMethodError => e # Ugh! I want to catch these where they happen
     raise InvalidFile
   end
 
@@ -146,10 +144,12 @@ class Parsers::BioanalysisCsvParser
 
   def each_well_and_parameters
     parsed_content.each do |well, values|
-      yield(well, values[:peak_table][field_name_for(:concentration)], values[:peak_table][field_name_for(:molarity)])
+      yield(well, {
+        set_concentration: values[:peak_table][field_name_for(:concentration)],
+        set_molarity: values[:peak_table][field_name_for(:molarity)]
+        })
     end
   end
-
 
   def self.is_bioanalyzer?(content)
     # We don't go through the whole file

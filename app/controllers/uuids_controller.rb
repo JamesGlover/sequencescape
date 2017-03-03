@@ -4,9 +4,8 @@
 # Copyright (C) 2016 Genome Research Ltd.
 
 class UuidsController < ApplicationController
-
   def show
-    uuid = Uuid.find_by_external_id!(params[:id])
+    uuid = Uuid.find_by!(external_id: params[:id])
     # We need to override the automatic path finding for
     # a resource here as our controllers are a little inconsistent
     # and assets especially end up getting redirected to undesired
@@ -14,5 +13,4 @@ class UuidsController < ApplicationController
     # base class, ensuring it ends up at the correct controller.
     redirect_to(uuid.resource.becomes uuid.resource.class.base_class)
   end
-
 end

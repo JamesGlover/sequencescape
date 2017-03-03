@@ -5,7 +5,6 @@
 # Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
 
 class Sdb::SuppliersController < Sdb::BaseController
-
   # Show all suppliers
   def index
     @suppliers = Supplier.all
@@ -25,7 +24,7 @@ class Sdb::SuppliersController < Sdb::BaseController
         flash[:notice] = 'Supplier was successfully created.'
         format.html { redirect_to('/sdb/') }
       else
-        format.html { render action: "new" }
+        format.html { render action: 'new' }
       end
     end
   end
@@ -43,7 +42,7 @@ class Sdb::SuppliersController < Sdb::BaseController
         flash[:notice] = 'Supplier was successfully updated'
         format.html { redirect_to(@supplier) }
       else
-        format.html { render action: "new" }
+        format.html { render action: 'new' }
       end
     end
   end
@@ -62,5 +61,4 @@ class Sdb::SuppliersController < Sdb::BaseController
     @supplier = Supplier.find(params[:id])
     @studies = @supplier.studies.paginate(page: params[:page])
   end
-
 end

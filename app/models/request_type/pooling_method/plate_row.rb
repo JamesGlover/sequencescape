@@ -11,7 +11,6 @@
 # WARNING: Will pool based on source asset location, not target. So may show odd behaviour
 # with re-arrays.
 module RequestType::PoolingMethod::PlateRow
-
   def pool_count
     pooling_options[:pool_count]
   end
@@ -26,6 +25,6 @@ module RequestType::PoolingMethod::PlateRow
     return pool_index_for_asset(request.asset) if request.asset.present?
     # If we don't have an asset yet, look upstream. This assumes no
     # re-arraying has taken place.
-    raise StandardError, "Finding the pool index before requests are attached is unsupported"
+    raise StandardError, 'Finding the pool index before requests are attached is unsupported'
   end
 end

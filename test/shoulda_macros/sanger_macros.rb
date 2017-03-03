@@ -10,7 +10,6 @@ module Sanger
   module Testing
     module Controller
       module Macros
-
         def should_have_instance_methods(*methods)
           dt = described_type
           should "have instance methods #{methods.join(',')}" do
@@ -23,8 +22,8 @@ module Sanger
         def should_have_successful_submission
           # FIXME: routing doesnt work property
           # should redirect_to("study workflow submission page"){ study_workflow_submission_url(@study, @workflow, @submission) }
-          should "have a successful submission" do
-            assert_not_nil @controller.session.try(:[], :flash).try(:[], :notice).try(:include?, "Submission successfully created")
+          should 'have a successful submission' do
+            assert_not_nil @controller.session.try(:[], :flash).try(:[], :notice).try(:include?, 'Submission successfully created')
             assert_equal @submission_count + 1, Submission.count
           end
         end
@@ -33,8 +32,8 @@ module Sanger
           params = actions.pop if actions.last.is_a?(Hash)
           actions << :index if actions.empty?
           actions.each do |action|
-            context "#{action}" do
-              context "when logged in" do
+            context action.to_s do
+              context 'when logged in' do
                 setup do
                   session[:user] = create(:user)
                   begin
@@ -50,13 +49,12 @@ module Sanger
                     assert true
                   end
                 end
-                should "not redirect" do
+                should 'not redirect' do
                   assert !(300..307).to_a.include?(@response.code)
                 end
               end
-              context "when not logged in" do
+              context 'when not logged in' do
                 setup do
-
                   session[:user] = nil
 
                   begin
@@ -65,7 +63,7 @@ module Sanger
                     flunk "Testing for an unknown action: #{action}"
                   end
                 end
-                should redirect_to("login page") { login_path }
+                should redirect_to('login page') { login_path }
               end
             end
           end

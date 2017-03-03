@@ -40,11 +40,11 @@ plate_purposes = <<-EOS
   qc_display: false
 - name: Sequenom
   qc_display: false
-  type: QcPlatePurpose
+  type: PlatePurpose
   size: 384
 - name: Gel Dilution
   qc_display: false
-  type: WorkingDilutionPlatePurpose
+  type: PlatePurpose
   target_type: GelDilutionPlate
 - name: Infinium 15k
   qc_display: false
@@ -58,7 +58,7 @@ plate_purposes = <<-EOS
   target_type: PicoDilutionPlate
 - name: Pico Assay A
   qc_display: false
-  type: PicoAssayPlatePurpose
+  type: PlatePurpose
   target_type: PicoAssayAPlate
 - name: Normalisation
   qc_display: true
@@ -143,71 +143,71 @@ plate_purposes = <<-EOS
   cherrypickable_target: true
 - name: Pulldown
   qc_display: true
-  type: PulldownPlatePurpose
+  type: PlatePurpose
   cherrypickable_target: true
 - name: Dilution Plates
   qc_display: true
   type: DilutionPlatePurpose
 - name: Pico Assay Plates
   qc_display: true
-  type: PicoAssayPlatePurpose
+  type: PlatePurpose
 - name: Pico Assay B
   qc_display: false
-  type: PicoAssayPlatePurpose
+  type: PlatePurpose
   target_type: PicoAssayBPlate
 - name: Gel Dilution Plates
   qc_display: true
-  type: WorkingDilutionPlatePurpose
+  type: PlatePurpose
 - name: Pulldown Aliquot
   qc_display: false
   pulldown_display: true
-  type: PulldownAliquotPlatePurpose
+  type: PlatePurpose
   target_type: PulldownAliquotPlate
 - name: Sonication
   qc_display: false
   pulldown_display: true
-  type: PulldownSonicationPlatePurpose
+  type: PlatePurpose
   target_type: PulldownSonicationPlate
 - name: Run of Robot
   qc_display: false
   pulldown_display: true
-  type: PulldownRunOfRobotPlatePurpose
+  type: PlatePurpose
   target_type: PulldownRunOfRobotPlate
 - name: EnRichment 1
   qc_display: false
   pulldown_display: true
-  type: PulldownEnrichmentOnePlatePurpose
+  type: PlatePurpose
   target_type: PulldownEnrichmentOnePlate
 - name: EnRichment 2
   qc_display: false
   pulldown_display: true
-  type: PulldownEnrichmentTwoPlatePurpose
+  type: PlatePurpose
   target_type: PulldownEnrichmentTwoPlate
 - name: EnRichment 3
   qc_display: false
   pulldown_display: true
-  type: PulldownEnrichmentThreePlatePurpose
+  type: PlatePurpose
   target_type: PulldownEnrichmentThreePlate
 - name: EnRichment 4
   qc_display: false
   pulldown_display: true
-  type: PulldownEnrichmentFourPlatePurpose
+  type: PlatePurpose
   target_type: PulldownEnrichmentFourPlate
 - name: Sequence Capture
   qc_display: false
   pulldown_display: true
-  type: PulldownSequenceCapturePlatePurpose
+  type: PlatePurpose
   target_type: PulldownSequenceCapturePlate
   cherrypickable_target: true
 - name: Pulldown PCR
   qc_display: false
   pulldown_display: true
-  type: PulldownPcrPlatePurpose
+  type: PlatePurpose
   target_type: PulldownPcrPlate
 - name: Pulldown qPCR
   qc_display: false
   pulldown_display: true
-  type: PulldownQpcrPlatePurpose
+  type: PlatePurpose
   target_type: PulldownQpcrPlate
 - name: Pre-Extracted Plate
   qc_display: false
@@ -242,7 +242,7 @@ AssetShape.create!(
 )
 
 YAML::load(plate_purposes).each do |plate_purpose|
-  attributes = plate_purpose.reverse_merge('type' => 'PlatePurpose', 'cherrypickable_target' => false, 'asset_shape_id' => AssetShape.find_by_name('Standard').id)
+  attributes = plate_purpose.reverse_merge('type' => 'PlatePurpose', 'cherrypickable_target' => false, 'asset_shape_id' => AssetShape.find_by(name: 'Standard').id)
   attributes.delete('type').constantize.new(attributes).save!
 end
 
@@ -250,29 +250,29 @@ end
 (1..5).each do |index|
   PlatePurpose.create!(name: "Aliquot #{index}", qc_display: true, can_be_considered_a_stock_plate: true, cherrypickable_target: true)
 end
-PlatePurpose.create!(name: "ABgene_0765", can_be_considered_a_stock_plate: false, cherrypickable_source: true, cherrypickable_target: false)
-PlatePurpose.create!(name: "ABgene_0800", can_be_considered_a_stock_plate: false, cherrypickable_source: true, cherrypickable_target: true)
-PlatePurpose.create!(name: "FluidX075", can_be_considered_a_stock_plate: false, cherrypickable_source: true, cherrypickable_target: false)
+PlatePurpose.create!(name: 'ABgene_0765', can_be_considered_a_stock_plate: false, cherrypickable_source: true, cherrypickable_target: false)
+PlatePurpose.create!(name: 'ABgene_0800', can_be_considered_a_stock_plate: false, cherrypickable_source: true, cherrypickable_target: true)
+PlatePurpose.create!(name: 'FluidX075', can_be_considered_a_stock_plate: false, cherrypickable_source: true, cherrypickable_target: false)
 
 # Build the links between the parent and child plate purposes
 relationships = {
-  "Working Dilution"    => ["Working Dilution", "Pico Dilution"],
-  "Pico Dilution"       => ["Working Dilution", "Pico Dilution"],
-  "Pico Assay A"        => ["Pico Assay A", "Pico Assay B"],
-  "Pulldown"            => ["Pulldown Aliquot"],
-  "Dilution Plates"     => ["Working Dilution", "Pico Dilution"],
-  "Pico Assay Plates"   => ["Pico Assay A", "Pico Assay B"],
-  "Pico Assay B"        => ["Pico Assay A", "Pico Assay B"],
-  "Gel Dilution Plates" => ["Gel Dilution"],
-  "Pulldown Aliquot"    => ["Sonication"],
-  "Sonication"          => ["Run of Robot"],
-  "Run of Robot"        => ["EnRichment 1"],
-  "EnRichment 1"        => ["EnRichment 2"],
-  "EnRichment 2"        => ["EnRichment 3"],
-  "EnRichment 3"        => ["EnRichment 4"],
-  "EnRichment 4"        => ["Sequence Capture"],
-  "Sequence Capture"    => ["Pulldown PCR"],
-  "Pulldown PCR"        => ["Pulldown qPCR"]
+  'Working Dilution'    => ['Working Dilution', 'Pico Dilution'],
+  'Pico Dilution'       => ['Working Dilution', 'Pico Dilution'],
+  'Pico Assay A'        => ['Pico Assay A', 'Pico Assay B'],
+  'Pulldown'            => ['Pulldown Aliquot'],
+  'Dilution Plates'     => ['Working Dilution', 'Pico Dilution'],
+  'Pico Assay Plates'   => ['Pico Assay A', 'Pico Assay B'],
+  'Pico Assay B'        => ['Pico Assay A', 'Pico Assay B'],
+  'Gel Dilution Plates' => ['Gel Dilution'],
+  'Pulldown Aliquot'    => ['Sonication'],
+  'Sonication'          => ['Run of Robot'],
+  'Run of Robot'        => ['EnRichment 1'],
+  'EnRichment 1'        => ['EnRichment 2'],
+  'EnRichment 2'        => ['EnRichment 3'],
+  'EnRichment 3'        => ['EnRichment 4'],
+  'EnRichment 4'        => ['Sequence Capture'],
+  'Sequence Capture'    => ['Pulldown PCR'],
+  'Pulldown PCR'        => ['Pulldown qPCR']
 }
 
 ActiveRecord::Base.transaction do
@@ -294,54 +294,54 @@ ActiveRecord::Base.transaction do
   PlatePurpose.create!(name: 'SEQCAP SC', cherrypickable_target: false)  # Superceded by Pulldown SC/ISC below (here for transition period)
 
   PlatePurpose.create!(
-    name: 'STA',
-    default_state: 'pending',
-    barcode_printer_type: BarcodePrinterType.find_by_name('96 Well Plate'),
-    cherrypickable_target: true,
-    cherrypick_direction: 'column',
-    asset_shape: AssetShape.find_by_name('Standard')
-  )
-  PlatePurpose.create!(
-    name: 'STA2',
-    default_state: 'pending',
-    barcode_printer_type: BarcodePrinterType.find_by_name('96 Well Plate'),
-    cherrypickable_target: true,
-    cherrypick_direction: 'column',
-    asset_shape: AssetShape.find_by_name('Standard')
-  )
-  PlatePurpose.create!(
-    name: 'SNP Type',
-    default_state: 'pending',
-    barcode_printer_type: BarcodePrinterType.find_by_name('96 Well Plate'),
-    cherrypickable_target: true,
-    cherrypick_direction: 'column',
-    asset_shape: AssetShape.find_by_name('Standard')
-  )
-  PlatePurpose.create!(
-    name: 'Fluidigm 96-96',
-    default_state: 'pending',
-    cherrypickable_target: true,
-    cherrypick_direction: 'interlaced_column',
-    size: 96,
-    asset_shape: AssetShape.find_by_name('Fluidigm96')
-  )
-  PlatePurpose.create!(
-    name: 'Fluidigm 192-24',
-    default_state: 'pending',
-    cherrypickable_target: true,
-    cherrypick_direction: 'interlaced_column',
-    size: 192,
-    asset_shape: AssetShape.find_by_name('Fluidigm192')
-  )
+  name: 'STA',
+  default_state: 'pending',
+  barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+  cherrypickable_target: true,
+  cherrypick_direction: 'column',
+  asset_shape: AssetShape.find_by(name: 'Standard')
+)
+PlatePurpose.create!(
+  name: 'STA2',
+  default_state: 'pending',
+  barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+  cherrypickable_target: true,
+  cherrypick_direction: 'column',
+  asset_shape: AssetShape.find_by(name: 'Standard')
+)
+PlatePurpose.create!(
+  name: 'SNP Type',
+  default_state: 'pending',
+  barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+  cherrypickable_target: true,
+  cherrypick_direction: 'column',
+  asset_shape: AssetShape.find_by(name: 'Standard')
+)
+PlatePurpose.create!(
+  name: 'Fluidigm 96-96',
+  default_state: 'pending',
+  cherrypickable_target: true,
+  cherrypick_direction: 'interlaced_column',
+  size: 96,
+  asset_shape: AssetShape.find_by(name: 'Fluidigm96')
+)
+PlatePurpose.create!(
+  name: 'Fluidigm 192-24',
+  default_state: 'pending',
+  cherrypickable_target: true,
+  cherrypick_direction: 'interlaced_column',
+  size: 192,
+  asset_shape: AssetShape.find_by(name: 'Fluidigm192')
+)
 end
 PlatePurpose.create!(
   name: 'PacBio Sheared',
   target_type: 'Plate',
   default_state: 'pending',
-  barcode_printer_type: BarcodePrinterType.find_by_name('96 Well Plate'),
+  barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
   cherrypickable_target: false,
   cherrypickable_source: false,
   size: 96,
-  asset_shape: AssetShape.find_by_name('Standard'),
+  asset_shape: AssetShape.find_by(name: 'Standard'),
   barcode_for_tecan: 'ean13_barcode'
 )

@@ -4,9 +4,7 @@
 # authorship of this file.
 # Copyright (C) 2015 Genome Research Ltd.
 
-
 class QcReportsController < ApplicationController
-
   before_action :login_required
   before_action :check_required, only: :create
 
@@ -23,9 +21,8 @@ class QcReportsController < ApplicationController
   end
 
   def create
-
-    study = Study.find_by_id(params[:qc_report][:study_id])
-    exclude_existing = params[:qc_report][:exclude_existing] == "1"
+    study = Study.find_by(id: params[:qc_report][:study_id])
+    exclude_existing = params[:qc_report][:exclude_existing] == '1'
 
     qc_report = QcReport.new(study: study, product_criteria: @product.stock_criteria, exclude_existing: exclude_existing)
 
@@ -37,8 +34,6 @@ class QcReportsController < ApplicationController
       flash[:error] = "Failed to create report: #{error_messages}"
       redirect_to :back
     end
-
-
   end
 
   # On form submit of a qc_file. Strictly speaking this should be an update action
@@ -46,7 +41,7 @@ class QcReportsController < ApplicationController
   # the report identifier from the file.
   def qc_file
     qc_file = params[:qc_report_file]
-    overide_qc = params[:overide_qc_decision] == "1"
+    overide_qc = params[:overide_qc_decision] == '1'
     file = QcReport::File.new(qc_file, overide_qc, qc_file.original_filename, qc_file.content_type)
     if file.process
       redirect_to file.qc_report
@@ -57,14 +52,14 @@ class QcReportsController < ApplicationController
   end
 
   def show
-    qc_report = QcReport.find_by_report_identifier(params[:id])
+    qc_report = QcReport.find_by(report_identifier: params[:id])
     queue_count = qc_report.queued? ? Delayed::Job.count : 0
     @report_presenter = Presenters::QcReportPresenter.new(qc_report, queue_count)
 
     respond_to do |format|
       format.html
 
-      format.csv  do
+      format.csv do
         file = nil
         begin
           file = Tempfile.new(@report_presenter.filename)
@@ -73,7 +68,7 @@ class QcReportsController < ApplicationController
         ensure
           file.close unless file.nil?
         end
-        send_file file.path, content_type: "text/csv", filename: @report_presenter.filename
+        send_file file.path, content_type: 'text/csv', filename: @report_presenter.filename
       end if qc_report.available?
     end
   end
@@ -83,7 +78,7 @@ class QcReportsController < ApplicationController
   def check_required
     return fail('No report options were provided') unless params[:qc_report].present?
     return fail('You must select a product') if params[:qc_report][:product_id].nil?
-    @product = Product.find_by_id(params[:qc_report][:product_id])
+    @product = Product.find_by(id: params[:qc_report][:product_id])
     return fail('Could not find product') if @product.nil?
     return fail("#{product.name} is inactive") if @product.deprecated?
     return fail("#{product.name} does not have any stock criteria set") if @product.stock_criteria.nil?
@@ -102,6 +97,4 @@ class QcReportsController < ApplicationController
     conds[:state] = params[:state] if params[:state].present?
     conds
   end
-
-
 end

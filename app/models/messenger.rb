@@ -5,7 +5,6 @@
 # Copyright (C) 2014,2015 Genome Research Ltd.
 
 class Messenger < ActiveRecord::Base
-
   belongs_to :target, polymorphic: true
   validates_presence_of :target, :root, :template
 
@@ -21,7 +20,7 @@ class Messenger < ActiveRecord::Base
     "#{Rails.env}.message.#{root}.#{id}"
   end
 
-  def as_json(options = {})
+  def as_json(_options = {})
     { root => render_class.to_hash(target),
       'lims' => configatron.amqp.lims_id! }
   end
@@ -29,5 +28,4 @@ class Messenger < ActiveRecord::Base
   def resend
     AmqpObserver.instance << self
   end
-
 end

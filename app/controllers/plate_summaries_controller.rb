@@ -3,16 +3,16 @@
 # authorship of this file.
 # Copyright (C) 2016 Genome Research Ltd.
 class PlateSummariesController < ApplicationController
-
   before_action :login_required
 
   def index
-    @plates = Plate.source_plates.with_descendants_owned_by(current_user).order("assets.id desc").page(params[:page])
+    @plates = Plate.source_plates.with_descendants_owned_by(current_user).order('assets.id desc').page(params[:page])
   end
 
   def show
     @plate = Plate.find_from_any_barcode(params[:id])
     raise ActiveRecord::RecordNotFound if @plate.nil?
+    @custom_metadatum_collection = @plate.custom_metadatum_collection || NullCustomMetadatumCollection.new
     @sequencing_batches = @plate.descendant_lanes.include_creation_batches.map(&:creation_batches).flatten.uniq
   end
 

@@ -16,7 +16,7 @@ class ReferenceSequenceTask < Task
   end
 
   def partial
-    "reference_sequence_batches"
+    'reference_sequence_batches'
   end
 
   def render_task(workflow, params)
@@ -27,5 +27,4 @@ class ReferenceSequenceTask < Task
   def do_task(workflow, params)
     workflow.do_reference_sequence_task(self, params)
   end
-
 end

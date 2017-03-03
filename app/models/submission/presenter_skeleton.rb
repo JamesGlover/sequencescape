@@ -16,7 +16,6 @@ class Submission::PresenterSkeleton
     attributes.each do |attribute|
       send("#{attribute}=", submission_attributes[attribute])
     end
-
   end
 
   # id accessors need to be explicitly defined...
@@ -56,6 +55,10 @@ class Submission::PresenterSkeleton
     end
   end
 
+  def each_submission_warning(&block)
+    submission.each_submission_warning(&block)
+  end
+
   def lanes_from_request_options
     return order.request_options.fetch(:multiplier, {}).values.last || 1 if order.request_types[-2].nil?
 
@@ -78,7 +81,7 @@ class Submission::PresenterSkeleton
 
   def method_missing(name, *args, &block)
     name_without_assignment = name.to_s.sub(/=$/, '').to_sym
-    return super unless self.attributes.include?(name_without_assignment)
+    return super unless attributes.include?(name_without_assignment)
 
     instance_variable_name = :"@#{name_without_assignment}"
     return instance_variable_get(instance_variable_name) if name_without_assignment == name.to_sym

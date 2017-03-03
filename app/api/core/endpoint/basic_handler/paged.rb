@@ -51,7 +51,7 @@ module Core::Endpoint::BasicHandler::Paged
       per_page: Core::Endpoint::BasicHandler::Paged.results_per_page,
       total_entries: model.count(:all)
     ).tap do |results|
-      raise ActiveRecord::RecordNotFound, 'past the end of the results' if  (page > 1) && (page > results.total_pages)
+      raise ActiveRecord::RecordNotFound, 'past the end of the results' if (page > 1) && (page > results.total_pages)
     end
   end
   private :page_of_results
@@ -64,7 +64,7 @@ module Core::Endpoint::BasicHandler::Paged
     delegate :count, to: :@model
 
     class PageOfResults
-      def initialize(page, total, per_page)
+      def initialize(page, _total, per_page)
         @page, @total_pages = page, page / per_page
       end
 

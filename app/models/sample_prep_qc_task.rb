@@ -16,7 +16,7 @@ class SamplePrepQcTask < Task
   end
 
   def partial
-    "sample_prep_qc_batches"
+    'sample_prep_qc_batches'
   end
 
   def render_task(workflow, params)
@@ -27,6 +27,4 @@ class SamplePrepQcTask < Task
   def do_task(workflow, params)
     workflow.do_sample_prep_qc_task(self, params)
   end
-
-
 end

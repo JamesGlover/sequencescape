@@ -18,7 +18,6 @@ module WTSI
   # date_line: The line that will include date information. %s indicates where dates will be inserted
   # license_text: Sting that will be inserted at the top of each file. %s will be replaced with the application name
   class LicenseApplication
-
     attr_accessor :application, :initial_range, :date_line
     attr_writer :license_text
 
@@ -61,7 +60,7 @@ module WTSI
       files_to_license.each do |filename|
         TargetFile.new(filename, self).apply_license
       end
-      return 0
+      0
     end
 
     ##
@@ -109,11 +108,9 @@ module WTSI
       return excluded_root if path.one?
       excluded_folders.include?(path.first)
     end
-
   end
 
   class TargetFile
-
     attr_reader :filename, :licenser, :filetype, :old_file
 
     def initialize(filename, licenser)
@@ -126,10 +123,9 @@ module WTSI
     # Apply the license text to the given file
     # Involves the creation of a temporary file
     def apply_license
-
       begin
         return if existing_license?
-        STDOUT.print "."
+        STDOUT.print '.'
         first_line = old_file.gets
         new_file.write(first_line) if !first_line.nil? && first_line.match(/^#!/)
         new_file.write(license_text)
@@ -213,14 +209,10 @@ module WTSI
     def extension
       filename.match(/\.([^\.]*)$/)[1]
     end
-
-
   end
 end
 
-
 WTSI::LicenseApplication.new do |config|
-
   config.application = 'SEQUENCESCAPE'
   config.license_text = <<HEREDOC
 This file is part of %s; it is distributed under the terms of GNU General Public License version 1 or later;
@@ -235,5 +227,4 @@ HEREDOC
 
   config.exclude_folder 'lib'
   config.exclude_folder 'vendor'
-
 end.apply_licenses

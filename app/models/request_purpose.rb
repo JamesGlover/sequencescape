@@ -9,7 +9,6 @@
 # Both RequestType and Request have a purpose, with the former acting as the default for
 # the latter.
 class RequestPurpose < ActiveRecord::Base
-
   STANDARD_PURPOSE = 'standard'
 
   validates_presence_of :key
@@ -19,7 +18,6 @@ class RequestPurpose < ActiveRecord::Base
   has_many :request_types
 
   def self.standard
-    self.find_by_key(STANDARD_PURPOSE)
+    find_by!(key: STANDARD_PURPOSE)
   end
-
 end

@@ -1,7 +1,5 @@
 module SampleManifestExcel
-
   class Configuration
-
     include SampleManifestExcel::Helpers
 
     FILES = [:conditional_formattings, :manifest_types, :ranges, :columns]
@@ -16,13 +14,13 @@ module SampleManifestExcel
 
     def add_file(file)
       @files << file.to_sym
-      self.class_eval { attr_accessor file.to_sym }
+      class_eval { attr_accessor file.to_sym }
     end
 
     def load!
       if folder.present?
         FILES.each do |file|
-          self.send("#{file}=", load_file(folder, file.to_s))
+          send("#{file}=", load_file(folder, file.to_s))
         end
         @loaded = true
       end
@@ -58,7 +56,6 @@ module SampleManifestExcel
     end
 
     class Columns
-
       attr_reader :all
 
       def initialize(columns, conditional_formattings, manifest_types)
@@ -67,7 +64,7 @@ module SampleManifestExcel
         manifest_types.each do |key, manifest_type|
           extract = all.extract(manifest_type.columns).freeze
           instance_variable_set "@#{key}", extract
-          self.class_eval { attr_reader key }
+          class_eval { attr_reader key }
           self.manifest_types[key] = extract
         end
       end
@@ -80,12 +77,10 @@ module SampleManifestExcel
         manifest_types[key] || manifest_types[key.to_s]
       end
 
-
       def ==(other)
         return false unless other.is_a?(self.class)
         all == other.all
       end
     end
-
   end
 end

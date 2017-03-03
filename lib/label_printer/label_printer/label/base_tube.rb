@@ -1,8 +1,6 @@
 module LabelPrinter
   module Label
-
     class BaseTube
-
       include Label::MultipleLabels
 
       def create_label(tube)
@@ -46,9 +44,8 @@ module LabelPrinter
       end
 
       def date_today
-        Date.today.strftime("%e-%^b-%Y")
+        Date.today.strftime('%e-%^b-%Y')
       end
-
     end
   end
 end

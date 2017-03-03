@@ -13,11 +13,11 @@
 module DelegateValidation
   def delegate_validation(*args)
     options           = args.extract_options!
-    delegation_target = options.delete(:to) or raise StandardError, "Cannot delegate validation without :to!"
+    delegation_target = options.delete(:to) or raise StandardError, 'Cannot delegate validation without :to!'
     attribute_tag     = options[:as]
     args.push(options)
 
-    validates_each(*args) do |record, attr, value|
+    validates_each(*args) do |record, _attr, value|
       validator = record.send(:"#{delegation_target}_delegate_validator").new(value)
       validator.valid?.tap do
         validator.errors.messages.each do |attrib, message|
@@ -41,7 +41,6 @@ module DelegateValidation
     protected :target
     delegate :include_unset_values?, to: :target
 
-
     def self.name
       'Nothing'
     end
@@ -52,7 +51,7 @@ module DelegateValidation
 
     def self.delegate_attribute(*args)
       options   = args.extract_options!
-      type_cast = ".#{options[:type_cast]}"        if options.key?(:type_cast) && options[:type_cast].present?
+      type_cast = ".#{options[:type_cast]}" if options.key?(:type_cast) && options[:type_cast].present?
       default   = " || #{options[:default].inspect}" if options.key?(:default)
 
       args.each do |attribute|
@@ -105,6 +104,5 @@ module DelegateValidation
       end
       false
     end
-
   end
 end

@@ -16,7 +16,7 @@ class ValidateSampleSheetTask < Task
   end
 
   def partial
-    "validate_sample_sheet_batches"
+    'validate_sample_sheet_batches'
   end
 
   def render_task(workflow, params)
@@ -27,5 +27,4 @@ class ValidateSampleSheetTask < Task
   def do_task(workflow, params)
     workflow.do_validate_sample_sheet_task(self, params)
   end
-
 end

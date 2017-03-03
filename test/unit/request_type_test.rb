@@ -4,7 +4,7 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
 
-require "test_helper"
+require 'test_helper'
 
 class RequestTypeTest < ActiveSupport::TestCase
   context RequestType do
@@ -56,7 +56,6 @@ class RequestTypeTest < ActiveSupport::TestCase
         request = @nrequest_type.create!
         assert_equal @rp, request.request_purpose
       end
-
     end
 
     context 'when deprecated,' do

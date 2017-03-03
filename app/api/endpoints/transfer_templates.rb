@@ -6,11 +6,10 @@
 
 class ::Endpoints::TransferTemplates < ::Core::Endpoint::Base
   model do
-
   end
 
   instance do
-    def build_transfer(request, &block)
+    def build_transfer(request)
       ActiveRecord::Base.transaction do
         # Here we have to map the JSON provided based on the transfer class we're going to build
         io_handler = ::Core::Io::Registry.instance.lookup_for_class(request.target.transfer_class)

@@ -4,7 +4,7 @@
 # authorship of this file.
 # Copyright (C) 2015,2016 Genome Research Ltd.
 
-require 'lib/lab_where_client'
+require 'lab_where_client'
 # A simple class to handle the behaviour from the labwhere reception controller
 class LabwhereReception
   # The following two modules include methods used by a number of rails
@@ -25,11 +25,13 @@ class LabwhereReception
   end
 
   def location
-     @location ||= Location.find_by_id(location_id)
+     @location ||= Location.find_by(id: location_id)
   end
 
   def id; nil; end
+
   def persisted?; false; end
+
   def new_record?; true; end
 
   # save attempts to perform the actions, and returns true if it was successful
@@ -51,7 +53,7 @@ class LabwhereReception
       end
 
     rescue LabWhereClient::LabwhereException => exception
-      errors.add(:base, "Could not connect to Labwhere. Sequencescape location has still been updated")
+      errors.add(:base, 'Could not connect to Labwhere. Sequencescape location has still been updated')
       return false
     end
 
@@ -68,5 +70,4 @@ class LabwhereReception
   def assets
     @assets ||= Asset.with_machine_barcode(asset_barcodes)
   end
-
 end

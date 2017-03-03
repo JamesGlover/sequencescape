@@ -21,7 +21,7 @@ class Tag < ActiveRecord::Base
   has_many :assets, through: :aliquots, source: :receptacle
   has_many :requests, ->() { distinct }, through: :assets
 
-  scope :sorted, ->() { order("map_id ASC") }
+  scope :sorted, ->() { order('map_id ASC') }
 
   def name
     "Tag #{map_id}"
@@ -29,9 +29,21 @@ class Tag < ActiveRecord::Base
 
   # Connects a tag instance to the specified asset
   def tag!(asset)
-    raise StandardError, "Cannot tag an empty asset"   if asset.aliquots.empty?
-    raise StandardError, "Cannot tag multiple samples" if asset.aliquots.size > 1
+    raise StandardError, 'Cannot tag an empty asset'   if asset.aliquots.empty?
+    raise StandardError, 'Cannot tag multiple samples' if asset.aliquots.size > 1
     asset.aliquots.first.update_attributes!(tag: self)
+  end
+
+  # Allows the application of multiple tags to an aliquot
+  def multitag!(asset)
+    raise StandardError, 'Cannot tag an empty asset'   if asset.aliquots.empty?
+    asset.aliquots.group_by { |aliquot| aliquot.sample_id }.each do |_sample_id, aliquots|
+      new_aliquot = aliquots.first.untagged? ? aliquots.first : aliquots.first.dup
+      # dup automatically unsets receptacle, so we reallocate it here.
+      new_aliquot.receptacle = asset
+      new_aliquot.tag = self
+      new_aliquot.save!
+    end
   end
 
   # Map id is converted to a string here for consistency with elsewhere in the api.

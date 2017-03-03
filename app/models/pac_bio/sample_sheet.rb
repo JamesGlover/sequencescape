@@ -24,7 +24,6 @@ class PacBio::SampleSheet
       'Sample Comments', 'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5', 'User Field 6', 'Results Data Output Path']
   end
 
-
   def create_csv_from_batch(batch)
     csv_string = CSV.generate(row_sep: "\r\n") do |csv|
       header_metadata(batch).each { |header_row| csv << header_row }
@@ -38,7 +37,7 @@ class PacBio::SampleSheet
   def requests_by_wells(batch)
     requests = batch.requests.for_pacbio_sample_sheet
     sorted_well_requests = requests.group_by { |r| r.target_asset.map.column_order }.sort
-    sorted_well_requests.map { |well_index, requests| requests }
+    sorted_well_requests.map { |_well_index, requests| requests }
   end
 
   def replace_non_alphanumeric(protocol)
@@ -50,7 +49,6 @@ class PacBio::SampleSheet
   def concat(list, sym, separator = @@CONCAT_SEPARATOR)
     list.map(&sym).uniq.join(separator)
   end
-
 
   def row(requests, batch)
     # Read these lines when secondary analysis activated
@@ -93,5 +91,4 @@ class PacBio::SampleSheet
     return 'MagBead Standard Seq v2' if request.request_metadata.sequencing_type == 'MagBead'
     request.request_metadata.sequencing_type
   end
-
 end

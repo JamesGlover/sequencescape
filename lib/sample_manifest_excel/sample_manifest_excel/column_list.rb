@@ -1,8 +1,6 @@
 module SampleManifestExcel
-
   # A collection of columns
   class ColumnList
-
     include Enumerable
     include Comparable
 
@@ -83,7 +81,7 @@ module SampleManifestExcel
     ##
     # A forwarding method - Update each column in the list of columns.
     def update(first_row, last_row, ranges, worksheet)
-       each { |k, column| column.update(first_row, last_row, ranges, worksheet) }
+       each { |_k, column| column.update(first_row, last_row, ranges, worksheet) }
     end
 
     def <=>(other)
@@ -116,6 +114,5 @@ module SampleManifestExcel
         end
       end
     end
-
   end
 end

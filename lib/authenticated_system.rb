@@ -4,6 +4,7 @@
 # Copyright (C) 2007-2011,2013 Genome Research Ltd.
 module AuthenticatedSystem
   protected
+
     # Returns true or false if the user is logged in.
     # Preloads @current_user with the user model if they're logged in.
     def logged_in?
@@ -62,7 +63,7 @@ module AuthenticatedSystem
           self.current_user = user
         end
       elsif params[:api_key]
-        user = User.find_by_api_key(params[:api_key])
+        user = User.find_by(api_key: params[:api_key])
         if user.nil?
           self.current_user = :false
         else
@@ -71,8 +72,8 @@ module AuthenticatedSystem
       end
 
       respond_to do |accepts|
-        accepts.html   { logged_in? && authorized? ? true : access_denied }
-        accepts.csv   { logged_in? && authorized? ? true : access_denied }
+        accepts.html { logged_in? && authorized? ? true : access_denied }
+        accepts.csv { logged_in? && authorized? ? true : access_denied }
         if configatron.disable_api_authentication == true
           accepts.xml  { true }
           accepts.json { true }
@@ -86,7 +87,7 @@ module AuthenticatedSystem
     def admin_login_required
       setup_current_user
       respond_to do |accepts|
-        accepts.html   { logged_in? && authorized? && current_user.administrator? ? true : access_denied }
+        accepts.html { logged_in? && authorized? && current_user.administrator? ? true : access_denied }
         if configatron.disable_api_authentication == true
           accepts.xml  { true }
           accepts.json { true }
@@ -100,7 +101,7 @@ module AuthenticatedSystem
     def manager_login_required
       setup_current_user
       respond_to do |accepts|
-        accepts.html   { logged_in? && authorized? && current_user.manager_or_administrator? ? true : access_denied }
+        accepts.html { logged_in? && authorized? && current_user.manager_or_administrator? ? true : access_denied }
         if configatron.disable_api_authentication == true
           accepts.xml  { true }
           accepts.json { true }
@@ -114,7 +115,7 @@ module AuthenticatedSystem
     def lab_manager_login_required
       setup_current_user
       respond_to do |accepts|
-        accepts.html   { logged_in? && authorized? && current_user.lab_manager? ? true : access_denied }
+        accepts.html { logged_in? && authorized? && current_user.lab_manager? ? true : access_denied }
         if configatron.disable_api_authentication == true
           accepts.xml  { true }
           accepts.json { true }
@@ -192,21 +193,22 @@ module AuthenticatedSystem
     # cookie and log the user back in if apropriate
     def login_from_cookie
       return unless cookies[:auth_token] && !logged_in?
-      user = User.find_by_remember_token(cookies[:auth_token])
+      user = User.find_by(remember_token: cookies[:auth_token])
       if user && user.remember_token?
         user.remember_me
         self.current_user = user
         cookies[:auth_token] = { value: self.current_user.remember_token, expires: self.current_user.remember_token_expires_at }
-        flash[:notice] = "Logged in successfully"
+        flash[:notice] = 'Logged in successfully'
       end
     end
 
   private
+
     @@http_auth_headers = %w(X-HTTP_AUTHORIZATION HTTP_AUTHORIZATION Authorization)
     # gets BASIC auth info
     def get_auth_data
       auth_key  = @@http_auth_headers.detect { |h| request.env.has_key?(h) }
       auth_data = request.env[auth_key].to_s.split unless auth_key.blank?
-      return auth_data && auth_data[0] == 'Basic' ? Base64.decode64(auth_data[1]).split(':')[0..1] : [nil, nil]
+      auth_data && auth_data[0] == 'Basic' ? Base64.decode64(auth_data[1]).split(':')[0..1] : [nil, nil]
     end
 end

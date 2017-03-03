@@ -41,8 +41,15 @@ class LibraryTube < Tube
   end
 
   def specialized_from_manifest=(attributes)
-    aliquots.first.update_attributes!(attributes.merge(library_id: self.id))
-    requests.map(&:manifest_processed!)
+    if first_update?
+      aliquots.first.update_attributes!(attributes.merge(library_id: id))
+      requests.each(&:manifest_processed!)
+    end
+  end
+
+  def first_update?
+    external_library_creation_request = requests.find_by(sti_type: 'ExternalLibraryCreationRequest')
+    external_library_creation_request && external_library_creation_request.allow_library_update?
   end
 
   def library_information
@@ -53,13 +60,12 @@ class LibraryTube < Tube
       insert_size_from: aliquots.first.insert_size_from,
       insert_size_to: aliquots.first.insert_size_to
     }.tap do |tag_hash|
-      tag_hash.merge!(tag: tag.summary) if tag
+      tag_hash[:tag] = tag.summary if tag
       tag_hash.merge!(tag2: tag2.summary) if tag2
     end
   end
 
   def library_information=(library_information)
-
     library_information[:tag]  = find_tag(library_information[:tag])
     library_information[:tag2] = find_tag(library_information[:tag2]) if library_information[:tag2]
 
@@ -71,8 +77,8 @@ class LibraryTube < Tube
   end
 
   def find_tag(tag_info)
-    tag_group = Uuid.with_resource_type('TagGroup').include_resource.find_by_external_id!(tag_info['tag_group']).resource
-    tag_group.tags.find_by_map_id!(tag_info['tag_index'])
+    tag_group = Uuid.with_resource_type('TagGroup').include_resource.find_by!(external_id: tag_info['tag_group']).resource
+    tag_group.tags.find_by!(map_id: tag_info['tag_index'])
   end
   private :find_tag
 

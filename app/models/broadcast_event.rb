@@ -5,7 +5,6 @@
 # Copyright (C) 2015 Genome Research Ltd.
 
 class BroadcastEvent < ActiveRecord::Base
-
   EVENT_JSON_ROOT = 'event'
   UNKNOWN_USER_IDENTIFIER = 'UNKNOWN'
 
@@ -20,7 +19,7 @@ class BroadcastEvent < ActiveRecord::Base
   validates_presence_of :seed
 
   serialize :properties
-  self.inheritance_column = "sti_type"
+  self.inheritance_column = 'sti_type'
 
   def initialize(*args)
     raise StandardError, 'BroadcastEvents can not be created directly' unless self.class < BroadcastEvent
@@ -64,6 +63,4 @@ class BroadcastEvent < ActiveRecord::Base
   def self.event_type
     @event_type
   end
-
-
 end

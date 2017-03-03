@@ -1,12 +1,10 @@
 module SampleManifestExcel
-
   ##
   # Column creates a particular column with all the information about this column (name, heading,
   # value, type, attribute, should it be locked or unlocked, position of the column,
   # validation, conditional formatting rules)
   # A column is only valid if it has a name and heading.
   class Column
-
     include HashAttributes
     include ActiveModel::Validations
 
@@ -15,11 +13,16 @@ module SampleManifestExcel
 
     attr_reader :range
 
+    ##
+    # Defaults to a NullValidation object
+    attr_reader :validation
+
     validates_presence_of :name, :heading
 
     delegate :range_name, to: :validation
 
     def initialize(attributes = {})
+      @validation = NullValidation.new
       create_attributes(attributes)
 
       # @attribute = Attributes.find(name) if valid?
@@ -30,10 +33,10 @@ module SampleManifestExcel
     # create a new validation object
     def validation=(validation)
       @validation = if validation.kind_of?(Hash)
-        Validation.new(validation)
-      else
-        validation.dup
-      end
+                      Validation.new(validation)
+                    else
+                      validation.dup
+                    end
     end
 
     ##
@@ -41,20 +44,20 @@ module SampleManifestExcel
     # otherwise create a new conditional formatting list
     def conditional_formattings=(conditional_formattings)
       @conditional_formattings = if conditional_formattings.kind_of?(Hash)
-        ConditionalFormattingList.new(conditional_formattings)
-      else
-        conditional_formattings.dup
-      end
+                                   ConditionalFormattingList.new(conditional_formattings)
+                                 else
+                                   conditional_formattings.dup
+                                 end
     end
 
     ##
     # Creates a new Range object.
     def range=(attributes)
-      @range = unless attributes.empty?
-        Range.new(attributes)
-      else
-        NullRange.new
-      end
+      @range = if attributes.empty?
+                 NullRange.new
+               else
+                 Range.new(attributes)
+               end
     end
 
     ##
@@ -71,12 +74,6 @@ module SampleManifestExcel
 
     def attribute_value(detail)
       detail[attribute] || value
-    end
-
-    ##
-    # Defaults to a NullValidation object
-    def validation
-      @validation || NullValidation.new
     end
 
     ##
@@ -123,7 +120,6 @@ module SampleManifestExcel
     end
 
     class ArgumentBuilder
-
       attr_reader :arguments
 
       def initialize(args, key, default_conditional_formattings)
@@ -149,7 +145,5 @@ module SampleManifestExcel
   private
 
     attr_reader :attribute
-
   end
-
 end

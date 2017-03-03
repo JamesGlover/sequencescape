@@ -4,18 +4,16 @@
 # authorship of this file.
 # Copyright (C) 2013,2015 Genome Research Ltd.
 
-require "test_helper"
+require 'test_helper'
 
 class AssetShapeTest < ActiveSupport::TestCase
   context 'standard plates of' do
-
     setup do
       @shape = AssetShape.new(name: 'Test', horizontal_ratio: 3, vertical_ratio: 2, description_strategy: 'Map::Coordinate')
     end
 
-  context "96 wells " do
-
-    context "conversion between horizontal and back" do
+  context '96 wells ' do
+    context 'conversion between horizontal and back' do
       (1..96).step(1) do |i|
         should "revert to same value #{i}" do
           assert_equal i, @shape.vertical_to_horizontal(@shape.horizontal_to_vertical(i, 96), 96)
@@ -34,9 +32,8 @@ class AssetShapeTest < ActiveSupport::TestCase
     end
   end
 
-  context "384 wells " do
-
-    context "and back" do
+  context '384 wells ' do
+    context 'and back' do
       (1..384).step(1) do |i|
         should "revert back to same value #{i}" do
           assert_equal i, @shape.vertical_to_horizontal(@shape.horizontal_to_vertical(i, 384), 384)
@@ -54,16 +51,14 @@ class AssetShapeTest < ActiveSupport::TestCase
       end
     end
   end
-
   end
 
-  context "Fluidigm plates of 96 wells" do
-
+  context 'Fluidigm plates of 96 wells' do
     setup do
       @shape = AssetShape.new(name: 'Test', horizontal_ratio: 3, vertical_ratio: 8, description_strategy: 'Map::Sequential')
     end
 
-    context "conversion between horizontal and back" do
+    context 'conversion between horizontal and back' do
       (1..96).step(1) do |i|
         should "revert to same value #{i}" do
           assert_equal i, @shape.vertical_to_horizontal(@shape.horizontal_to_vertical(i, 96), 96)
@@ -86,17 +81,14 @@ class AssetShapeTest < ActiveSupport::TestCase
         assert_equal hor, @shape.interlaced_vertical_to_horizontal(vert, 96)
       end
     end
-
   end
 
-
-  context "Fluidigm plates of 192 wells" do
-
+  context 'Fluidigm plates of 192 wells' do
     setup do
       @shape = AssetShape.new(name: 'Test', horizontal_ratio: 3, vertical_ratio: 4, description_strategy: 'Map::Sequential')
     end
 
-    context "conversion between horizontal and back" do
+    context 'conversion between horizontal and back' do
       (1..96).step(1) do |i|
         should "revert to same value #{i}" do
           assert_equal i, @shape.vertical_to_horizontal(@shape.horizontal_to_vertical(i, 192), 192)
@@ -119,7 +111,5 @@ class AssetShapeTest < ActiveSupport::TestCase
     #     assert_equal hor, @shape.interlaced_vertical_to_horizontal(vert,192)
     #   end
     # end
-
   end
-
 end

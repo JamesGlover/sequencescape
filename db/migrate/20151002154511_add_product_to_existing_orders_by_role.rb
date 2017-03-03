@@ -5,7 +5,6 @@
 # Copyright (C) 2015,2016 Genome Research Ltd.
 
 class AddProductToExistingOrdersByRole < ActiveRecord::Migration
-
   class Order < ActiveRecord::Base
     self.table_name = ('orders')
     belongs_to :order_role
@@ -34,9 +33,9 @@ class AddProductToExistingOrdersByRole < ActiveRecord::Migration
     ActiveRecord::Base.transaction do
       say 'Setting for roles...'
       ORDER_ROLE_PRODUCT.each do |rolename, product_name|
-        role = OrderRole.find_by_role(rolename)
+        role = OrderRole.find_by(role: rolename)
         next if role.nil?
-        product = Product.find_by_name!(product_name)
+        product = Product.find_by!(name: product_name)
         say "#{rolename} to #{product_name}"
         Order.with_role(role).update_all(product_id: product.id)
       end

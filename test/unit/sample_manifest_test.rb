@@ -4,12 +4,12 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
 
-require "test_helper"
+require 'test_helper'
 
 class SampleManifestTest < ActiveSupport::TestCase
-  context "#generate" do
+  context '#generate' do
     setup do
-      barcode = mock("barcode")
+      barcode = mock('barcode')
       barcode.stubs(:barcode).returns(23)
       PlateBarcode.stubs(:create).returns(barcode)
 
@@ -37,7 +37,6 @@ class SampleManifestTest < ActiveSupport::TestCase
             assert_equal (count * 96), Well.count - @initial_wells
             assert_equal (count * 96), @study.samples.count - @initial_in_study
           end
-
         end
       end
     end
@@ -62,24 +61,22 @@ class SampleManifestTest < ActiveSupport::TestCase
             assert_equal (1),     MultiplexedLibraryTube.count - @initial_mx_tubes
             assert_equal (count), @study.samples.count         - @initial_in_study
           end
-
         end
       end
     end
-
   end
 
-  context "update event" do
+  context 'update event' do
     setup do
       @user = create :user
       @well_with_sample_and_plate = create :well_with_sample_and_plate
       @well_with_sample_and_plate.save
     end
-    context "where a well has no plate" do
+    context 'where a well has no plate' do
       setup do
         @well_with_sample_and_without_plate = create :well_with_sample_and_without_plate
       end
-      should "not try to add an event to a plate" do
+      should 'not try to add an event to a plate' do
         assert_nothing_raised do
           SampleManifest::PlateBehaviour::Core.new(SampleManifest.new).updated_by!(
             @user, [
@@ -90,14 +87,13 @@ class SampleManifestTest < ActiveSupport::TestCase
         end
       end
     end
-    context "where a well has a plate" do
-      should "add an event to the plate" do
+    context 'where a well has a plate' do
+      should 'add an event to the plate' do
         SampleManifest::PlateBehaviour::Core.new(SampleManifest.new).updated_by!(@user, [@well_with_sample_and_plate.primary_aliquot.sample])
         assert_equal Event.last, @well_with_sample_and_plate.plate.events.last
         assert_not_nil @well_with_sample_and_plate.plate.events.last
       end
     end
-
   end
 
   # This is testing a specific case pulled from production where the size of the delayed job 'handler' column was
@@ -127,9 +123,8 @@ class SampleManifestTest < ActiveSupport::TestCase
         Delayed::Job.first.invoke_job
       end
 
-
-      should "change Well.count by 96" do
-        assert_equal 96,  Sample.count - @well_count, "Expected Well.count to change by 96"
+      should 'change Well.count by 96' do
+        assert_equal 96, Sample.count - @well_count, 'Expected Well.count to change by 96'
       end
     end
   end

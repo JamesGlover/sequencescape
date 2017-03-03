@@ -43,13 +43,13 @@ class AddHiseq4000Pipelines < ActiveRecord::Migration
 
   def down
     ActiveRecord::Base.transaction do
-      SequencingPipeline.find_by_name('HiSeq 4000 PE').destroy
-      SequencingPipeline.find_by_name('HiSeq 4000 SE').destroy
+      SequencingPipeline.find_by(name: 'HiSeq 4000 PE').destroy
+      SequencingPipeline.find_by(name: 'HiSeq 4000 SE').destroy
     end
   end
 
   def cluster_formation_freezer
-    Location.find_by_name 'Cluster formation freezer'
+    Location.find_by name: 'Cluster formation freezer'
   end
 
   def build_tasks_for(workflow, paired_only = false)
@@ -116,13 +116,10 @@ class AddHiseq4000Pipelines < ActiveRecord::Migration
         ])
       end
     end
-
   end
 
   def add_information_types_to(pipeline)
     pipeline.request_information_types << RequestInformationType.where(label: 'Vol.', hide_in_inbox: false).first!
     pipeline.request_information_types << RequestInformationType.where(label: 'Read length', hide_in_inbox: false).first!
   end
-
-
 end

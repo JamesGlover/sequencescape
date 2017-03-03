@@ -5,7 +5,6 @@
 # Copyright (C) 2013,2014,2015 Genome Research Ltd.
 
 class QcFile < ActiveRecord::Base
-
   extend DbFile::Uploader
   include Uuid::Uuidable
 
@@ -23,7 +22,7 @@ class QcFile < ActiveRecord::Base
           qc_files.create!(opts) unless file.blank?
         end
 
-        def update_concentrations_from(parser)
+        def update_qc_values_with_parser(parser)
           true
         end
       ", __FILE__, line)
@@ -33,13 +32,12 @@ class QcFile < ActiveRecord::Base
   belongs_to :asset, polymorphic: true
   validates_presence_of :asset
 
-
   # Handle some of the metadata with this callback
   before_save :update_document_attributes
   after_save :store_file_extracted_data, if: :parser
 
   # CarrierWave uploader - gets the uploaded_data file, but saves the identifier to the "filename" column
-  has_uploaded :uploaded_data, { serialization_column: "filename" }
+  has_uploaded :uploaded_data, serialization_column: 'filename'
 
   # Method provided for backwards compatibility
   def current_data
@@ -62,12 +60,12 @@ class QcFile < ActiveRecord::Base
   private
 
   def parser
-    @parser ||= Parsers.parser_for(uploaded_data.filename, content_type, current_data)
+    @parser ||= Parsers.parser_for(filename, content_type, current_data)
   end
 
   def store_file_extracted_data
     return if parser.nil?
-    asset.update_concentrations_from(parser)
+    asset.update_qc_values_with_parser(parser)
   end
 
   # Save Size/content_type Metadata

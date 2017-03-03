@@ -11,13 +11,13 @@ class Studies::CommentsController < ApplicationController
   before_action :discover_study
 
   def index
-    @comments = @study.comments.order(:create_at)
+    @comments = @study.comments.order(:created_at)
   end
 
   def create
     @study.comments.create(description: params[:comment], user_id: current_user.id)
     @comments = @study.comments
-    render partial: "list", locals: { commentable: @study, visible: true }
+    render partial: 'list', locals: { commentable: @study, visible: true }
   end
 
   def destroy
@@ -26,10 +26,11 @@ class Studies::CommentsController < ApplicationController
       comment.destroy
     end
     @comments = @study.comments
-    render partial: "list", locals: { commentable: @study, visible: true }
+    render partial: 'list', locals: { commentable: @study, visible: true }
   end
 
   private
+
   def discover_study
     @study = Study.find(params[:study_id])
   end

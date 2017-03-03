@@ -5,9 +5,9 @@
 # Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
 
 module ChangeTagException
-  class MissingTag < Exception
+  class MissingTag < RuntimeError
   end
-  class MissingLibraryTube < Exception
+  class MissingLibraryTube < RuntimeError
   end
 end
 
@@ -38,6 +38,7 @@ class ChangeTag
   end
 
   protected
+
   def parse_library_tube_ids(library_tube_ids_string)
     @library_tube_ids = []
     library_tube_ids_string.scan(/\d+/).each do |library_tube_id|
@@ -53,7 +54,7 @@ class ChangeTag
   end
 
   def asset_from_id(asset_id)
-    Asset.find_by_id(asset_id) || Asset.find_by_barcode(asset_id)
+    Asset.find_by(id: asset_id) || Asset.find_by(barcode: asset_id)
   end
 
   def tubes_have_tags!
@@ -61,5 +62,4 @@ class ChangeTag
       raise ChangeTagException::MissingTag if library_tube.get_tag.nil?
     end
   end
-
 end

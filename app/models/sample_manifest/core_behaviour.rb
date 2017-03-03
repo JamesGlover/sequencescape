@@ -5,11 +5,11 @@
 # Copyright (C) 2011,2015 Genome Research Ltd.
 
 module SampleManifest::CoreBehaviour
-
   # Include in cores which exhibit the default behaviour
   module NoSpecializedValidation
     def validate_specialized_fields(*args); end
-    def specialized_fields(*args); {}; end
+
+    def specialized_fields(*_args); {}; end
   end
 
   def self.included(base)
@@ -25,19 +25,22 @@ module SampleManifest::CoreBehaviour
     end
   end
 
+  private
 
   def core_behaviour
-    return @core_behaviour if @core_behaviour.present?
+    @core_behaviour ||= "::SampleManifest::#{behaviour_module}::#{core_module}".constantize.new(self)
+  end
 
-    behaviour = case self.asset_type
+  def behaviour_module
+    case asset_type
     when '1dtube'              then 'SampleTubeBehaviour'
     when 'plate'               then 'PlateBehaviour'
     when 'multiplexed_library' then 'MultiplexedLibraryBehaviour'
-    else raise StandardError, "Unknown core behaviour (#{self.asset_type.inspect}) for sample manifest"
+    else raise StandardError, "Unknown core behaviour (#{asset_type.inspect}) for sample manifest"
     end
-
-    core = rapid_generation? ? 'RapidCore' : 'Core'
-    @core_behaviour = "::SampleManifest::#{behaviour}::#{core}".constantize.new(self)
   end
-  private :core_behaviour
+
+  def core_module
+    rapid_generation? ? 'RapidCore' : 'Core'
+  end
 end

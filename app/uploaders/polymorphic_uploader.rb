@@ -34,9 +34,7 @@ module CarrierWave
           @path
         end
 
-        def size
-          current_data.size
-        end
+        delegate :size, to: :current_data
 
         # Reads the contents of the file
         def read
@@ -50,7 +48,7 @@ module CarrierWave
 
         # Would returns the url
         def url
-          raise NotImplementedError, "Files are stored in the database, so are not available directly through a URL"
+          raise NotImplementedError, 'Files are stored in the database, so are not available directly through a URL'
         end
 
         # Stores the file in the DbFiles model - split across many rows if size > 200KB
@@ -75,6 +73,7 @@ module CarrierWave
         end
 
         private
+
           # Gets the current data from the database
           def current_data
             @uploader.model.db_files.map(&:data).join
@@ -104,7 +103,6 @@ module CarrierWave
   end # Storage
 end # CarrierWave
 class PolymorphicUploader < CarrierWave::Uploader::Base
-
   def initialize(*args, &block)
     super
   end
@@ -124,21 +122,18 @@ class PolymorphicUploader < CarrierWave::Uploader::Base
     self.class.cache_dir
   end
 
-
   before :store, :remember_cache_id
   after :store, :delete_tmp_dir
 
   # store! nils the cache_id after it finishes so we need to remember it for deletion
-  def remember_cache_id(new_file)
+  def remember_cache_id(_new_file)
     @cache_id_was = cache_id
   end
 
-  def delete_tmp_dir(new_file)
+  def delete_tmp_dir(_new_file)
     # make sure we don't delete other things accidentally by checking the name pattern
     if @cache_id_was.present? && @cache_id_was =~ /\A[\d]{8}\-[\d]{4}\-[\d]+\-[\d]{4}\z/
       FileUtils.rm_rf(File.join(cache_dir, @cache_id_was))
     end
   end
-
-
 end

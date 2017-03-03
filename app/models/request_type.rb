@@ -5,7 +5,6 @@
 # Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
 
 class RequestType < ActiveRecord::Base
-
   include RequestType::Validation
 
   class DeprecatedError < RuntimeError; end
@@ -27,16 +26,16 @@ class RequestType < ActiveRecord::Base
   has_many :requests, inverse_of: :request_type
   has_many :pipelines_request_types, inverse_of: :request_type
   has_many :pipelines, through: :pipelines_request_types
-  has_many :library_types_request_types, inverse_of: :request_type
+  has_many :library_types_request_types, inverse_of: :request_type, dependent: :destroy
   has_many :library_types, through: :library_types_request_types
-  has_many :request_type_validators, class_name: 'RequestType::Validator'
+  has_many :request_type_validators, class_name: 'RequestType::Validator', dependent: :destroy
 
   belongs_to :pooling_method, class_name: 'RequestType::PoolingMethod'
   has_many :request_type_extended_validators, class_name: 'ExtendedValidator::RequestTypeExtendedValidator'
   has_many :extended_validators, through: :request_type_extended_validators, dependent: :destroy
 
   def default_library_type
-    library_types.where(library_types_request_types: { is_default: true }).first
+    library_types.find_by(library_types_request_types: { is_default: true })
   end
 
   # Returns a collect of pipelines for which this RequestType is valid control.
@@ -60,7 +59,7 @@ class RequestType < ActiveRecord::Base
   validates_presence_of :request_purpose
 
   MORPHOLOGIES = [
-    LINEAR = 0,   # one-to-one
+    LINEAR = 0, # one-to-one
     CONVERGENT = 1, # many-to-one
     DIVERGENT = 2 # one-to-many
     # we don't do many-to-many so far
@@ -82,7 +81,7 @@ class RequestType < ActiveRecord::Base
          AND deprecated IS FALSE',
          asset.asset_type_for_request_types.name
       ])
-  }
+                              }
 
   # Helper method for generating a request constructor, like 'create!'
   def self.request_constructor(name, options = {})
@@ -120,21 +119,20 @@ class RequestType < ActiveRecord::Base
   end
 
   def self.dna_qc
-    find_by_key("dna_qc") or raise "Cannot find dna_qc request type"
+    find_by(key: 'dna_qc') or raise 'Cannot find dna_qc request type'
   end
 
   def self.genotyping
-    find_by_key("genotyping") or raise "Cannot find genotyping request type"
+    find_by(key: 'genotyping') or raise 'Cannot find genotyping request type'
   end
 
   def self.transfer
-    find_by_key("transfer") or raise "Cannot find transfer request type"
+    find_by(key: 'transfer') or raise 'Cannot find transfer request type'
   end
 
   def self.initial_transfer
-    find_by_key("initial_transfer") or raise "Cannot find initial request type"
+    find_by(key: 'initial_transfer') or raise 'Cannot find initial request type'
   end
-
 
   def extract_metadata_from_hash(request_options)
     # WARNING: we need a copy of the options (we delete stuff from attributes)

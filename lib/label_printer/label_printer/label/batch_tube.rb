@@ -1,9 +1,7 @@
 
 module LabelPrinter
   module Label
-
     class BatchTube < BaseTube
-
       attr_reader :count, :printable, :batch, :stock
 
       def initialize(options)
@@ -41,10 +39,9 @@ module LabelPrinter
       private
 
       def requests
-        request_ids = printable.select { |barcode, check| check == 'on' }.keys
+        request_ids = printable.select { |_barcode, check| check == 'on' }.keys
         requests = Request.find request_ids
       end
-
     end
   end
 end

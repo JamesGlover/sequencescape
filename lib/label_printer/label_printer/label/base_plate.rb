@@ -1,8 +1,6 @@
 module LabelPrinter
   module Label
-
     class BasePlate
-
       include Label::MultipleLabels
 
       def create_label(plate)
@@ -36,7 +34,7 @@ module LabelPrinter
       end
 
       def date_today
-        Date.today.strftime("%e-%^b-%Y")
+        Date.today.strftime('%e-%^b-%Y')
       end
 
       def plates
@@ -46,8 +44,6 @@ module LabelPrinter
       def assets
         plates
       end
-
     end
-
   end
 end

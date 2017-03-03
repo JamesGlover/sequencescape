@@ -3,12 +3,10 @@
 # Please refer to the LICENSE and README files for information on licensing and
 # authorship of this file.
 # Copyright (C) 2015,2016 Genome Research Ltd.
-# require 'lib/pmb_client'
+# require 'pmb_client'
 
 module LabelPrinter
-
   class PrintJob
-
   include ActiveModel::Validations
 
     attr_reader :printer_name, :label_class, :options, :labels
@@ -56,11 +54,11 @@ module LabelPrinter
     def label_template_id
       printer = find_printer
       name = printer.barcode_printer_type.label_template_name
-      LabelPrinter::PmbClient.get_label_template_by_name(name).fetch("data").first["id"]
+      LabelPrinter::PmbClient.get_label_template_by_name(name).fetch('data').first['id']
     end
 
     def find_printer
-      BarcodePrinter.find_by_name(printer_name) or raise BarcodePrinter::BarcodePrinterException.new, "Could not find barcode printer #{printer_name.inspect}"
+      BarcodePrinter.find_by(name: printer_name) or raise BarcodePrinter::BarcodePrinterException.new, "Could not find barcode printer #{printer_name.inspect}"
     end
 
     def success
@@ -70,6 +68,5 @@ module LabelPrinter
     def number_of_labels
       labels[:labels][:body] ? labels[:labels][:body].count : 0
     end
-
   end
 end

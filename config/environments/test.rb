@@ -34,10 +34,15 @@ Sequencescape::Application.configure do
   # The :test delivery method accumulates sent emails in the
   # ActionMailer::Base.deliveries array.
   config.action_mailer.delivery_method = :test
-  config.reload_plugins = true
 
   config.time_zone = 'London'
 
+  # Avoids threading issues with cucumber and some ajax requests
+  # particularly: features/studies/3871492_links_from_study_workflow_view.feature
+  # under MRI. If hit to overall test performance is grim, might need to
+  # unpick this further.
+  # https://github.com/rails/rails/issues/15089
+  config.allow_concurrency = false
 
   # config.active_record.observers = [ :batch_cache_sweeper, :request_observer ]
   config.active_record.observers = [:request_observer]

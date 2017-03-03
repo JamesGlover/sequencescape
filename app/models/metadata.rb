@@ -23,7 +23,7 @@ private
     # First we build the association into the current ActiveRecord::Base class
     as_name = as_class.name.demodulize.underscore
     association_name = "#{as_name}_metadata".underscore.to_sym
-    class_name = "#{self.name}::Metadata"
+    class_name = "#{name}::Metadata"
 
     has_one(association_name, { class_name: class_name, dependent: :destroy, validate: true, autosave: true, inverse_of: :owner }.merge(options).merge(foreign_key: "#{as_name}_id", inverse_of: :owner))
     accepts_nested_attributes_for(association_name, update_only: true)
@@ -83,7 +83,6 @@ private
     end
   end
 
-
   class AccessionedTag
     attr_reader :tag, :name, :downcase
     def initialize(tag, as = nil, services = [], downcase = false)
@@ -108,8 +107,8 @@ private
     # is correctly set.
     metadata.instance_eval "
       self.table_name =('#{table_name}')
-      belongs_to :#{as_name}, :class_name => #{self.name.inspect}, :validate => false, :autosave => false
-      belongs_to :owner, :foreign_key => :#{as_name}_id, :class_name => #{self.name.inspect}, :validate => false, :autosave => false, :inverse_of => :#{as_name}_metadata
+      belongs_to :#{as_name}, :class_name => #{name.inspect}, :validate => false, :autosave => false
+      belongs_to :owner, :foreign_key => :#{as_name}_id, :class_name => #{name.inspect}, :validate => false, :autosave => false, :inverse_of => :#{as_name}_metadata
     "
 
     # Finally give it a name!
@@ -131,13 +130,13 @@ private
 
     def merge_instance_defaults
       # Replace attributes with the default if the value is nil
-      self.attributes = instance_defaults.merge(self.attributes.symbolize_keys) { |key, default, attribute| attribute.nil? ? default : attribute }
+      self.attributes = instance_defaults.merge(attributes.symbolize_keys) { |_key, default, attribute| attribute.nil? ? default : attribute }
     end
 
     include Attributable
 
     def validating_ena_required_fields?
-      @validating_ena_required_fields
+      @validating_ena_required_fields ||= false
     end
 
     def validating_ena_required_fields=(state)
@@ -153,13 +152,12 @@ private
     end
 
     class << self
-
       def metadata_attribute_path_store
         @md_a_p ||= Hash.new { |h, field| h[field] = metadata_attribute_path_generator(field) }
       end
 
       def metadata_attribute_path_generator(field)
-        self.name.underscore.split('/').map(&:to_sym) + [field.to_sym]
+        name.underscore.split('/').map(&:to_sym) + [field.to_sym]
       end
 
       def metadata_attribute_path(field)

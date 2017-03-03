@@ -21,7 +21,7 @@ class Metadata::FormBuilder < Metadata::BuilderBase
   #--
   # NOTE: This is immediately overridden by the block below so don't move it!
   #++
-  def document_field(field, options = {})
+  def document_field(field, _options = {})
     fields_for(:"#{ field }_attributes", builder: ActionView::Helpers::FormBuilder) do |fields|
       fields.file_field(:uploaded_data)
     end
@@ -56,7 +56,6 @@ class Metadata::FormBuilder < Metadata::BuilderBase
     select_without_bootstrap(method, choices, options, html_options, &block)
   end
   alias_method_chain(:select, :bootstrap)
-
 
   # We wrap each of the following field types (text_field, select, etc) within a special
   # layout for our properties
@@ -114,7 +113,7 @@ class Metadata::FormBuilder < Metadata::BuilderBase
   end
 
   # Renders the Javascript for dealing with showing and hiding the related fields.
-  def finalize_related_fields(&block)
+  def finalize_related_fields
     related = @related_fields.compact.uniq.map(&:to_s)
     concat(render(
       partial: 'shared/metadata/related_fields',
@@ -128,7 +127,7 @@ class Metadata::FormBuilder < Metadata::BuilderBase
 
 private
 
-  def property_field(type, field, options = {}, &block)
+  def property_field(type, field, options = {})
     content = capture do
       render_view(type, field, options) { |locals| locals.merge(field: yield) }
     end

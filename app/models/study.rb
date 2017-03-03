@@ -4,11 +4,9 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
 
-
 require 'aasm'
 
 class Study < ActiveRecord::Base
-
   include StudyReport::StudyDetails
   include ModelExtensions::Study
 
@@ -34,7 +32,6 @@ class Study < ActiveRecord::Base
   acts_as_authorizable
 
   aasm column: :state, whiny_persistence: true do
-
     state :pending, initial: true
     state :active, enter: :mark_active
     state :inactive, enter: :mark_deactive
@@ -50,7 +47,6 @@ class Study < ActiveRecord::Base
     event :deactivate do
       transitions to: :inactive, from: [:pending, :active]
     end
-
   end
 
   attr_accessor :approval
@@ -69,21 +65,21 @@ class Study < ActiveRecord::Base
 
   belongs_to :user
 
-  has_many :study_samples
+  has_many :study_samples, inverse_of: :study
   has_many :orders
   has_many :submissions, through: :orders
-  has_many :samples, through: :study_samples
+  has_many :samples, through: :study_samples, inverse_of: :studies
   has_many :batches
 
   has_many :asset_groups
   has_many :study_reports
 
   # load all the associated requests with attemps and request type
-  has_many :eager_items, ->() { includes(requests: :request_type) }, class_name: "Item", through: :requests, source: :item
+  has_many :eager_items, ->() { includes(requests: :request_type) }, class_name: 'Item', through: :requests, source: :item
 
   has_many :aliquots
-  has_many :assets_through_aliquots,  ->() { distinct }, class_name: "Asset", through: :aliquots, source: :receptacle
-  has_many :assets_through_requests,  ->() { distinct }, class_name: "Asset", through: :initial_requests, source: :asset
+  has_many :assets_through_aliquots,  ->() { distinct }, class_name: 'Asset', through: :aliquots, source: :receptacle
+  has_many :assets_through_requests,  ->() { distinct }, class_name: 'Asset', through: :initial_requests, source: :asset
 
   has_many :requests, through: :assets_through_aliquots, source: :requests_as_source
   has_many :items, ->() { distinct }, through: :requests
@@ -91,7 +87,7 @@ class Study < ActiveRecord::Base
   # New version
   has_many :projects, ->() { distinct }, through: :orders
 
-  has_many :initial_requests, class_name: "Request", foreign_key: :initial_study_id
+  has_many :initial_requests, class_name: 'Request', foreign_key: :initial_study_id
 
   has_many :comments, as: :commentable
   has_many :events, ->() { order('created_at ASC, id ASC') }, as: :eventful
@@ -104,33 +100,33 @@ class Study < ActiveRecord::Base
   squishify :name
 
   validates_presence_of :name
-  validates_uniqueness_of :name, on: :create, message: "already in use (#{self.name})"
+  validates_uniqueness_of :name, on: :create, message: "already in use (#{name})"
   validates_length_of :name, maximum: 200
   validates_format_of :abbreviation, with: /\A[\w_-]+\z/i, allow_blank: false, message: 'cannot contain spaces or be blank'
 
   validate :validate_ethically_approved
   def validate_ethically_approved
     return true if valid_ethically_approved?
-    message = self.ethical_approval_required? ? "should be either true or false for this study." : "should be not applicable (null) not false."
+    message = ethical_approval_required? ? 'should be either true or false for this study.' : 'should be not applicable (null) not false.'
     errors.add(:ethically_approved, message)
     false
   end
 
   def valid_ethically_approved?
-    self.ethical_approval_required? ? !ethically_approved.nil? : ethically_approved != false
+    ethical_approval_required? ? !ethically_approved.nil? : ethically_approved != false
   end
   private :valid_ethically_approved?
 
   before_validation :set_default_ethical_approval
   def set_default_ethical_approval
-    self.ethically_approved ||= self.ethical_approval_required? ? false : nil
+    self.ethically_approved ||= ethical_approval_required? ? false : nil
     true
   end
   private :set_default_ethical_approval
 
- scope :for_search_query, ->(query, with_includes) {
+ scope :for_search_query, ->(query, _with_includes) {
     joins(:study_metadata).where(['name LIKE ? OR studies.id=? OR prelim_id=?', "%#{query}%", query, query])
-  }
+                          }
 
  scope :with_no_ethical_approval, -> { where(ethically_approved: false) }
 
@@ -138,25 +134,25 @@ class Study < ActiveRecord::Base
  scope :is_inactive, -> { where(state: 'inactive') }
  scope :is_pending,  -> { where(state: 'pending') }
 
-  scope :newest_first, -> { order("#{self.quoted_table_name}.created_at DESC") }
+  scope :newest_first, -> { order("#{quoted_table_name}.created_at DESC") }
   scope :with_user_included, -> { includes(:user) }
 
   scope :in_assets, ->(assets) {
-    select('DISTINCT studies.*').
-    joins([
+    select('DISTINCT studies.*')
+    .joins([
       'LEFT JOIN aliquots ON aliquots.study_id = studies.id',
-    ]).
-    where(['aliquots.receptacle_id IN (?)', assets.map(&:id)])
+    ])
+    .where(['aliquots.receptacle_id IN (?)', assets.map(&:id)])
   }
 
   STOCK_PLATE_PURPOSES = ['Stock Plate', 'Stock RNA Plate']
 
   def each_well_for_qc_report_in_batches(exclude_existing, product_criteria)
-    base_scope = Well.on_plate_purpose(PlatePurpose.where(name: STOCK_PLATE_PURPOSES)).
-      for_study_through_aliquot(self).
-      without_blank_samples.
-      includes(:well_attribute, samples: :sample_metadata).
-      readonly(true)
+    base_scope = Well.on_plate_purpose(PlatePurpose.where(name: STOCK_PLATE_PURPOSES))
+      .for_study_through_aliquot(self)
+      .without_blank_samples
+      .includes(:well_attribute, samples: :sample_metadata)
+      .readonly(true)
     scope = exclude_existing ? base_scope.without_report(product_criteria) : base_scope
     scope.find_in_batches { |wells| yield wells }
   end
@@ -164,7 +160,7 @@ class Study < ActiveRecord::Base
   YES = 'Yes'
   NO  = 'No'
   YES_OR_NO = [YES, NO]
-  Other_type = "Other"
+  Other_type = 'Other'
 
   STUDY_SRA_HOLDS = ['Hold', 'Public']
 
@@ -198,9 +194,15 @@ class Study < ActiveRecord::Base
     DATA_RELEASE_DELAY_FOR_OTHER
   ]
 
-  DATA_RELEASE_DELAY_LONG  = ['6 months', '9 months', '12 months']
+  DATA_RELEASE_DELAY_LONG  = ['6 months', '9 months', '12 months', '18 months']
   DATA_RELEASE_DELAY_SHORT = ['3 months']
   DATA_RELEASE_DELAY_PERIODS = DATA_RELEASE_DELAY_SHORT + DATA_RELEASE_DELAY_LONG
+
+  scope :for_sample_accessioning, ->() {
+          joins(:study_metadata)
+          .where("study_metadata.study_ebi_accession_number <> ''")
+          .where(study_metadata: { data_release_strategy: [Study::DATA_RELEASE_STRATEGY_OPEN, Study::DATA_RELEASE_STRATEGY_MANAGED], data_release_timing: Study::DATA_RELEASE_TIMINGS })
+                                  }
 
   extend Metadata
   has_metadata do
@@ -259,6 +261,8 @@ class Study < ActiveRecord::Base
       required.attribute(:data_release_prevention_reason_comment)
     end
 
+    # Note: Additional validation in Study::Metadata Class to validate_presence_of :data_access_group, if: :managed
+    # Behaviour can't go here, as :if also toggles the saving of the required information.
     attribute(:data_access_group, with: /\A[a-z_][a-z0-9_-]{0,31}(?:\s+[a-z_][a-z0-9_-]{0,31})*\Z/)
 
     # SNP information
@@ -275,9 +279,8 @@ class Study < ActiveRecord::Base
       study_sra_hold: STUDY_SRA_HOLDS,
       contains_human_dna: YES_OR_NO,
       commercially_available: YES_OR_NO
-    }.inject({}) do |h, (k, v)|
-      h[k] = v.inject({}) { |a, b| a[b.downcase] = b; a }
-      h
+    }.each_with_object({}) do |(k, v), h|
+      h[k] = v.each_with_object({}) { |b, a| a[b.downcase] = b }
     end
 
     before_validation do |record|
@@ -290,33 +293,31 @@ class Study < ActiveRecord::Base
         record[attribute] = nil if record[attribute].blank? # Empty strings should be nil
       end
     end
-
   end
 
   class Metadata
-
     def remove_x_and_autosomes?
       remove_x_and_autosomes == YES
     end
 
     def managed?
-      self.data_release_strategy == DATA_RELEASE_STRATEGY_MANAGED
+      data_release_strategy == DATA_RELEASE_STRATEGY_MANAGED
     end
 
     def delayed_release?
-      self.data_release_timing == DATA_RELEASE_TIMING_DELAYED
+      data_release_timing == DATA_RELEASE_TIMING_DELAYED
     end
 
     def never_release?
-      self.data_release_timing == DATA_RELEASE_TIMING_NEVER
+      data_release_timing == DATA_RELEASE_TIMING_NEVER
     end
 
     def delayed_for_other_reasons?
-      self.data_release_delay_reason == DATA_RELEASE_DELAY_FOR_OTHER
+      data_release_delay_reason == DATA_RELEASE_DELAY_FOR_OTHER
     end
 
     def delayed_for_long_time?
-      DATA_RELEASE_DELAY_PERIODS.include?(self.data_release_delay_period)
+      DATA_RELEASE_DELAY_PERIODS.include?(data_release_delay_period)
     end
 
     validates_numericality_of :number_of_gigabases_per_sample, greater_than_or_equal_to: 0.15, allow_blank: true, allow_nil: true
@@ -326,15 +327,17 @@ class Study < ActiveRecord::Base
     validates :data_release_non_standard_agreement, presence: true, if: :non_standard_agreement?
     validates_associated :data_release_non_standard_agreement, if: :non_standard_agreement?
 
+    # Please adjust comment above if this behaviour ever changes
+    validates_presence_of :data_access_group, if: :managed?
+
     validate :valid_policy_url?
 
     validate :sanity_check_y_separation, if: :separate_y_chromosome_data?
 
     def sanity_check_y_separation
-      self.errors.add(:separate_y_chromosome_data, 'cannot be selected with remove x and autosomes.') if remove_x_and_autosomes?
+      errors.add(:separate_y_chromosome_data, 'cannot be selected with remove x and autosomes.') if remove_x_and_autosomes?
       !remove_x_and_autosomes?
     end
-
 
     before_validation do |record|
       if not record.non_standard_agreement? and not record.data_release_non_standard_agreement.nil?
@@ -344,11 +347,11 @@ class Study < ActiveRecord::Base
     end
 
     def non_standard_agreement?
-      self.data_release_standard_agreement == NO
+      data_release_standard_agreement == NO
     end
 
     def study_type_valid?
-      self.errors.add(:study_type, "is not specified")  if study_type.name == "Not specified"
+      errors.add(:study_type, 'is not specified') if study_type.name == 'Not specified'
     end
 
     def valid_policy_url?
@@ -356,15 +359,15 @@ class Study < ActiveRecord::Base
       # use the inbuilt ruby URI parser, a bit like here:
       # http://www.simonecarletti.com/blog/2009/04/validating-the-format-of-an-url-with-rails/
       return true if dac_policy.blank?
-      dac_policy.insert(0, "http://") if /:\/\//.match(dac_policy).nil? # Add an http protocol if no protocol is defined
+      dac_policy.insert(0, 'http://') if /:\/\//.match(dac_policy).nil? # Add an http protocol if no protocol is defined
       begin
         uri = URI.parse(dac_policy)
         raise URI::InvalidURIError if configatron.invalid_policy_url_domains.include?(uri.host)
       rescue URI::InvalidURIError
-        self.errors.add(:dac_policy, ": #{dac_policy} is not a valid URL")
+        errors.add(:dac_policy, ": #{dac_policy} is not a valid URL")
         return false
       end
-      return true
+      true
     end
 
     with_options(if: :validating_ena_required_fields?) do |ena_required_fields|
@@ -377,48 +380,52 @@ class Study < ActiveRecord::Base
     end
 
     def snp_parent_study
-      return nil if self.snp_parent_study_id.nil?
-      self.class.where(snp_study_id: self.snp_parent_study_id).includes(:study).try(:study)
+      return nil if snp_parent_study_id.nil?
+      self.class.where(snp_study_id: snp_parent_study_id).includes(:study).try(:study)
     end
 
     def snp_child_studies
-      return nil if self.snp_study_id.nil?
-      self.class.where(snp_parent_study_id: self.snp_study_id).includes(:study).map(&:study)
+      return nil if snp_study_id.nil?
+      self.class.where(snp_parent_study_id: snp_study_id).includes(:study).map(&:study)
     end
   end
 
   # We only need to validate the field if we are enforcing data release
   def validating_ena_required_fields_with_enforce_data_release=(state)
-    self.validating_ena_required_fields_without_enforce_data_release = state if self.enforce_data_release
+    self.validating_ena_required_fields_without_enforce_data_release = state if enforce_data_release
   end
   alias_method_chain(:validating_ena_required_fields=, :enforce_data_release)
 
   def warnings
     # These studies are now invalid, but the warning should remain until existing studies are fixed.
     if study_metadata.managed? && study_metadata.data_access_group.blank?
-      "No user group specified for a managed study. Please specify a valid Unix user group to ensure study data is visible to the correct people."
+      'No user group specified for a managed study. Please specify a valid Unix user group to ensure study data is visible to the correct people.'
     end
   end
 
   def mark_deactive
-    unless self.inactive?
-      logger.warn "Study deactivation failed! #{self.errors.map { |e| e.to_s }}"
+    unless inactive?
+      logger.warn "Study deactivation failed! #{errors.map { |e| e.to_s }}"
     end
   end
 
   def mark_active
-    unless self.active?
-      logger.warn "Study activation failed! #{self.errors.map { |e| e.to_s }}"
+    unless active?
+      logger.warn "Study activation failed! #{errors.map { |e| e.to_s }}"
     end
+  end
+
+  def text_comments
+    comments.collect { |c| c.description unless c.description.blank? }.compact.join(', ')
   end
 
   def completed(workflow = nil)
     rts = workflow.present? ? workflow.request_types.map(&:id) : RequestType.all.map(&:id)
-    total = self.requests.request_type(rts).count
-    failed = self.requests.failed.request_type(rts).count
-    cancelled = self.requests.cancelled.request_type(rts).count
+    total = requests.request_type(rts).count
+    failed = requests.failed.request_type(rts).count
+    cancelled = requests.cancelled.request_type(rts).count
     if (total - failed - cancelled) > 0
-      completed_percent = ((self.requests.passed.request_type(rts).count.to_f / (total - failed - cancelled).to_f) * 100)
+      completed_percent = ((requests.passed.request_type(rts).count.to_f / (total - failed - cancelled).to_f) * 100)
       completed_percent.to_i
     else
       return 0
@@ -430,19 +437,19 @@ class Study < ActiveRecord::Base
   end
 
   # Yields information on the state of all request types in a convenient fashion for displaying in a table.
-  def request_progress(&block)
-    yield(self.initial_requests.progress_statistics)
+  def request_progress
+    yield(initial_requests.progress_statistics)
   end
 
   # Yields information on the state of all assets in a convenient fashion for displaying in a table.
-  def asset_progress(assets = nil, &block)
+  def asset_progress(assets = nil)
     wheres = {}
     wheres = { asset_id: assets.map(&:id) } unless assets.blank?
-    yield(self.initial_requests.asset_statistics(wheres))
+    yield(initial_requests.asset_statistics(wheres))
   end
 
   # Yields information on the state of all samples in a convenient fashion for displaying in a table.
-  def sample_progress(samples = nil, &block)
+  def sample_progress(samples = nil)
     if samples.blank?
       requests.sample_statistics_new
     else
@@ -451,11 +458,11 @@ class Study < ActiveRecord::Base
   end
 
   def study_status
-    self.inactive? ? "closed" : "open"
+    inactive? ? 'closed' : 'open'
   end
 
   def dac_refname
-    "DAC for study - #{name} - ##{self.id}"
+    "DAC for study - #{name} - ##{id}"
   end
 
   def unprocessed_submissions?
@@ -478,12 +485,12 @@ class Study < ActiveRecord::Base
   end
 
   def locale
-    self.funding_source
+    funding_source
   end
 
   scope :awaiting_ethical_approval, ->() {
-    joins(:study_metadata).
-    where(
+    joins(:study_metadata)
+    .where(
       ethically_approved: false,
       study_metadata: {
         contains_human_dna: Study::YES,
@@ -493,10 +500,9 @@ class Study < ActiveRecord::Base
     )
   }
 
-
   scope :contaminated_with_human_dna, ->() {
-    joins(:study_metadata).
-    where(
+    joins(:study_metadata)
+    .where(
       study_metadata: {
         contaminated_human_dna: Study::YES
       }
@@ -504,42 +510,39 @@ class Study < ActiveRecord::Base
   }
 
   scope :with_remove_x_and_autosomes, ->() {
-    joins(:study_metadata).
-    where(
+    joins(:study_metadata)
+    .where(
       study_metadata: {
         remove_x_and_autosomes: Study::YES
       }
     )
   }
 
-
   def ebi_accession_number
-    self.study_metadata.study_ebi_accession_number
+    study_metadata.study_ebi_accession_number
   end
 
   def dac_accession_number
-    self.study_metadata.ega_dac_accession_number
+    study_metadata.ega_dac_accession_number
   end
 
   def policy_accession_number
-    self.study_metadata.ega_policy_accession_number
+    study_metadata.ega_policy_accession_number
   end
 
   def accession_number?
-    not ebi_accession_number.blank?
+    ebi_accession_number.present?
   end
 
-  def data_release_strategy
-    self.study_metadata.data_release_strategy
-  end
+  delegate :data_release_strategy, to: :study_metadata
 
   def abbreviation
-    abbreviation = self.study_metadata.study_name_abbreviation
-    abbreviation.blank? ? "#{self.id}STDY" : abbreviation
+    abbreviation = study_metadata.study_name_abbreviation
+    abbreviation.blank? ? "#{id}STDY" : abbreviation
   end
 
   def dehumanise_abbreviated_name
-    self.abbreviation.downcase.gsub(/ +/, '_')
+    abbreviation.downcase.gsub(/ +/, '_')
   end
 
   def approved?
@@ -548,30 +551,34 @@ class Study < ActiveRecord::Base
   end
 
   def ethical_approval_required?
-    (self.study_metadata.contains_human_dna == Study::YES &&
-    self.study_metadata.contaminated_human_dna == Study::NO &&
-    self.study_metadata.commercially_available == Study::NO)
+    (study_metadata.contains_human_dna == Study::YES &&
+    study_metadata.contaminated_human_dna == Study::NO &&
+    study_metadata.commercially_available == Study::NO)
   end
 
   def accession_service
     case data_release_strategy
-    when "open" then EraAccessionService.new
-    when "managed" then EgaAccessionService.new
+    when 'open' then EnaAccessionService.new
+    when 'managed' then EgaAccessionService.new
     else NoAccessionService.new(self)
     end
   end
 
+  def send_samples_to_service?
+    accession_service.no_study_accession_needed || ((!study_metadata.never_release?) && accession_number?)
+  end
+
   def validate_ena_required_fields!
     self.validating_ena_required_fields = true
-    self.valid? or raise ActiveRecord::RecordInvalid, self
+    valid? or raise ActiveRecord::RecordInvalid, self
   ensure
     self.validating_ena_required_fields = false
   end
 
   def mailing_list_of_managers
-    receiver = self.managers.pluck(:email).compact.uniq
+    receiver = managers.pluck(:email).compact.uniq
     receiver = User.all_administrators_emails if receiver.empty?
-    return receiver
+    receiver
   end
 
   alias_attribute :friendly_name, :name
@@ -579,5 +586,4 @@ class Study < ActiveRecord::Base
   def subject_type
     'study'
   end
-
 end

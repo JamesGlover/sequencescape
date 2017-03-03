@@ -4,11 +4,8 @@
 # authorship of this file.
 # Copyright (C) 2012,2013,2015 Genome Research Ltd.
 
-
 module Asset::Ownership
-
   module ChangesOwner
-
     # Included in events which change ownership of plates
     def self.included(base)
       base.class_eval do
@@ -41,21 +38,19 @@ module Asset::Ownership
 
     def self.included(base)
       base.class_eval do
-
         has_one :plate_owner
         has_one :owner, source: :user, through: :plate_owner
 
          scope :for_user, ->(user) {
-            joins(:plate_owner).
-            where(plate_owners: { user_id: user })
-          }
-
+            joins(:plate_owner)
+            .where(plate_owners: { user_id: user })
+                          }
       end
     end
 
     def change_owner_to(owner, source_event)
       if plate_owner.nil?
-        self.update_attributes!(plate_owner: PlateOwner.create!(user: owner, eventable: source_event, plate: self))
+        update_attributes!(plate_owner: PlateOwner.create!(user: owner, eventable: source_event, plate: self))
       else
         plate_owner.update_attributes!(user: owner, eventable: source_event)
       end

@@ -5,7 +5,6 @@
 # Copyright (C) 2015,2016 Genome Research Ltd.
 
 class RequestType::PoolingMethod < ActiveRecord::Base
-
   has_many :request_types
   validates_presence_of :pooling_behaviour
   serialize :pooling_options
@@ -17,7 +16,7 @@ class RequestType::PoolingMethod < ActiveRecord::Base
   def import_behaviour
     return if pooling_behaviour.nil?
     behavior_module = "RequestType::PoolingMethod::#{pooling_behaviour}".constantize
-    self.class_eval do
+    class_eval do
       include(behavior_module)
     end
   end
@@ -26,5 +25,4 @@ class RequestType::PoolingMethod < ActiveRecord::Base
     super
     import_behaviour
   end
-
 end

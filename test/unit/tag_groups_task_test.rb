@@ -4,17 +4,15 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
 
-require "test_helper"
+require 'test_helper'
 
 class TagGroupsTaskTest < TaskTestBase
-
   class DummyWorkflowController < WorkflowsController
     attr_accessor :batch, :pipeline
   end
 
   context '#render_tag_groups_task' do
     setup do
-
       @object = task_instance_for(::Tasks::TagGroupHandler) do
         attr_reader :tag_groups
       end
@@ -22,7 +20,7 @@ class TagGroupsTaskTest < TaskTestBase
       @object.render_tag_groups_task(nil, nil)
     end
 
-    should "not have at least one entry in tag_groups" do
+    should 'not have at least one entry in tag_groups' do
       assert @object.tag_groups.present?
     end
   end

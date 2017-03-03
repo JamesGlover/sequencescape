@@ -5,11 +5,10 @@
 # Copyright (C) 2015,2016 Genome Research Ltd.
 
 class ProductCriteria::Basic
-
-  SUPPORTED_WELL_ATTRIBUTES = [:gel_pass, :concentration, :current_volume, :pico_pass, :gender_markers, :measured_volume, :initial_volume, :molarity, :sequenom_count]
+  SUPPORTED_WELL_ATTRIBUTES = [:gel_pass, :concentration, :rin, :current_volume, :pico_pass, :gender_markers, :measured_volume, :initial_volume, :molarity, :sequenom_count]
   SUPPORTED_SAMPLE = [:sanger_sample_id]
   SUPPORTED_SAMPLE_METADATA = [:gender, :sample_ebi_accession_number, :supplier_name]
-  EXTENDED_ATTRIBUTES = [:total_micrograms, :conflicting_gender_markers, :sample_gender, :well_location, :plate_barcode]
+  EXTENDED_ATTRIBUTES = [:total_micrograms, :conflicting_gender_markers, :sample_gender, :well_location, :plate_barcode, :concentration_from_normalization]
 
   PASSSED_STATE = 'passed'
   FAILED_STATE = 'failed'
@@ -22,10 +21,10 @@ class ProductCriteria::Basic
   Comparison = Struct.new(:method, :message)
 
   METHOD_ALIAS = {
-    greater_than: Comparison.new(:>,    '%s too low'),
-    less_than: Comparison.new(:<,    '%s too high'),
-    at_least: Comparison.new(:>=,   '%s too low'),
-    at_most: Comparison.new(:<=,   '%s too high'),
+    greater_than: Comparison.new(:>, '%s too low'),
+    less_than: Comparison.new(:<, '%s too high'),
+    at_least: Comparison.new(:>=, '%s too low'),
+    at_most: Comparison.new(:<=, '%s too high'),
     equals: Comparison.new(:==,   '%s not suitable'),
     not_equal: Comparison.new(:'!=', '%s not suitable')
   }
@@ -42,15 +41,16 @@ class ProductCriteria::Basic
     end
 
     def headers(configuration)
-      configuration.map { |k, v| k } + [:comment]
+      configuration.keys + [:comment]
     end
   end
 
-  def initialize(params, well)
+  def initialize(params, well, target_wells = nil)
     @params = params
     @well_or_metric = well
     @comment = []
     @values = {}
+    @target_wells = target_wells
     assess!
   end
 
@@ -64,7 +64,7 @@ class ProductCriteria::Basic
   end
 
   def metrics
-    values.merge({ comment: @comment.join(';') })
+    values.merge(comment: @comment.join(';'))
   end
 
   def well_location
@@ -72,7 +72,18 @@ class ProductCriteria::Basic
   end
 
   def plate_barcode
-    @well_or_metric.plate.try(:sanger_human_barcode) || "Unknown"
+    @well_or_metric.plate.try(:sanger_human_barcode) || 'Unknown'
+  end
+
+  # We sort in Ruby here as we've loaded the wells in bulk. Performing this selection in
+  # the database is actually more tricky than it sounds as your trying to load the latest
+  # record from multiple different wells simultaneously.
+  def most_recent_concentration_from_target_well_by_updating_date
+    @target_wells.sort_by { |w| w.well_attribute.updated_at }.last.get_concentration if @target_wells
+  end
+
+  def concentration_from_normalization
+    most_recent_concentration_from_target_well_by_updating_date
   end
 
   SUPPORTED_SAMPLE.each do |attribute|
@@ -155,7 +166,7 @@ class ProductCriteria::Basic
     if @well_or_metric.is_a?(Hash)
       @well_or_metric[attribute]
     else
-      self.send(attribute)
+      send(attribute)
     end
   end
 
@@ -172,6 +183,4 @@ class ProductCriteria::Basic
   def comparison_for(comparison)
     METHOD_ALIAS.fetch(comparison) || raise(UnknownSpecification, "#{comparison} isn't a recognised means of comparison.")
   end
-
-
 end

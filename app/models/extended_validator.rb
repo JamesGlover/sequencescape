@@ -13,17 +13,13 @@
 # options   => serialized hash for configuration
 
 class ExtendedValidator < ActiveRecord::Base
-
-
   class RequestTypeExtendedValidator < ActiveRecord::Base
-
     self.table_name = ('request_types_extended_validators')
 
     belongs_to :extended_validator
     belongs_to :request_type
     validates_presence_of :extended_validator
     validates_presence_of :request_type
-
   end
 
   after_initialize :import_behaviour
@@ -31,7 +27,7 @@ class ExtendedValidator < ActiveRecord::Base
   def import_behaviour
     return if behaviour.nil?
     behavior_module = "ExtendedValidator::#{behaviour}".constantize
-    self.class_eval do
+    class_eval do
       include(behavior_module)
     end
   end
@@ -43,7 +39,7 @@ class ExtendedValidator < ActiveRecord::Base
   serialize :options
 
   scope :for_submission, ->(submission) {
-    joins('INNER JOIN request_types_extended_validators ON request_types_extended_validators.extended_validator_id = extended_validators.id').
-    where(request_types_extended_validators: { request_type_id: submission.request_types })
+    joins('INNER JOIN request_types_extended_validators ON request_types_extended_validators.extended_validator_id = extended_validators.id')
+    .where(request_types_extended_validators: { request_type_id: submission.request_types })
   }
 end

@@ -4,10 +4,10 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2013,2015 Genome Research Ltd.
 
-require "test_helper"
+require 'test_helper'
 
 class RequestcreateTest < ActiveSupport::TestCase
-  context "Requestcreate" do
+  context 'Requestcreate' do
     context '.copy_request' do
       setup do
         @project = create(:project)
@@ -50,21 +50,24 @@ class RequestcreateTest < ActiveSupport::TestCase
   context '.create_assets_requests' do
     setup do
       @study  = create(:study)
-      @assets = [create(:sample_tube), create(:sample_tube)]
+      @assets = [
+        create(:sample_tube, study: nil, project: nil),
+        create(:sample_tube, study: nil, project: nil)
+      ]
 
       RequestFactory.create_assets_requests(@assets, @study)
     end
 
     should 'have all create asset requests as passed' do
-      assert_equal ['passed'], RequestType.find_by_key('create_asset').requests.map(&:state).uniq
+      assert_equal ['passed'], RequestType.find_by(key: 'create_asset').requests.map(&:state).uniq
     end
 
     should 'have the study on all requests' do
-      assert_equal [@study.id], RequestType.find_by_key('create_asset').requests.map(&:study_id).uniq
+      assert_equal [@study.id], RequestType.find_by(key: 'create_asset').requests.map(&:study_id).uniq
     end
 
     should 'have the asset IDs' do
-      assert_equal @assets.map(&:id).sort, RequestType.find_by_key('create_asset').requests.map(&:asset_id).sort
+      assert_equal @assets.map(&:id).sort, RequestType.find_by(key: 'create_asset').requests.map(&:asset_id).sort
     end
   end
 end

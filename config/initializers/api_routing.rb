@@ -4,14 +4,13 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2015 Genome Research Ltd.
 
-
 # TODO: Fix these
 module ApiRouting
   # Assets have a couple of extra actions that are always present: namely 'parents' and 'children'
   def asset(*entities, &block)
     options = entities.extract_options!
     entities.push({ member: { parents: :get, children: :get } }.merge(options))
-    self.model(*entities, &block)
+    model(*entities, &block)
   end
 
   # Models exposed through the API are assumed to always be read only, unless otherwise specified.  Nested
@@ -24,7 +23,7 @@ module ApiRouting
 
     original_block = block
     block          = !block_given? ? original_block : ->(r) { r.with_options(read_only: read_only, &original_block) }
-    self.resources(*entities, &block)
+    resources(*entities, &block)
   end
 end
 

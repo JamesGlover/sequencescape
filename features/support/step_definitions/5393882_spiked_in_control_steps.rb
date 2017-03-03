@@ -27,7 +27,7 @@ Given /^the "([^\"]+)" of the asset "([^\"]+)" is "([^\"]+)"$/ do |field, id, va
 end
 
 Then /^(.+) asset (?:called|named) "([^\"]+)"(.*)$/ do |pre, name, post|
-  asset = Asset.find_by_name(name) or raise StandardError, "Cannot find asset #{name.inspect}"
+  asset = Asset.find_by(name: name) or raise StandardError, "Cannot find asset #{name.inspect}"
   step %Q{#{pre} asset "#{asset.id}"#{post}}
 end
 
@@ -36,5 +36,4 @@ Given /^(.+) the (\w+) asset of the asset "([^\"]+)"(.*)$/ do |pre, relation, id
   related = asset.send(relation)
 
   step %Q{#{pre} the asset "#{related.id}"#{post}}
-
 end

@@ -10,10 +10,9 @@
 # instead of editing this one. Cucumber will automatically load all features/**/*.rb
 # files.
 
-
 require 'uri'
 require 'cgi'
-require_relative "../paths"
+require_relative '../paths'
 require 'webmock/cucumber'
 WebMock.disable_net_connect!(allow_localhost: true)
 
@@ -51,7 +50,7 @@ When /^(?:|I )follow "([^"]*)"(?: within "([^"]*)")?$/ do |link, selector|
 end
 
 When /^I follow first "(.*?)"$/ do |link|
-  first("a", text: link).click
+  first('a', text: link).click
 end
 
 When /^(?:|I )fill in "([^"]*)" with "([^"]*)"(?: within "([^"]*)")?$/ do |field, value, selector|
@@ -115,7 +114,7 @@ When /^(?:|I )select "([^"]*)" from the first "([^"]*)"(?: within "([^"]*)")?$/ 
 end
 
 When /^(?:|I )check (the invisible )?"([^"]*)"(?: within "([^"]*)")?$/ do |invisible, field, selector|
-  visible = invisible != "the invisible "
+  visible = invisible != 'the invisible '
   with_scope(selector) do
     check(field, visible: visible)
   end
@@ -166,7 +165,6 @@ Then /^(?:|I )should see \/([^\/]*)\/(?: within "([^\"]*)")?$/ do |regexp, selec
     end
   end
 end
-
 
 Then /^I should see "(.*?)" once$/ do |text|
   if page.respond_to? :should
@@ -233,7 +231,7 @@ Then /^the "([^"]*)" checkbox(?: within "([^"]*)")? should be checked$/ do |labe
   with_scope(selector) do
     field_checked = find_field(label)['checked']
     if field_checked.respond_to? :should
-      field_checked.should be_true
+      field_checked.should be true
     else
       assert field_checked
     end
@@ -244,7 +242,7 @@ Then /^the "([^"]*)" checkbox(?: within "([^"]*)")? should not be checked$/ do |
   with_scope(selector) do
     field_checked = find_field(label)['checked']
     if field_checked.respond_to? :should
-      field_checked.should be_false
+      field_checked.should be false
     else
       assert !field_checked
     end
@@ -306,8 +304,7 @@ Then /^Pmb is down$/ do
 end
 
 Then /^Pmb has the required label templates$/ do
-
-  body = "{\"data\":[{\"id\":\"1\"}]}"
+  body = '{"data":[{"id":"1"}]}'
 
   stub_request(:get, "#{LabelPrinter::PmbClient.label_templates_filter_url}sqsc_96plate_label_template")
     .with(headers: LabelPrinter::PmbClient.headers)

@@ -4,9 +4,7 @@
 # authorship of this file.
 # Copyright (C) 2015 Genome Research Ltd.
 
-
 module SharedBehaviour::Immutable
-
   MUTABLE = ['deprecated_at', 'updated_at']
 
   def self.included(base)
@@ -18,8 +16,7 @@ module SharedBehaviour::Immutable
   private
 
   def save_allowed?
-    return true if (self.changed - MUTABLE).empty?
+    return true if (changed - MUTABLE).empty?
     raise ActiveRecord::RecordNotSaved, 'This record is immutable. Deprecate it and create a replacement instead.'
   end
-
 end

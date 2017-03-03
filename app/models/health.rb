@@ -5,16 +5,14 @@
 # Copyright (C) 2015 Genome Research Ltd.
 
 class Health
-
   attr_reader :status, :message
 
   def initialize
     @status, @message = :ok, []
-    self.check
+    check
   end
 
   def check
     @message << 'No problems detected.' if status == :ok
   end
-
 end

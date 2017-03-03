@@ -16,7 +16,7 @@ FactoryGirl.define do
   end
 
   sequence :barcode do |n|
-    "#{n}"
+    n.to_s
   end
 
   sequence :budget_division_name do |n|
@@ -75,7 +75,6 @@ FactoryGirl.define do
     "Request Type #{n}"
   end
 
-
   sequence :sample_name do |n|
     "Sample#{n}"
   end
@@ -88,8 +87,11 @@ FactoryGirl.define do
     "Study Type #{n}"
   end
 
+  sequence :submission_template_name do |n|
+    "Submission Template #{n}"
+  end
+
   sequence :data_release_study_type_name do |n|
     "Data release study Type #{n}"
   end
-
 end

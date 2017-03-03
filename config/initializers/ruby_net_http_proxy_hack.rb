@@ -22,7 +22,6 @@ require 'net/http'
 
 module Net
   class HTTP
-
     def self.set_proxy_header(name, value)
       additional_proxy_headers[name] = value
     end
@@ -34,6 +33,7 @@ module Net
     def additional_proxy_headers
       Net::HTTP.additional_proxy_headers
     end
+
     # Adapted from https://raw.githubusercontent.com/jruby/jruby/9.0.5.0/lib/ruby/stdlib/net/http.rb
     def connect
       if proxy? then
@@ -49,7 +49,7 @@ module Net
         TCPSocket.open(conn_address, conn_port, @local_host, @local_port)
       }
       s.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-      D "opened"
+      D 'opened'
       if use_ssl?
         ssl_parameters = Hash.new
         iv_list = instance_variables
@@ -64,7 +64,7 @@ module Net
         D "starting SSL for #{conn_address}:#{conn_port}..."
         s = OpenSSL::SSL::SSLSocket.new(s, @ssl_context)
         s.sync_close = true
-        D "SSL established"
+        D 'SSL established'
       end
       @socket = BufferedIO.new(s)
       @socket.read_timeout = @read_timeout

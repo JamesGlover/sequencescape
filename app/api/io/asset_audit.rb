@@ -15,7 +15,7 @@ class ::Io::AssetAudit < ::Core::Io::Base
     end
 
     def asset_uuid
-      self.asset.try(:uuid)
+      asset.try(:uuid)
     end
 
     def asset_uuid=(uuid)
@@ -41,8 +41,6 @@ class ::Io::AssetAudit < ::Core::Io::Base
   #
   # The 'attribute' is the attribute to write, i.e. 'name' would be the 'name' attribute, and 'parent.name' would be the 'name'
   # attribute of whatever 'parent' is.
-
-
 
   define_attribute_and_json_mapping("
        message  <=> message

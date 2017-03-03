@@ -3,7 +3,6 @@ class Tube::Purpose < ::Purpose
   # TODO: change to purpose_id
   has_many :tubes, foreign_key: :plate_purpose_id
 
-
   # Tubes of the general types have no stock plate!
   def stock_plate(_)
     nil
@@ -21,7 +20,7 @@ class Tube::Purpose < ::Purpose
     target_class.create_with_barcode!(*args, &block).tap { |t| tubes << t }
   end
 
-  def sibling_tubes(tube)
+  def sibling_tubes(_tube)
     nil
   end
 

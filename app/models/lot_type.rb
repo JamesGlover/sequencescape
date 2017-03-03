@@ -8,7 +8,6 @@
 # A lot type governs the behaviour of a lot
 
 class LotType < ActiveRecord::Base
-
   include Uuid::Uuidable
 
   has_many :lots, inverse_of: :lot_type
@@ -21,12 +20,9 @@ class LotType < ActiveRecord::Base
     template_class.constantize
   end
 
-  def create!(options)
-    self.lots.create!(options)
-  end
+  delegate :create!, to: :lots
 
   def printer_type
     target_purpose.barcode_printer_type.name
   end
-
 end

@@ -1,10 +1,8 @@
 module SampleManifestExcel
-
   ##
   # A list of ranges which can be added to a Worksheet
   # and used by the validations.
   class RangeList
-
     include Enumerable
     include Comparable
 
@@ -33,7 +31,7 @@ module SampleManifestExcel
     # Each range needs a worksheet name to be used as an absolute reference.
     # for when it is added to a validation on another worksheet.
     def set_worksheet_names(worksheet_name)
-      each { |k, range| range.set_worksheet_name(worksheet_name) }
+      each { |_k, range| range.set_worksheet_name(worksheet_name) }
       self
     end
 

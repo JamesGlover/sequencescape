@@ -4,17 +4,15 @@
 # authorship of this file.
 # Copyright (C) 2015,2016 Genome Research Ltd.
 
-
-require "test_helper"
+require 'test_helper'
 
 class ProductTest < ActiveSupport::TestCase
-  context "A product" do
+  context 'A product' do
     should have_many :submission_templates
     should have_many :orders
     should have_many :product_criteria
 
     should validate_presence_of :name
-
 
     should 'only allow one active product with each name' do
       @product_a = create :product
@@ -43,7 +41,6 @@ class ProductTest < ActiveSupport::TestCase
   end
 
   context 'Product' do
-
     setup do
       @product_a = create :product, deprecated_at: Time.now
       @product_b = create :product

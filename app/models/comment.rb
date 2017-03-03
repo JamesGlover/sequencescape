@@ -11,7 +11,6 @@ class Comment < ActiveRecord::Base
   belongs_to :user
 
   scope :for_plate, ->(plate) {
-
     submissions = plate.all_submission_ids
 
     # Warning: The code below is utterly horrible, and has already be the source of several bugs
@@ -21,18 +20,20 @@ class Comment < ActiveRecord::Base
 
     if submissions.present?
       rids = Request.where(submission_id: submissions).pluck(:id)
-      where([
+      select(
+        # Yuck! MySql57 issue.
+        'MIN(comments.id) AS id, MIN(comments.title) AS title, MIN(comments.user_id) user_id, MIN(comments.description) AS description, MIN(created_at) AS created_at, MIN(updated_at) AS updated_at'
+      ).where([
         '(commentable_type= "Request" AND commentable_id IN (?)) OR (commentable_type = "Asset" and commentable_id = ?)',
         rids, plate.id
       ]).group('CONCAT(comments.description, IFNULL(comments.title,""), comments.user_id)')
       # The above group by is grim, and is due to the way rails generates the key to help count
-      # grouped statements. Essentially is adds AS on the end to create a new column. If we don't
+      # grouped statements. Essentially it adds AS on the end to create a new column. If we don't
       # concat, then if just uses the last element. The IFNULL is necessary as it seems that
       # if any element of a CONCAT statement is NULL, MySQL just returns NULL
     else
       where(['comments.commentable_type = "Asset" and commentable_id = ?', plate.id])
     end
-
   }
 
   scope :include_uuid, -> { all }
@@ -42,5 +43,4 @@ class Comment < ActiveRecord::Base
     type = commentables.first.class.base_class.name
     where(commentable_type: type, commentable_id: commentables).group(:commentable_id).count
   end
-
 end

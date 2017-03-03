@@ -17,7 +17,7 @@ class Samples::CommentsController < ApplicationController
   def create
     @sample.comments.create(description: params[:comment], user_id: current_user.id)
     @comments = @sample.comments
-    render partial: "list", locals: { commentable: @sample, visible: true }
+    render partial: 'list', locals: { commentable: @sample, visible: true }
   end
 
   def destroy
@@ -26,10 +26,11 @@ class Samples::CommentsController < ApplicationController
       comment.destroy
     end
     @comments = @sample.comments
-    render partial: "list", locals: { commentable: @sample, visible: true }
+    render partial: 'list', locals: { commentable: @sample, visible: true }
   end
 
   private
+
   def discover_sample
     @sample = Sample.find(params[:sample_id])
   end

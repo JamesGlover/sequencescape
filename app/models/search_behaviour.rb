@@ -5,7 +5,6 @@
 # Copyright (C) 2007-2011,2012,2014,2015 Genome Research Ltd.
 
 module SearchBehaviour
-
   MINIMUM_QUERY_LENGTH = 3
 
   def self.included(base)
@@ -31,7 +30,7 @@ private
     end
   end
 
-  def each_non_empty_search_result(&block)
+  def each_non_empty_search_result
     searchable_classes.each do |clazz|
       results = instance_variable_get("@#{clazz.name.underscore.pluralize}")
       yield(clazz.name.underscore, results) unless results.blank?

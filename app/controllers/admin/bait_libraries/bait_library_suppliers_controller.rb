@@ -5,7 +5,6 @@
 # Copyright (C) 2015 Genome Research Ltd.
 
 class Admin::BaitLibraries::BaitLibrarySuppliersController < ApplicationController
-
   before_action :admin_login_required
   before_action :discover_bait_library_supplier, only: [:edit, :update, :destroy]
 
@@ -24,7 +23,7 @@ class Admin::BaitLibraries::BaitLibrarySuppliersController < ApplicationControll
         flash[:notice] = 'Supplier was successfully created.'
         format.html { redirect_to(admin_bait_libraries_path) }
       else
-        format.html { render action: "new" }
+        format.html { render action: 'new' }
       end
     end
   end
@@ -35,7 +34,7 @@ class Admin::BaitLibraries::BaitLibrarySuppliersController < ApplicationControll
         flash[:notice] = 'Supplier was successfully updated.'
         format.html { redirect_to(admin_bait_libraries_path) }
       else
-        format.html { render action: "edit" }
+        format.html { render action: 'edit' }
       end
     end
   end

@@ -5,7 +5,6 @@
 # Copyright (C) 2013,2015 Genome Research Ltd.
 
 module PlatesHelper
-
   class AliquotError < StandardError; end
 
   def padded_wells_by_row(plate, overide = nil)
@@ -29,7 +28,7 @@ module PlatesHelper
   def padded_well_name_with_index(plate)
     ('A'...(?A.getbyte(0) + (plate.size / 12)).chr).each_with_index do |row, ri|
       (1..12).each_with_index do |col, ci|
-        padded_name = "%s%02d" % [row, col]
+        padded_name = '%s%02d' % [row, col]
         index = ci + (ri * 12)
         yield(padded_name, index)
       end
@@ -49,5 +48,4 @@ module PlatesHelper
   def self.event_family_for_pick(plate_purpose_name)
     "picked_well_to_#{plate_purpose_name.tr(' ', "_").downcase}_plate"
   end
-
 end

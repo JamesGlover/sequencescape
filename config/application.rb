@@ -30,7 +30,7 @@ module Sequencescape
     # config.i18n.default_locale = :de
 
     # Configure the default encoding used in templates for Ruby 1.9.
-    config.encoding = "utf-8"
+    config.encoding = 'utf-8'
 
     # Configure sensitive parameters which will be filtered from the log file.
     config.filter_parameters += [:password]
@@ -51,7 +51,6 @@ module Sequencescape
     config.assets.version = '1.0'
       # Settings in config/environments/* take precedence over those specified here.
 
-
     # Add additional load paths for your own custom dirs
     # config.load_paths += %W( #{Rails.root}/extras )
     config.autoload_paths += %W{#{Rails.root}/app/observers}
@@ -59,8 +58,11 @@ module Sequencescape
     config.autoload_paths += %W{#{Rails.root}/app}
     config.autoload_paths += %W{#{Rails.root}/lib}
     config.autoload_paths += %W{#{Rails.root}/lib/sample_manifest_excel}
+    config.autoload_paths += %W{#{Rails.root}/lib/accession}
 
     config.middleware.insert_after ActionDispatch::ParamsParser, ActionDispatch::XmlParamsParser
+
+    config.encoding = 'utf-8'
 
     # Make Time.zone default to the specified zone, and make Active Record store time values
     # in the database in UTC, and return them converted to the specified local zone.
@@ -79,7 +81,6 @@ module Sequencescape
     # Enable localisations to be split over multiple paths.
     config.i18n.load_path = Dir[File.join(Rails.root, %w{config locales metadata *.{rb,yml}})]
     I18n.enforce_available_locales = false
-
 
     # Jruby 1.7 seems to try and use the http.proxyX settings, but ignores the noProxyHost ENV.
     if defined?(ENV_JAVA)

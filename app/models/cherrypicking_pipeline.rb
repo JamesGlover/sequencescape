@@ -5,6 +5,7 @@
 # Copyright (C) 2007-2011,2012,2015,2016 Genome Research Ltd.
 
 class CherrypickingPipeline < GenotypingPipeline
+  self.batch_worksheet = 'cherrypick_worksheet'
 
   def custom_inbox_actions
     [:holder_not_control]
@@ -14,4 +15,9 @@ class CherrypickingPipeline < GenotypingPipeline
     :loaded_for_grouped_inbox_display
   end
 
+  def robot_verified!(batch)
+    batch.requests.each do |request|
+      request.reduce_source_volume if request.respond_to?(:reduce_source_volume)
+    end
+  end
 end

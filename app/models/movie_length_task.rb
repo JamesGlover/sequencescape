@@ -16,7 +16,7 @@ class MovieLengthTask < Task
   end
 
   def partial
-    "movie_length_batches"
+    'movie_length_batches'
   end
 
   def render_task(workflow, params)
@@ -44,5 +44,4 @@ class MovieLengthTask < Task
   def included_for_render_task
     [{ requests: :asset }, :pipeline]
   end
-
 end

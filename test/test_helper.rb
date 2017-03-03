@@ -6,17 +6,19 @@
 
 require 'simplecov'
 
-ENV["RAILS_ENV"] = "test"
-require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
+ENV['RAILS_ENV'] = 'test'
+require File.expand_path(File.dirname(__FILE__) + '/../config/environment')
 
 require 'minitest/autorun'
 require 'shoulda'
 require 'rails/test_help'
 require 'factory_girl'
+require 'webmock/minitest'
 
 begin
   require 'pry'
-rescue LoadError => exception
+rescue LoadError
+  # No pry? That's okay, we're probably on the CI server
 end
 
 require File.expand_path(File.join(Rails.root, %w{test factories.rb}))

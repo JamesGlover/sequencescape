@@ -6,9 +6,7 @@
 
 module Presenters
   class GroupedPipelineInboxPresenter
-
     class << self
-
       def fields
         @fields ||= []
       end
@@ -16,7 +14,6 @@ module Presenters
       def add_field(name, method, options = {})
         fields << [name, method, options[:if]]
       end
-
     end
 
     # Register our fields and their respective conditions
@@ -33,7 +30,6 @@ module Presenters
     add_field 'Still Required', :still_required, if: :select_partial_requests?
     add_field 'Submitted at',   :submitted_at
 
-
     attr_reader :pipeline, :user
 
     def initialize(pipeline, user, show_held_requests = false)
@@ -43,13 +39,13 @@ module Presenters
     end
 
     def each_field_header
-      valid_fields.each do |field, method, condition|
+      valid_fields.each do |field, _method, _condition|
         yield field
       end
     end
 
     def each_method
-      valid_fields.each do |field, method, condition|
+      valid_fields.each do |_field, method, _condition|
         yield method
       end
     end
@@ -73,7 +69,7 @@ module Presenters
     end
 
     def valid_fields
-      @valid_fields ||= self.class.fields.select { |n, m, c| c.nil? || self.send(c) }
+      @valid_fields ||= self.class.fields.select { |_n, _m, c| c.nil? || send(c) }
     end
 
     def purpose_important?
@@ -95,11 +91,9 @@ module Presenters
     def group_by_submission?
       pipeline.group_by_submission?
     end
-
   end
 
   class GroupLinePresenter
-
     include PipelinesHelper
 
     attr_reader :group, :request, :index, :pipeline, :inbox
@@ -108,7 +102,7 @@ module Presenters
     end
 
     def group_id
-      group.join(", ")
+      group.join(', ')
     end
 
     def request_group_id
@@ -174,7 +168,7 @@ module Presenters
     end
 
     def stock_barcode
-      parent.source_plate.try(:sanger_human_barcode) || "Unknown"
+      parent.source_plate.try(:sanger_human_barcode) || 'Unknown'
     end
 
     def still_required
@@ -194,7 +188,5 @@ module Presenters
     def parentless?
       yield if parent.nil?
     end
-
-
   end
 end

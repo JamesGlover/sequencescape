@@ -5,16 +5,15 @@
 # Copyright (C) 2007-2011,2013,2015 Genome Research Ltd.
 
 module Tasks::SetDescriptorsHandler
-
-  def do_set_descriptors_task(task, params)
+  def do_set_descriptors_task(_task, params)
     @batch = Batch.includes(:requests, :pipeline, :lab_events).find(params[:batch_id])
     @rits = @batch.pipeline.request_information_types
     @requests = @batch.ordered_requests
 
     # if qc_state is qc_manual then update it
-    if @batch.qc_state == "qc_manual"
-      @batch.lab_events.create(description: "Manual QC", message: "Manual QC started for batch #{@batch.id}", user_id: current_user.id)
-      @batch.lab_events.create(description: "Manual QC", message: "Manual QC started for batch #{@batch.id}", user_id: current_user.id)
+    if @batch.qc_state == 'qc_manual'
+      @batch.lab_events.create(description: 'Manual QC', message: "Manual QC started for batch #{@batch.id}", user_id: current_user.id)
+      @batch.lab_events.create(description: 'Manual QC', message: "Manual QC started for batch #{@batch.id}", user_id: current_user.id)
       @batch.qc_state = @batch.qc_next_state
       @batch.save
     end
@@ -54,11 +53,11 @@ module Tasks::SetDescriptorsHandler
                 end
               end
 
-              if !params[:requests].nil? && !params[:requests]["#{request.id}"].nil? && !params[:requests]["#{request.id}"][:descriptors].nil?
+              if !params[:requests].nil? && !params[:requests][(request.id).to_s].nil? && !params[:requests][(request.id).to_s][:descriptors].nil?
                 # Descriptors: create description for event
 
-                event.descriptors = params[:requests]["#{request.id}"][:descriptors]
-                event.descriptor_fields = ordered_fields(params[:requests]["#{request.id}"][:fields])
+                event.descriptors = params[:requests][(request.id).to_s][:descriptors]
+                event.descriptor_fields = ordered_fields(params[:requests][(request.id).to_s][:fields])
 
               end
 
@@ -66,7 +65,7 @@ module Tasks::SetDescriptorsHandler
                 params[:upload].each_key do |key|
                   event.filename = params[:upload][key].original_filename.gsub(/[^a-zA-Z0-9.]/, '_')
                   event.data = params[:upload][key].read
-                  event.add_descriptor Descriptor.new({ name: key, value: event.filename })
+                  event.add_descriptor Descriptor.new(name: key, value: event.filename)
                 end
               end
 
@@ -76,10 +75,10 @@ module Tasks::SetDescriptorsHandler
 
               if params[:asset]
                 params[:asset].keys.each do |key|
-                  asset = Asset.new()
+                  asset = Asset.new
                   asset.sti_type = Family.find(params[:asset][key][:family_id]).name
                   params[:asset][key].each_key do |field|
-                    asset.add_descriptor Descriptor.new({ name: field, value: params[:asset][key][field] })
+                    asset.add_descriptor Descriptor.new(name: field, value: params[:asset][key][field])
                   end
                   asset.save
                   asset.parents << request.asset
@@ -87,7 +86,7 @@ module Tasks::SetDescriptorsHandler
               end
 
               unless request.asset.try(:resource)
-                EventSender.send_request_update(request.id, "update", "Passed: #{@task.name}")
+                EventSender.send_request_update(request.id, 'update', "Passed: #{@task.name}")
               end
             end
           end
@@ -97,7 +96,6 @@ module Tasks::SetDescriptorsHandler
           updated += 1
         end
       end
-
 
       if updated == @batch.requests.count
         eventify_batch @batch, @task
@@ -113,7 +111,7 @@ module Tasks::SetDescriptorsHandler
     false
   end
 
-  def render_set_descriptors_task(task, params)
+  def render_set_descriptors_task(_task, params)
     @batch = Batch.includes(:requests, :pipeline, :lab_events).find(params[:batch_id])
     @rits = @batch.pipeline.request_information_types
     @requests = @batch.ordered_requests
@@ -126,8 +124,5 @@ module Tasks::SetDescriptorsHandler
     else
       @values = params[:values]
     end
-
-
   end
-
 end

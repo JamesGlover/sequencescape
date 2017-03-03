@@ -16,7 +16,7 @@ class MultiplexedCherrypickingTask < Task
   end
 
   def partial
-    "assign_wells_to_wells"
+    'assign_wells_to_wells'
   end
 
   def included_for_do_task
@@ -46,6 +46,4 @@ class MultiplexedCherrypickingTask < Task
     return Plate.with_machine_barcode(barcode).first unless barcode.blank?
     PlatePurpose.find(plate_purpose_id).create!
   end
-
-
 end

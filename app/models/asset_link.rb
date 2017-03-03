@@ -4,7 +4,6 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2012,2015,2016 Genome Research Ltd.
 
-
 class AssetLink < ActiveRecord::Base
   include Api::AssetLinkIO::Extensions
 
@@ -12,7 +11,6 @@ class AssetLink < ActiveRecord::Base
 
   # Enables the bulk creation of the asset links defined by the pairs passed as edges.
   class BuilderJob < Struct.new(:links)
-
     # For memory resons we need to limit transaction size to 10 links at a time
     TRANSACTION_COUNT = 10
     def perform
@@ -44,7 +42,6 @@ class AssetLink < ActiveRecord::Base
     end
   end
 
-
   self.per_page = 500
   include Uuid::Uuidable
 
@@ -67,7 +64,6 @@ class AssetLink < ActiveRecord::Base
         has_many(plural_name, scope, through: :links_as_child, source: :ancestor)
         line = __LINE__ + 1
         class_eval("
-
           def #{name}
             #{plural_name}.first
           end

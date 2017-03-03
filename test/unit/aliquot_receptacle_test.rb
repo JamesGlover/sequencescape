@@ -1,8 +1,7 @@
-require "test_helper"
+require 'test_helper'
 
 class Aliquot::ReceptacleTest < ActiveSupport::TestCase
-  context "Aliquot::Receptacle" do
-
+  context 'Aliquot::Receptacle' do
     setup do
       @receptacle = create :aliquot_receptacle
     end
@@ -19,6 +18,5 @@ class Aliquot::ReceptacleTest < ActiveSupport::TestCase
         assert_equal name, @receptacle.tag_count_name
       end
     end
-
   end
 end

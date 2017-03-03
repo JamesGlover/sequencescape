@@ -4,11 +4,10 @@
 # authorship of this file.
 # Copyright (C) 2015,2016 Genome Research Ltd.
 
-require "test_helper"
-require "timecop"
+require 'test_helper'
+require 'timecop'
 
 class QcReportPresenterTest < ActiveSupport::TestCase
-
   EXPECTED_CSV = %Q{Sequencescape QC Report,1.0.0
 This section is for information only and cannot be changed
 Please place a Y in the proceed column for any samples you wish to proceed; use a N for samples you don't want to proceed.
@@ -24,8 +23,7 @@ Asset ID,Total micrograms,Sanger sample,Comment,Qc Decision,Proceed
 %s,10,EG,X,failed,
 }
 
-  context "A QcReportPresenter" do
-
+  context 'A QcReportPresenter' do
     STATE_ARRAY = ['passed', 'failed']
 
     setup do
@@ -43,11 +41,9 @@ Asset ID,Total micrograms,Sanger sample,Comment,Qc Decision,Proceed
     end
 
     should 'generate an appropriate csv file' do
-      csv = ""
+      csv = ''
       Presenters::QcReportPresenter.new(@report).to_csv(csv)
       assert_equal EXPECTED_CSV % @asset_ids, csv
     end
-
   end
-
 end

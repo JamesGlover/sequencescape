@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20160914100113) do
+ActiveRecord::Schema.define(version: 20161220133436) do
 
   create_table "aliquot_indices", force: :cascade do |t|
     t.integer  "aliquot_id",    limit: 4, null: false
@@ -37,10 +37,10 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "bait_library_id",  limit: 4
-    t.integer  "tag2_id",          limit: 4,   default: -1, null: false
+    t.integer  "tag2_id",          limit: 4,   default: -1
   end
 
-  add_index "aliquots", ["library_id"], :name => "index_aliquots_on_library_id"
+  add_index "aliquots", ["library_id"], name: "index_aliquots_on_library_id", using: :btree
   add_index "aliquots", ["receptacle_id", "tag_id", "tag2_id"], name: "aliquot_tags_and_tag2s_are_unique_within_receptacle", unique: true, using: :btree
   add_index "aliquots", ["sample_id"], name: "index_aliquots_on_sample_id", using: :btree
   add_index "aliquots", ["study_id"], name: "index_aliquots_on_study_id", using: :btree
@@ -241,12 +241,12 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
   add_index "barcode_prefixes", ["prefix"], name: "index_barcode_prefixes_on_prefix", using: :btree
 
   create_table "barcode_printer_types", force: :cascade do |t|
-    t.string   "name",            limit: 255
-    t.integer  "printer_type_id", limit: 4
-    t.string   "type",            limit: 255
+    t.string   "name",                limit: 255
+    t.integer  "printer_type_id",     limit: 4
+    t.string   "type",                limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "label_template_name"
+    t.string   "label_template_name", limit: 255
   end
 
   add_index "barcode_printer_types", ["name"], name: "index_barcode_printer_types_on_name", using: :btree
@@ -356,6 +356,26 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  create_table "custom_metadata", force: :cascade do |t|
+    t.string   "key",                            limit: 255
+    t.string   "value",                          limit: 255
+    t.integer  "custom_metadatum_collection_id", limit: 4
+    t.datetime "created_at",                                 null: false
+    t.datetime "updated_at",                                 null: false
+  end
+
+  add_index "custom_metadata", ["custom_metadatum_collection_id"], name: "index_custom_metadata_on_custom_metadatum_collection_id", using: :btree
+
+  create_table "custom_metadatum_collections", force: :cascade do |t|
+    t.integer  "user_id",    limit: 4
+    t.integer  "asset_id",   limit: 4
+    t.datetime "created_at",           null: false
+    t.datetime "updated_at",           null: false
+  end
+
+  add_index "custom_metadatum_collections", ["asset_id"], name: "index_custom_metadatum_collections_on_asset_id", using: :btree
+  add_index "custom_metadatum_collections", ["user_id"], name: "index_custom_metadatum_collections_on_user_id", using: :btree
 
   create_table "custom_texts", force: :cascade do |t|
     t.string   "identifier",   limit: 255
@@ -1268,7 +1288,7 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
   add_index "roles_users", ["role_id"], name: "index_roles_users_on_role_id", using: :btree
   add_index "roles_users", ["user_id"], name: "index_roles_users_on_user_id", using: :btree
 
-  create_table "sample_manifests", :force => true do |t|
+  create_table "sample_manifests", force: :cascade do |t|
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "study_id",    limit: 4
@@ -1280,7 +1300,7 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.string   "state",       limit: 255
     t.text     "barcodes",    limit: 65535
     t.integer  "user_id",     limit: 4
-    t.string   "password"
+    t.string   "password",    limit: 255
   end
 
   add_index "sample_manifests", ["asset_type"], name: "index_sample_manifests_on_asset_type", using: :btree
@@ -1591,24 +1611,16 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
   end
 
   create_table "submissions", force: :cascade do |t|
-    t.integer  "study_id_to_delete",         limit: 4
-    t.integer  "workflow_id_to_delete",      limit: 4
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "state",                      limit: 20
-    t.string   "message",                    limit: 255
-    t.integer  "user_id",                    limit: 4
-    t.text     "item_options_to_delete",     limit: 65535
-    t.text     "request_types",              limit: 65535
-    t.text     "request_options",            limit: 65535
-    t.text     "comments_to_delete",         limit: 65535
-    t.integer  "project_id_to_delete",       limit: 4
-    t.string   "sti_type_to_delete",         limit: 255
-    t.string   "template_name_to_delete",    limit: 255
-    t.integer  "asset_group_id_to_delete",   limit: 4
-    t.string   "asset_group_name_to_delete", limit: 255
-    t.string   "name",                       limit: 255
-    t.integer  "priority",                   limit: 1,     default: 0, null: false
+    t.string   "state",                  limit: 20
+    t.string   "message",                limit: 255
+    t.integer  "user_id",                limit: 4
+    t.text     "request_types",          limit: 65535
+    t.text     "request_options",        limit: 65535
+    t.string   "name",                   limit: 255
+    t.integer  "priority",               limit: 1,     default: 0, null: false
+    t.integer  "submission_template_id", limit: 4
   end
 
   add_index "submissions", ["name"], name: "index_submissions_on_name", using: :btree
@@ -1620,6 +1632,8 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  add_index "submitted_assets", ["asset_id"], name: "index_submitted_assets_on_asset_id", using: :btree
 
   create_table "suppliers", force: :cascade do |t|
     t.string   "name",         limit: 255
@@ -1657,13 +1671,13 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
   end
 
   create_table "tag2_layouts", force: :cascade do |t|
-    t.integer  "tag_id",     limit: 4
-    t.integer  "plate_id",   limit: 4
-    t.integer  "user_id",    limit: 4
+    t.integer  "tag_id",                limit: 4
+    t.integer  "plate_id",              limit: 4
+    t.integer  "user_id",               limit: 4
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "source_id"
-    t.text     "target_well_locations"
+    t.integer  "source_id",             limit: 4
+    t.text     "target_well_locations", limit: 65535
   end
 
   create_table "tag_groups", force: :cascade do |t|
@@ -1800,24 +1814,34 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
   add_index "uuids", ["external_id"], name: "index_uuids_on_external_id", using: :btree
   add_index "uuids", ["resource_type", "resource_id"], name: "index_uuids_on_resource_type_and_resource_id", using: :btree
 
+  create_table "volume_updates", force: :cascade do |t|
+    t.integer  "target_id",     limit: 4
+    t.string   "created_by",    limit: 255
+    t.float    "volume_change", limit: 24
+    t.datetime "created_at",                null: false
+    t.datetime "updated_at",                null: false
+  end
+
   create_table "well_attributes", force: :cascade do |t|
-    t.integer  "well_id",          limit: 4
-    t.string   "gel_pass",         limit: 20
-    t.float    "concentration",    limit: 24
-    t.float    "current_volume",   limit: 24
-    t.float    "buffer_volume",    limit: 24
-    t.float    "requested_volume", limit: 24
-    t.float    "picked_volume",    limit: 24
+    t.integer  "well_id",                      limit: 4
+    t.string   "gel_pass",                     limit: 20
+    t.float    "concentration",                limit: 24
+    t.float    "current_volume",               limit: 24
+    t.float    "buffer_volume",                limit: 24
+    t.float    "requested_volume",             limit: 24
+    t.float    "picked_volume",                limit: 24
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "pico_pass",        limit: 255, default: "ungraded", null: false
-    t.integer  "sequenom_count",   limit: 4
-    t.string   "study_id",         limit: 255
-    t.string   "gender_markers",   limit: 255
-    t.string   "gender",           limit: 255
-    t.float    "measured_volume",  limit: 24
-    t.float    "initial_volume",   limit: 24
-    t.float    "molarity",         limit: 24
+    t.string   "pico_pass",                    limit: 255, default: "ungraded", null: false
+    t.integer  "sequenom_count",               limit: 4
+    t.string   "study_id",                     limit: 255
+    t.string   "gender_markers",               limit: 255
+    t.string   "gender",                       limit: 255
+    t.float    "measured_volume",              limit: 24
+    t.float    "initial_volume",               limit: 24
+    t.float    "molarity",                     limit: 24
+    t.float    "rin",                          limit: 24
+    t.float    "robot_minimum_picking_volume", limit: 24
   end
 
   add_index "well_attributes", ["well_id"], name: "index_well_attributes_on_well_id", using: :btree
@@ -1836,6 +1860,24 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.string  "source",         limit: 255
   end
 
+  create_table "work_completions", force: :cascade do |t|
+    t.integer  "user_id",    limit: 4, null: false
+    t.integer  "target_id",  limit: 4, null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "work_completions", ["target_id"], name: "fk_rails_f8fb9e95de", using: :btree
+  add_index "work_completions", ["user_id"], name: "fk_rails_204fc81a92", using: :btree
+
+  create_table "work_completions_submissions", force: :cascade do |t|
+    t.integer "work_completion_id", limit: 4, null: false
+    t.integer "submission_id",      limit: 4, null: false
+  end
+
+  add_index "work_completions_submissions", ["submission_id"], name: "fk_rails_1ac4e93988", using: :btree
+  add_index "work_completions_submissions", ["work_completion_id"], name: "fk_rails_5ea64f1af2", using: :btree
+
   create_table "workflow_samples", force: :cascade do |t|
     t.text     "name",          limit: 65535
     t.integer  "user_id",       limit: 4
@@ -1849,4 +1891,8 @@ ActiveRecord::Schema.define(:version => 20160914100113) do
     t.integer  "version",       limit: 4
   end
 
+  add_foreign_key "work_completions", "assets", column: "target_id"
+  add_foreign_key "work_completions", "users"
+  add_foreign_key "work_completions_submissions", "submissions"
+  add_foreign_key "work_completions_submissions", "work_completions"
 end

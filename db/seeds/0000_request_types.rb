@@ -4,7 +4,6 @@
 # authorship of this file.
 # Copyright (C) 2012,2013,2015,2016 Genome Research Ltd.
 
-
 std = RequestPurpose.create!(key: 'standard')
 qc = RequestPurpose.create!(key: 'qc')
 int = RequestPurpose.create!(key: 'internal')
@@ -18,8 +17,8 @@ RequestType.create!(
 )
 RequestType.create!(
   name: 'Transfer', key: 'transfer', order: 1,
-  asset_type: 'Asset',  multiples_allowed: false,
-  request_class_name: 'TransferRequest',  morphology: RequestType::CONVERGENT,
+  asset_type: 'Asset', multiples_allowed: false,
+  request_class_name: 'TransferRequest', morphology: RequestType::CONVERGENT,
   for_multiplexing: 0, billable: 0,
   request_purpose: int
 )
@@ -33,23 +32,23 @@ RequestType.create!(
 )
 RequestType.create!(
   name: 'Initial Transfer', key: 'initial_transfer', order: 1,
-  asset_type: 'Asset',  multiples_allowed: false,
-  request_class_name: 'TransferRequest::InitialTransfer',  morphology: RequestType::CONVERGENT,
+  asset_type: 'Asset', multiples_allowed: false,
+  request_class_name: 'TransferRequest::InitialTransfer', morphology: RequestType::CONVERGENT,
   for_multiplexing: 0, billable: 0,
   request_purpose: int
 )
 RequestType.create!(
-  asset_type: "LibraryTube",
+  asset_type: 'LibraryTube',
   billable: false,
   deprecated: false,
   for_multiplexing: true,
-  initial_state: "pending",
-  key: "external_multiplexed_library_creation",
+  initial_state: 'pending',
+  key: 'external_multiplexed_library_creation',
   morphology: 0,
   order: 0,
   multiples_allowed: false,
-  name: "External Multiplexed Library Creation",
+  name: 'External Multiplexed Library Creation',
   no_target_asset: false,
-  request_class_name: "ExternalLibraryCreationRequest",
+  request_class_name: 'ExternalLibraryCreationRequest',
   request_purpose: std
 )
