@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170321151830) do
+ActiveRecord::Schema.define(version: 20170503080756) do
 
   create_table "aliquot_indices", force: :cascade do |t|
     t.integer  "aliquot_id",    limit: 4, null: false
@@ -135,7 +135,7 @@ ActiveRecord::Schema.define(version: 20170321151830) do
     t.datetime "updated_at"
   end
 
-  create_table "assets", force: :cascade do |t|
+  create_table "assets_deprecated", force: :cascade do |t|
     t.string   "name",                    limit: 255
     t.string   "value",                   limit: 255
     t.text     "descriptors",             limit: 65535
@@ -161,14 +161,14 @@ ActiveRecord::Schema.define(version: 20170321151830) do
     t.integer  "legacy_tag_id",           limit: 4
   end
 
-  add_index "assets", ["barcode"], name: "index_assets_on_barcode", using: :btree
-  add_index "assets", ["barcode_prefix_id"], name: "index_assets_on_barcode_prefix_id", using: :btree
-  add_index "assets", ["legacy_sample_id"], name: "index_assets_on_sample_id", using: :btree
-  add_index "assets", ["map_id"], name: "index_assets_on_map_id", using: :btree
-  add_index "assets", ["sti_type", "plate_purpose_id"], name: "index_assets_on_plate_purpose_id_sti_type", using: :btree
-  add_index "assets", ["sti_type", "updated_at"], name: "index_assets_on_sti_type_and_updated_at", using: :btree
-  add_index "assets", ["sti_type"], name: "index_assets_on_sti_type", using: :btree
-  add_index "assets", ["updated_at"], name: "index_assets_on_updated_at", using: :btree
+  add_index "assets_deprecated", ["barcode"], name: "index_assets_on_barcode", using: :btree
+  add_index "assets_deprecated", ["barcode_prefix_id"], name: "index_assets_on_barcode_prefix_id", using: :btree
+  add_index "assets_deprecated", ["legacy_sample_id"], name: "index_assets_on_sample_id", using: :btree
+  add_index "assets_deprecated", ["map_id"], name: "index_assets_on_map_id", using: :btree
+  add_index "assets_deprecated", ["sti_type", "plate_purpose_id"], name: "index_assets_on_plate_purpose_id_sti_type", using: :btree
+  add_index "assets_deprecated", ["sti_type", "updated_at"], name: "index_assets_on_sti_type_and_updated_at", using: :btree
+  add_index "assets_deprecated", ["sti_type"], name: "index_assets_on_sti_type", using: :btree
+  add_index "assets_deprecated", ["updated_at"], name: "index_assets_on_updated_at", using: :btree
 
   create_table "attachments", force: :cascade do |t|
     t.integer "pipeline_workflow_id", limit: 4
@@ -631,6 +631,39 @@ ActiveRecord::Schema.define(version: 20170321151830) do
 
   add_index "lab_interface_workflows", ["pipeline_id"], name: "index_lab_interface_workflows_on_pipeline_id", using: :btree
 
+  create_table "labware", force: :cascade do |t|
+    t.string   "name",              limit: 255
+    t.text     "descriptors",       limit: 65535
+    t.text     "descriptor_fields", limit: 65535
+    t.string   "sti_type",          limit: 50
+    t.string   "barcode",           limit: 255
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "map_id",            limit: 4
+    t.integer  "size",              limit: 4
+    t.boolean  "closed",                          default: false
+    t.integer  "plate_purpose_id",  limit: 4
+    t.integer  "barcode_prefix_id", limit: 4
+  end
+
+  add_index "labware", ["barcode"], name: "index_assets_on_barcode", using: :btree
+  add_index "labware", ["barcode_prefix_id"], name: "index_assets_on_barcode_prefix_id", using: :btree
+  add_index "labware", ["map_id"], name: "index_assets_on_map_id", using: :btree
+  add_index "labware", ["sti_type", "plate_purpose_id"], name: "index_assets_on_plate_purpose_id_sti_type", using: :btree
+  add_index "labware", ["sti_type", "updated_at"], name: "index_assets_on_sti_type_and_updated_at", using: :btree
+  add_index "labware", ["sti_type"], name: "index_assets_on_sti_type", using: :btree
+  add_index "labware", ["updated_at"], name: "index_assets_on_updated_at", using: :btree
+
+  create_table "labware_receptacles", force: :cascade do |t|
+    t.integer "labware_id",     limit: 4, null: false
+    t.integer "receptacle_id",  limit: 4, null: false
+    t.integer "position_index", limit: 4
+  end
+
+  add_index "labware_receptacles", ["labware_id", "position_index"], name: "index_labware_receptacles_on_labware_id_and_position_index", unique: true, using: :btree
+  add_index "labware_receptacles", ["labware_id"], name: "index_container_associations_on_container_id", using: :btree
+  add_index "labware_receptacles", ["receptacle_id"], name: "container_association_content_is_unique", unique: true, using: :btree
+
   create_table "lane_metadata", force: :cascade do |t|
     t.integer  "lane_id",        limit: 4
     t.string   "release_reason", limit: 255
@@ -704,12 +737,12 @@ ActiveRecord::Schema.define(version: 20170321151830) do
   add_index "maps", ["description"], name: "index_maps_on_description", using: :btree
 
   create_table "messenger_creators", force: :cascade do |t|
-    t.string   "template",   limit: 255, null: false
-    t.string   "root",       limit: 255, null: false
-    t.integer  "purpose_id", limit: 4,   null: false
+    t.string   "template",            limit: 255,                        null: false
+    t.string   "root",                limit: 255,                        null: false
+    t.integer  "purpose_id",          limit: 4,                          null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "target_finder_class", :default => "SelfFinder", :null => false
+    t.string   "target_finder_class", limit: 255, default: "SelfFinder", null: false
   end
 
   add_index "messenger_creators", ["purpose_id"], name: "fk_messenger_creators_to_plate_purposes", using: :btree
@@ -1117,6 +1150,23 @@ ActiveRecord::Schema.define(version: 20170321151830) do
 
   add_index "quotas_bkp", ["request_type_id", "project_id"], name: "index_quotas_on_request_type_id_and_project_id", using: :btree
   add_index "quotas_bkp", ["updated_at"], name: "index_quotas_on_updated_at", using: :btree
+
+  create_table "receptacles", force: :cascade do |t|
+    t.text     "descriptors",       limit: 65535
+    t.text     "descriptor_fields", limit: 65535
+    t.string   "barcode",           limit: 255
+    t.string   "qc_state",          limit: 20
+    t.boolean  "resource"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.boolean  "external_release"
+    t.decimal  "volume",                          precision: 10, scale: 2
+    t.decimal  "concentration",                   precision: 18, scale: 8
+  end
+
+  add_index "receptacles", ["barcode"], name: "index_assets_on_barcode", using: :btree
+  add_index "receptacles", ["updated_at"], name: "index_assets_on_sti_type_and_updated_at", using: :btree
+  add_index "receptacles", ["updated_at"], name: "index_assets_on_updated_at", using: :btree
 
   create_table "reference_genomes", force: :cascade do |t|
     t.string   "name",       limit: 255
@@ -1921,7 +1971,7 @@ ActiveRecord::Schema.define(version: 20170321151830) do
     t.integer  "version",       limit: 4
   end
 
-  add_foreign_key "work_completions", "assets", column: "target_id"
+  add_foreign_key "work_completions", "assets_deprecated", column: "target_id"
   add_foreign_key "work_completions", "users"
   add_foreign_key "work_completions_submissions", "submissions"
   add_foreign_key "work_completions_submissions", "work_completions"
