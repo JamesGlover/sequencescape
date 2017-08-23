@@ -17,7 +17,7 @@ module Metadata
   SECTION_FIELDS = [:edit_info, :help, :label, :unspecified]
   Section = Struct.new(*SECTION_FIELDS, :label_options)
 
-private
+  private
 
   def build_association(as_class, options)
     # First we build the association into the current ActiveRecord::Base class
@@ -25,7 +25,8 @@ private
     association_name = "#{as_name}_metadata".underscore.to_sym
     class_name = "#{name}::Metadata"
 
-    has_one(association_name, { class_name: class_name, dependent: :destroy, validate: true, autosave: true, inverse_of: :owner }.merge(options).merge(foreign_key: "#{as_name}_id", inverse_of: :owner))
+    default_options = { class_name: class_name, dependent: :destroy, validate: true, autosave: true, inverse_of: :owner, foreign_key: "#{as_name}_id" }
+    has_one association_name, default_options.merge(options)
     accepts_nested_attributes_for(association_name, update_only: true)
     scope :"include_#{ association_name }", -> { includes(association_name) }
 
@@ -63,7 +64,7 @@ private
         @tags ||= []
       end
 
-      before_validation { |record| record.#{association_name} }
+      before_validation :#{association_name}, on: :create
 
     ", __FILE__, line)
 
@@ -129,7 +130,10 @@ private
 
     def merge_instance_defaults
       # Replace attributes with the default if the value is nil
-      self.attributes = instance_defaults.merge(attributes.symbolize_keys) { |_key, default, attribute| attribute.nil? ? default : attribute }
+      instance_defaults.each do |attribute, value|
+        next unless send(attribute).nil?
+        send(:"#{attribute}=", value)
+      end
     end
 
     include Attributable

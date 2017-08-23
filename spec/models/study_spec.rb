@@ -51,6 +51,18 @@ RSpec.describe Study, type: :model do
     expect(study.total_requests(request_type)).to eq(8)
   end
 
+  it 'validates uniqueness of name (case sensitive)' do
+    study_1 = create :study, name: 'Study_name'
+    study_2 = build :study, name: 'Study_name'
+    study_3 = build :study, name: 'Study_NAME'
+    expect(study_2.valid?).to be false
+    expect(study_2.errors.messages.length).to eq 1
+    expect(study_2.errors.full_messages).to include 'Name has already been taken'
+    expect(study_3.valid?).to be false
+    expect(study_2.errors.messages.length).to eq 1
+    expect(study_3.errors.full_messages).to include 'Name has already been taken'
+  end
+
   context 'Role system' do
     let!(:study)          { create(:study, name: 'role test1') }
     let!(:another_study)  { create(:study, name: 'role test2') }
@@ -375,6 +387,45 @@ RSpec.describe Study, type: :model do
         studies = Study.for_sample_accessioning
         expect(studies).to_not include(study_8)
       end
+    end
+
+    context '#each_well_for_qc_report_in_batches' do
+      let!(:study)          { create(:study) }
+      let!(:well_1)         { create(:well_for_qc_report, study: study, plate: create(:plate, plate_purpose: PlatePurpose.find_by(name: 'Stock Plate'))) }
+      let!(:well_2)         { create(:well_for_qc_report, study: study, plate: create(:plate, plate_purpose: PlatePurpose.find_by(name: 'ISC lib PCR-XP'))) }
+      let!(:well_3)         { create(:well_for_qc_report, study: study, plate: create(:plate, plate_purpose: PlatePurpose.find_by(name: 'Lib PCR-XP'))) }
+      let!(:well_4)         { create(:well_for_qc_report, study: study, plate: create(:plate, plate_purpose: PlatePurpose.find_by(name: 'PF Post Shear'))) }
+
+      it 'will limit by stock plate purposes if there are no plate purposes' do
+        wells_count = 0
+        study.each_well_for_qc_report_in_batches(false, 'Bespoke RNA') { |wells| wells.each { |_well| wells_count += 1 } }
+        expect(wells_count).to eq(1)
+      end
+
+      it 'will limit by passed plates purposes' do
+        wells_count = 0
+        study.each_well_for_qc_report_in_batches(false, 'Bespoke RNA', ['ISC lib PCR-XP', 'Lib PCR-XP', 'PF Post Shear']) { |wells| wells.each { |_well| wells_count += 1 } }
+        expect(wells_count).to eq(3)
+
+        wells_count = 0
+        study.each_well_for_qc_report_in_batches(false, 'Bespoke RNA', ['ISC lib PCR-XP', 'Lib PCR-XP']) { |wells| wells.each { |_well| wells_count += 1 } }
+        expect(wells_count).to eq(2)
+      end
+    end
+  end
+
+  describe '#mailing_list_of_managers' do
+    let(:study) { create :study }
+    subject { study.mailing_list_of_managers }
+
+    context 'with a manger' do
+      before { create :manager, authorizable: study, email: 'manager@example.com' }
+      it { is_expected.to eq ['manager@example.com'] }
+    end
+
+    context 'without a manger' do
+      before { create :admin }
+      it { is_expected.to eq ['ssr@example.com'] }
     end
   end
 end

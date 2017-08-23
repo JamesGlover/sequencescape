@@ -236,10 +236,6 @@ class Asset < ActiveRecord::Base
     scanned_into_lab_event.try(:content) || ''
   end
 
-  def moved_to_2D_tube_date
-    moved_to_2d_tube_event.try(:content) || ''
-  end
-
   def create_asset_group_wells(user, params)
     asset_group = AssetGroup.create(params)
     asset_group.user = user
@@ -457,9 +453,14 @@ class Asset < ActiveRecord::Base
     AssetLink.create_edge!(parent, self)
   end
 
-  def attach_tag(tag)
-    tag.tag!(self) if tag.present?
+  def attach_tag(tag, tag2 = nil)
+    tags = { tag: tag, tag2: tag2 }.compact
+    return if tags.empty?
+    raise StandardError, 'Cannot tag an empty asset'   if aliquots.empty?
+    raise StandardError, 'Cannot tag multiple samples' if aliquots.size > 1
+    aliquots.first.update_attributes!(tags)
   end
+  alias attach_tags attach_tag
 
   def requests_status(request_type)
     requests.order('id ASC').where(request_type: request_type).pluck(:state)
