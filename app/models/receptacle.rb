@@ -4,11 +4,15 @@
 # authorship of this file.
 # Copyright (C) 2011,2012,2013,2014,2015,2016 Genome Research Ltd.
 
-class Aliquot::Receptacle < Asset
+class Receptacle < ActiveRecord::Base
   include Transfer::State
   include Aliquot::Remover
 
+  class_attribute :stock_message_template, instance_writer: false
+
   SAMPLE_PARTIAL = 'assets/samples_partials/asset_samples'
+
+  belongs_to :map
 
   has_many :transfer_requests, class_name: 'TransferRequest', foreign_key: :target_asset_id
   has_many :transfer_requests_as_source, class_name: 'TransferRequest', foreign_key: :asset_id
@@ -19,6 +23,9 @@ class Aliquot::Receptacle < Asset
   has_many :requests_as_target, ->() { includes(:request_metadata) }, class_name: 'Request', foreign_key: :target_asset_id
   has_many :creation_batches, class_name: 'Batch', through: :requests_as_target, source: :batch
   has_many :source_batches, class_name: 'Batch', through: :requests_as_source, source: :batch
+
+  has_many :asset_group_assets, dependent: :destroy, inverse_of: :asset
+  has_many :asset_groups, through: :asset_group_assets
 
   # A receptacle can hold many aliquots.  For example, a multiplexed library tube will contain more than
   # one aliquot.
@@ -49,7 +56,7 @@ class Aliquot::Receptacle < Asset
 
   scope :for_study_and_request_type, ->(study, request_type) { joins(:aliquots, :requests).where(aliquots: { study_id: study }).where(requests: { request_type_id: request_type }) }
 
-  # This is a lambda as otherwise the scope selects Aliquot::Receptacles
+  # This is a lambda as otherwise the scope selects Receptacles
   scope :with_aliquots, -> { joins(:aliquots) }
 
   # Provide some named scopes that will fit with what we've used in the past

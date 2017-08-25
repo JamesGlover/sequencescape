@@ -12,10 +12,8 @@ FactoryGirl.define do
     "Plate Creator #{n}"
   end
 
-  factory :asset do
+  factory :labware do
     name                { |_a| generate :asset_name }
-    value               ''
-    qc_state            ''
     resource            nil
     barcode
     barcode_prefix { |b| b.association(:barcode_prefix) }
@@ -33,10 +31,8 @@ FactoryGirl.define do
   factory :control_plate do
     plate_purpose { PlatePurpose.find_by(name: 'Stock plate') }
     name                'Control Plate name'
-    value               ''
     descriptors         []
     descriptor_fields   []
-    qc_state            ''
     resource            nil
     sti_type            'ControlPlate'
     barcode
@@ -128,7 +124,6 @@ FactoryGirl.define do
 
   factory :descriptor do
     name                'Desc name'
-    value               ''
     selection           ''
     task
     kind                ''
@@ -355,7 +350,6 @@ FactoryGirl.define do
 
   factory :plate_template do
     name      'testtemplate'
-    value     96
     size      96
   end
 

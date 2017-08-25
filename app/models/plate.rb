@@ -6,7 +6,7 @@
 
 require 'lab_where_client'
 
-class Plate < Asset
+class Plate < Labware
   include Api::PlateIO::Extensions
   include ModelExtensions::Plate
   include LocationAssociation::Locatable

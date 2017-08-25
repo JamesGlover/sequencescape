@@ -60,8 +60,8 @@ class NpgActions::AssetsController < ApplicationController
   end
 
   def find_request
-    @asset ||= Asset.find(params[:asset_id])
-    if ((@asset.has_many_requests?) || (@asset.source_request.nil?))
+    @asset ||= Asset.includes(:requests_as_target).find(params[:asset_id])
+    unless @asset.requests_as_target.size.one?
       raise ActiveRecord::RecordNotFound, "Unable to find a request for Lane: #{params[:id]}"
     end
   end

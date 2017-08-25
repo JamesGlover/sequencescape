@@ -6,7 +6,6 @@
 
 FactoryGirl.define do
   factory :well do
-    value               ''
     qc_state            ''
     resource            nil
     barcode             nil

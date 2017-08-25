@@ -14,9 +14,9 @@ module Submission::AssetSubmissionFinder
   end
 
   def find_all_assets_by_id_or_name_including_samples!(ids, names)
-    return Aliquot::Receptacle.including_samples.find(*ids) unless ids.blank?
+    return Receptacle.including_samples.find(*ids) unless ids.blank?
     raise StandardError, 'Must specify at least an ID or a name' if names.blank?
-    Aliquot::Receptacle.including_samples.where(name: names).tap do |found|
+    Receptacle.including_samples.where(name: names).tap do |found|
       missing = names - found.map(&:name)
       raise ActiveRecord::RecordNotFound, "Could not find #{name} with names #{missing.inspect}" unless missing.blank?
     end

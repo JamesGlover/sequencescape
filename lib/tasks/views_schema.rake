@@ -25,9 +25,9 @@ namespace :db do
 end
 
 Rake::Task['db:schema:dump'].enhance do
-  Rake::Task['db:views:dump_schema'].invoke
+  # Rake::Task['db:views:dump_schema'].invoke
 end
 
 Rake::Task['db:schema:load'].enhance do
-  Rake::Task['db:views:schema_load'].invoke
+  # Rake::Task['db:views:schema_load'].invoke
 end

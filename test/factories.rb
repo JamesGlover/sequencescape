@@ -13,7 +13,7 @@ FactoryGirl.define do
 
   factory :comment  do
     description 'It is okay I guess'
-    association(:commentable, factory: :asset)
+    association(:commentable, factory: :sample)
   end
 
   factory :aliquot, aliases: [:tagged_aliquot, :dual_tagged_aliquot] do
@@ -35,7 +35,7 @@ FactoryGirl.define do
     end
   end
 
-  factory :aliquot_receptacle, class: Aliquot::Receptacle, aliases: [:receptacle] do
+  factory :receptacle do
   end
 
   factory :event do
@@ -259,12 +259,11 @@ FactoryGirl.define do
   end
 
   factory :sample do
-    name { |_a| generate :sample_name }
+    name { generate :sample_name }
+    sequence(:sanger_sample_id) { |n| n.to_s }
 
     factory :sample_with_well do
-      sequence(:sanger_sample_id) { |n| n.to_s }
-      wells { [FactoryGirl.create(:well_with_sample_and_plate)] }
-      assets { [wells.first.plate] }
+      assets { create_list(:well_with_sample_and_plate, 1) }
     end
 
     factory :sample_with_gender do
@@ -416,7 +415,7 @@ FactoryGirl.define do
   end
 
   factory :asset_group_asset do
-    association(:asset, factory: :aliquot_receptacle)
+    association(:asset, factory: :receptacle)
     asset_group
   end
 

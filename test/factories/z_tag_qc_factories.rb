@@ -68,7 +68,6 @@ FactoryGirl.define do
 
   factory :plate_template_with_well, class: PlateTemplate do
     name      'testtemplate2'
-    value     96
     size      96
     wells { [create(:well_with_sample_and_without_plate, map: create(:map))] }
   end

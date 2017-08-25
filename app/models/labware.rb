@@ -10,7 +10,7 @@ require 'external_properties'
 require 'eventful_record'
 require 'external_properties'
 
-class Asset < ActiveRecord::Base
+class Labware < ActiveRecord::Base
   include StudyReport::AssetDetails
   include ModelExtensions::Asset
   include AssetLink::Associations
@@ -49,8 +49,6 @@ class Asset < ActiveRecord::Base
   self.per_page = 500
   self.inheritance_column = 'sti_type'
 
-  has_many :asset_group_assets, dependent: :destroy, inverse_of: :asset
-  has_many :asset_groups, through: :asset_group_assets
   has_many :asset_audits
   has_many :volume_updates, foreign_key: :target_id
   has_many :events_on_requests, through: :requests, source: :events
@@ -82,7 +80,6 @@ class Asset < ActiveRecord::Base
     nil
   end
 
-  belongs_to :map
   belongs_to :barcode_prefix
   scope :sorted, ->() { order('map_id ASC') }
 
@@ -98,7 +95,7 @@ class Asset < ActiveRecord::Base
   scope :include_for_show, ->() { includes(requests: :request_metadata) }
 
   # Assets usually have studies through aliquots, which is only relevant to
-  # Aliquot::Receptacles. This method just ensures all assets respond to studies
+  # Receptacles. This method just ensures all assets respond to studies
   def studies
     Study.none
   end
@@ -488,7 +485,7 @@ class Asset < ActiveRecord::Base
   end
 
   def has_many_requests?
-    Request.find_all_target_asset(id).size > 1
+    requests_as_target.size > 1
   end
 
   def can_be_created?
@@ -503,7 +500,7 @@ class Asset < ActiveRecord::Base
     false
   end
 
-  # See Aliquot::Receptacle for handling of assets with contents
+  # See Receptacle for handling of assets with contents
   def tag_count
     nil
   end
