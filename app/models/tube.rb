@@ -6,7 +6,6 @@
 
 class Tube < Labware
   include DefaultAttributes
-
   include LocationAssociation::Locatable
   include Barcode::Barcodeable
   include ModelExtensions::Tube

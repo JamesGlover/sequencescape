@@ -7,7 +7,6 @@
 # Lanes should probably just be receptacles on the labware 'Flowcell'
 class Lane < Labware
   include DefaultAttributes
-
   include Api::LaneIO::Extensions
   include LocationAssociation::Locatable
   include AliquotIndexer::Indexable

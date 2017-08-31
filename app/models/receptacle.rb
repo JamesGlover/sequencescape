@@ -13,7 +13,7 @@ class Receptacle < ActiveRecord::Base
 
   class_attribute :stock_message_template, instance_writer: false
 
-  SAMPLE_PARTIAL = 'assets/samples_partials/asset_samples'
+  SAMPLE_PARTIAL = 'assets/samples_partials/asset_samples'.freeze
 
   belongs_to :map
 
