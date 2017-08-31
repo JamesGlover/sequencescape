@@ -17,7 +17,7 @@ class SpikedBuffer < LibraryTube
   # Before the validations are run on creation we need to ensure that there is at least an aliquot of phiX
   # in this tube.
   before_validation(on: :create) do |record|
-    record.aliquots.build(sample: record.class.phix_sample) if record.aliquots.empty?
+    record.receptacle.aliquots.build(sample: record.class.phix_sample) if record.aliquots.empty?
   end
 
   def self.phix_sample

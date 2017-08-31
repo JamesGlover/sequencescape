@@ -26,7 +26,7 @@ class Transfer::FromPlateToTube < Transfer
       well.nil? or well.aliquots.empty? or well.failed? or well.cancelled?
     end
 
-    good_wells.each { |well| yield(well, destination) }
+    good_wells.each { |well| yield(well, destination.receptacle) }
 
     # Eliminate any of the transfers that were not made because of the bad source wells
     self.transfers = transfers - bad_wells.map { |well| well.map.description }
@@ -35,7 +35,7 @@ class Transfer::FromPlateToTube < Transfer
 
   # Request type is based on the destination tube from the source plate
   def request_type_between(_, destination)
-    destination.transfer_request_type_from(source)
+    destination.labware.transfer_request_type_from(source)
   end
   private :request_type_between
 

@@ -80,9 +80,10 @@ class PlateTest < ActiveSupport::TestCase
       context 'where control well is present' do
         setup do
           @plate_cw = Plate.create!
-          @plate_cw.add_and_save_well Well.new
+          well = Well.new
+          @plate_cw.add_and_save_well well
           @plate_cw.reload
-          create :well_request, asset: @control_well_asset, target_asset: @plate_cw.child
+          create :well_request, asset: @control_well_asset, target_asset: well
         end
         should 'return true' do
           assert @plate_cw.control_well_exists?

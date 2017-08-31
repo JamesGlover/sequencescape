@@ -92,20 +92,19 @@ class Request < ActiveRecord::Base
       else
         [
           'INNER JOIN well_links ON well_links.source_well_id=requests.asset_id',
-          'INNER JOIN assets AS pw ON well_links.target_well_id=pw.id AND well_links.type="stock"',
+          'INNER JOIN labware AS pw ON well_links.target_well_id=pw.id AND well_links.type="stock"',
         ]
       end
 
     select('uuids.external_id AS pool_id, GROUP_CONCAT(DISTINCT pw_location.description ORDER BY pw.map_id ASC SEPARATOR ",") AS pool_into, MIN(requests.id) AS id, MIN(requests.sti_type) AS sti_type, MIN(requests.submission_id) AS submission_id, MIN(requests.request_type_id) AS request_type_id')
       .joins(add_joins + [
         'INNER JOIN maps AS pw_location ON pw.map_id=pw_location.id',
-        'INNER JOIN container_associations ON container_associations.content_id=pw.id',
         'INNER JOIN uuids ON uuids.resource_id=requests.submission_id AND uuids.resource_type="Submission"'
       ])
       .group('uuids.external_id')
       .customer_requests
       .where([
-        'container_associations.container_id=? AND requests.submission_id IN (?)',
+        'pw.labware_id=? AND requests.submission_id IN (?)',
         plate.id, submission_ids
       ])
   }
@@ -113,18 +112,17 @@ class Request < ActiveRecord::Base
   scope :for_pre_cap_grouping_of, ->(plate) {
     add_joins =
       if plate.stock_plate?
-        ['INNER JOIN assets AS pw ON requests.asset_id=pw.id']
+        ['INNER JOIN receptacles AS pw ON requests.asset_id=pw.id']
       else
         [
           'INNER JOIN well_links ON well_links.source_well_id=requests.asset_id',
-          'INNER JOIN assets AS pw ON well_links.target_well_id=pw.id AND well_links.type="stock"',
+          'INNER JOIN receptacles AS pw ON well_links.target_well_id=pw.id AND well_links.type="stock"',
         ]
       end
 
       select('min(uuids.external_id) AS group_id, GROUP_CONCAT(DISTINCT pw_location.description SEPARATOR ",") AS group_into, MIN(requests.id) AS id, MIN(requests.submission_id) AS submission_id, MIN(requests.request_type_id) AS request_type_id')
         .joins(add_joins + [
           'INNER JOIN maps AS pw_location ON pw.map_id = pw_location.id',
-          'INNER JOIN container_associations ON container_associations.content_id=pw.id',
           'INNER JOIN pre_capture_pool_pooled_requests ON requests.id=pre_capture_pool_pooled_requests.request_id',
           'INNER JOIN uuids ON uuids.resource_id = pre_capture_pool_pooled_requests.pre_capture_pool_id AND uuids.resource_type="PreCapturePool"'
         ])
@@ -132,7 +130,7 @@ class Request < ActiveRecord::Base
         .customer_requests
         .where(state: ['started', 'pending'])
         .where([
-          'container_associations.container_id=?',
+          'pw.labware_id=?',
           plate.id
         ])
   }
@@ -279,6 +277,26 @@ class Request < ActiveRecord::Base
   # we now need to be explicit in how we want it delegated.
   delegate :name, to: :request_metadata
 
+  # Temporary solution while we update to the new system
+  def asset=(asset)
+    receptacle = if asset.is_a?(SingleReceptacle)
+                   asset.receptacle
+                 else
+                   asset
+                 end
+    super(receptacle)
+  end
+
+  # Temporary solution while we update to the new system
+  def target_asset=(asset)
+    receptacle = if asset.is_a?(SingleReceptacle)
+                   asset.receptacle
+                 else
+                   asset
+                 end
+    super(receptacle)
+  end
+
   def self.delegate_validator
     DelegateValidation::AlwaysValidValidator
   end
@@ -351,10 +369,8 @@ class Request < ActiveRecord::Base
     Request.for_study_id(study.id)
   end
 
-  # TODO: There is probably a MUCH better way of getting this information. This is just a rewrite of the old approach
   def self.get_target_plate_ids(request_ids)
-    ContainerAssociation.joins('INNER JOIN requests ON content_id = target_asset_id')
-                        .where(['requests.id IN  (?)', request_ids]).uniq.pluck(:container_id)
+    Plate.join(:requests_as_target).where(requests: { id: request_ids }).pluck(:id)
   end
 
   # The options that are required for creation.  In other words, the truly required options that must

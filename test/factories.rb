@@ -36,6 +36,23 @@ FactoryGirl.define do
   end
 
   factory :receptacle do
+    factory :receptacle_with_sample do
+      after(:build) do |receptacle, _evalutator|
+        receptacle.aliquots = build_list(:aliquot, 1, receptacle: receptacle)
+      end
+    end
+    factory :pac_bio_library_tube_receptacle do
+      association(:labware, factory: :pac_bio_library_tube)
+      after(:build) do |receptacle, _evalutator|
+        receptacle.aliquots = build_list(:tagged_aliquot, 1, receptacle: receptacle)
+      end
+    end
+    factory :receptacle_with_labware do
+      labware
+    end
+    factory :receptacle_with_sample_tube do
+      association(:labware, factory: :sample_tube)
+    end
   end
 
   factory :event do
@@ -447,12 +464,12 @@ FactoryGirl.define do
   factory(:external_multiplexed_library_tube_creation_request, class: ExternalLibraryCreationRequest) do
     request_type { |_target| RequestType.find_by!(name: 'External Multiplexed Library Creation') }
     request_purpose { |rp| rp.association(:request_purpose) }
-    asset { create(:library_tube) }
-    target_asset { create(:multiplexed_library_tube) }
+    asset { create(:receptacle_with_sample) }
+    target_asset { create(:receptacle) }
   end
 
   factory :pac_bio_sample_prep_request do |_r|
-    target_asset    { |ta| ta.association(:pac_bio_library_tube) }
+    target_asset    { |ta| ta.association(:pac_bio_library_tube_receptacle) }
     asset           { |a|   a.association(:well) }
     submission      { |s|   s.association(:submission) }
     request_purpose { |rp| rp.association(:request_purpose) }
@@ -460,7 +477,7 @@ FactoryGirl.define do
 
   factory :pac_bio_sequencing_request do
     target_asset    { |ta| ta.association(:well) }
-    asset           { |a|   a.association(:pac_bio_library_tube) }
+    asset           { |a|   a.association(:pac_bio_library_tube_receptacle) }
     submission      { |s|   s.association(:submission) }
     request_type    { |s| s.association(:pac_bio_sequencing_request_type) }
     request_purpose
@@ -475,8 +492,8 @@ FactoryGirl.define do
   end
 
   factory  :spiked_buffer do
-    name { |_a| generate :asset_name }
-    volume 50
+    name { generate :asset_name }
+    association(:receptacle, volume: 50)
   end
 
   factory  :reference_genome do
@@ -542,7 +559,7 @@ FactoryGirl.define do
     key 'some_key'
     created_by 'abc123'
     witnessed_by 'jane'
-    asset
+    association(:asset, factory: :labware)
   end
 
   factory(:faculty_sponsor) do
@@ -574,7 +591,7 @@ FactoryGirl.define do
   end
 
   factory :uuid do
-    association(:resource, factory: :asset)
+    association(:resource, factory: :labware)
     external_id { SecureRandom.uuid }
   end
 

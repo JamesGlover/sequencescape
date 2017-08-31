@@ -99,7 +99,7 @@ FactoryGirl.define do
       request_class TransferRequest
       name 'Transfer'
       key 'transfer'
-      asset_type 'Asset'
+      asset_type 'Receptacle'
     end
   end
 

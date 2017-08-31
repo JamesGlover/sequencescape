@@ -11,33 +11,22 @@ class Well < Receptacle
   include Cherrypick::VolumeByNanoGramsPerMicroLitre
   include Cherrypick::VolumeByMicroLitre
   include StudyReport::WellDetails
-  include Tag::Associations
   include Api::Messages::FluidigmPlateIO::WellExtensions
 
   class Link < ActiveRecord::Base
     self.table_name = 'well_links'
     self.inheritance_column = nil
 
-    belongs_to :target_well, class_name: 'Well'
-    belongs_to :source_well, class_name: 'Well'
-  end
-
-  has_many :stock_well_links, ->() { where(type: 'stock') }, class_name: 'Well::Link', foreign_key: :target_well_id
-
-  has_many :stock_wells, through: :stock_well_links, source: :source_well do
-    def attach!(wells)
-      attach(wells).tap do |_|
-        proxy_association.owner.save!
-      end
-    end
-
-    def attach(wells)
-      proxy_association.owner.stock_well_links.build(wells.map { |well| { type: 'stock', source_well: well } })
-    end
+    belongs_to :target_well, class_name: 'Receptacle'
+    belongs_to :source_well, class_name: 'Receptacle'
   end
 
   def subject_type
     'well'
+  end
+
+  def asset_type_for_request_types
+    Well
   end
 
   has_many :customer_requests, class_name: 'CustomerRequest', foreign_key: :asset_id
@@ -71,11 +60,6 @@ class Well < Receptacle
   has_many :latest_child_well, ->() { limit(1).order('asset_links.descendant_id DESC').where(assets: { sti_type: 'Well' }) }, class_name: 'Well', through: :links_as_parent, source: :descendant
 
   scope :include_stock_wells, -> { includes(stock_wells: :requests_as_source) }
-  scope :include_map,         -> { includes(:map) }
-
-  scope :located_at, ->(location) {
-    joins(:map).where(maps: { description: location })
-  }
 
   scope :on_plate_purpose, ->(purposes) {
       joins(:plate)
@@ -118,14 +102,8 @@ class Well < Receptacle
         })
   }
 
-  scope :located_at_position, ->(position) { joins(:map).readonly(false).where(maps: { description: position }) }
-
-  has_one :container_association, foreign_key: :content_id, inverse_of: :well
-  has_one :plate, through: :container_association, inverse_of: :wells
-
-  def labware
-    plate
-  end
+  # For compatibility
+  belongs_to :plate, foreign_key: :labware_id
 
   delegate :location, :location_id, :location_id=, :printable_target, to: :plate, allow_nil: true
   self.per_page = 500
@@ -136,21 +114,15 @@ class Well < Receptacle
   before_create { |w| w.create_well_attribute unless w.well_attribute.present? }
 
   scope :pooled_as_target_by, ->(type) {
-    joins('LEFT JOIN requests patb ON assets.id=patb.target_asset_id')
+    joins('LEFT JOIN requests patb ON receptacles.id=patb.target_asset_id')
       .where(['(patb.sti_type IS NULL OR patb.sti_type IN (?))', [type, *type.descendants].map(&:name)])
-      .select('assets.*, patb.submission_id AS pool_id').uniq
+      .select('receptacles.*, patb.submission_id AS pool_id').uniq
   }
   scope :pooled_as_source_by, ->(type) {
-    joins('LEFT JOIN requests pasb ON assets.id=pasb.asset_id')
+    joins('LEFT JOIN requests pasb ON receptacles.id=pasb.asset_id')
       .where(['(pasb.sti_type IS NULL OR pasb.sti_type IN (?)) AND pasb.state IN (?)', [type, *type.descendants].map(&:name), Request::Statemachine::OPENED_STATE])
-      .select('assets.*, pasb.submission_id AS pool_id').uniq
+      .select('receptacles.*, pasb.submission_id AS pool_id').uniq
   }
-
-  # It feels like we should be able to do this with just includes and order, but oddly this causes more disruption downstream
-  scope :in_column_major_order,         -> { joins(:map).order('column_order ASC').select('assets.*, column_order') }
-  scope :in_row_major_order,            -> { joins(:map).order('row_order ASC').select('assets.*, row_order') }
-  scope :in_inverse_column_major_order, -> { joins(:map).order('column_order DESC').select('assets.*, column_order') }
-  scope :in_inverse_row_major_order,    -> { joins(:map).order('row_order DESC').select('assets.*, row_order') }
 
   scope :in_plate_column, ->(col, size) {  joins(:map).where(maps: { description: Map::Coordinate.descriptions_for_column(col, size), asset_size: size }) }
   scope :in_plate_row,    ->(row, size) {  joins(:map).where(maps: { description: Map::Coordinate.descriptions_for_row(row, size), asset_size: size }) }
@@ -280,9 +252,6 @@ class Well < Receptacle
     markers.is_a?(Array) ? markers.join : markers
   end
 
-  # def map_description
-  delegate :description, to: :map, prefix: true, allow_nil: true
-
   def valid_well_on_plate
     return false unless is_a?(Well)
     well_plate = plate
@@ -295,7 +264,7 @@ class Well < Receptacle
   end
 
   def create_child_sample_tube
-    Tube::Purpose.standard_sample_tube.create!(map: map, aliquots: aliquots.map(&:dup)).tap do |sample_tube|
+    Tube::Purpose.standard_sample_tube.create!(aliquots: aliquots.map(&:dup)).tap do |sample_tube|
       AssetLink.create_edge(self, sample_tube)
     end
   end
@@ -318,12 +287,6 @@ class Well < Receptacle
 
   validate(on: :save) do |record|
     record.errors.add(:name, 'cannot be specified for a well') unless record.name.blank?
-  end
-
-  def display_name
-    plate_name = plate.present? ? plate.sanger_human_barcode : '(not on a plate)'
-    plate_name ||= plate.display_name # In the even the plate is barcodeless (ie strip tubes) use its name
-    "#{plate_name}:#{map ? map.description : ''}"
   end
 
   def details

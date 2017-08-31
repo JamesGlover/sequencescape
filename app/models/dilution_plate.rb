@@ -15,7 +15,7 @@ class DilutionPlate < Plate
   # Eager load works just fine however. This effectively uses the join SQL, but populates the association
   scope :with_pico_children,  -> {
     eager_load(pico_children: [:barcode_prefix, :plate_metadata])
-      .where.not(pico_children_assets: { id: nil })
+      .where.not(pico_children_labware: { id: nil })
   }
 
   scope :for_pico_view, -> {

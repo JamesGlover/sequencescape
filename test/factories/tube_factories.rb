@@ -8,11 +8,9 @@ FactoryGirl.define do
 
   factory :empty_sample_tube, class: SampleTube do
     name                { generate :asset_name }
-    value               ''
     descriptors         []
     descriptor_fields   []
     qc_state            ''
-    resource            nil
     barcode
     purpose { Tube::Purpose.standard_sample_tube }
   end
@@ -25,7 +23,7 @@ FactoryGirl.define do
     end
 
     after(:create) do |sample_tube, evaluator|
-      create_list(:untagged_aliquot, 1, sample: evaluator.sample, receptacle: sample_tube, study: evaluator.study, project: evaluator.project)
+      create_list(:untagged_aliquot, 1, sample: evaluator.sample, receptacle: sample_tube.receptacle, study: evaluator.study, project: evaluator.project)
     end
 
     factory :sample_tube_with_sanger_sample_id do
@@ -46,7 +44,6 @@ FactoryGirl.define do
 
   factory :pulldown_multiplexed_library_tube do
     name { |_a| generate :asset_name }
-    public_name 'ABC'
   end
 
   factory :stock_multiplexed_library_tube do
@@ -60,20 +57,20 @@ FactoryGirl.define do
 
   factory(:empty_library_tube, class: LibraryTube) do
     qc_state ''
-    name     { |_| generate :asset_name }
+    name     { generate :asset_name }
     purpose  { Tube::Purpose.standard_library_tube }
   end
 
   factory(:library_tube, parent: :empty_library_tube) do
-    after(:create) do |library_tube|
-      library_tube.aliquots.create!(sample: create(:sample), library_type: 'Standard')
+    after(:build) do |tube, evaluator|
+      tube.receptacle = build(:receptacle_with_sample, map_id: 1)
     end
   end
 
  factory(:library_tube_with_barcode, parent: :empty_library_tube) do
     sequence(:barcode) { |i| i }
     after(:create) do |library_tube|
-      library_tube.aliquots.create!(sample: create(:sample_with_sanger_sample_id), library_type: 'Standard')
+      library_tube.receptacle.aliquots.create!(sample: create(:sample_with_sanger_sample_id), library_type: 'Standard')
     end
  end
 
@@ -83,32 +80,18 @@ FactoryGirl.define do
     end
 
     after(:create) do |library_tube, evaluator|
-      library_tube.aliquots << build(:tagged_aliquot, tag: create(:tag, map_id: evaluator.tag_map_id), receptacle: library_tube)
+      library_tube.receptacle.aliquots << build(:tagged_aliquot, tag: create(:tag, map_id: evaluator.tag_map_id), receptacle: library_tube.receptacle)
     end
   end
 
   factory :pac_bio_library_tube do
-    transient do
-      aliquot { build(:tagged_aliquot) }
-    end
+   # association(:receptacle, factory: :pac_bio_library_tube_receptacle)
     barcode
-    after(:build) do |t, evaluator|
-      t.aliquots << evaluator.aliquot
-    end
   end
 
   # A library tube is created from a sample tube through a library creation request!
   factory(:full_library_tube, parent: :library_tube) do
-    after(:create) { |tube| create(:library_creation_request, target_asset: tube) }
-  end
-
-  # A Multiplexed library tube comes from several library tubes, which are themselves created through a
-  # number of multiplexed library creation requests.  But the binding to these tubes comes from the parent-child
-  # relationships.
-  factory :full_multiplexed_library_tube, parent: :multiplexed_library_tube do
-    after(:create) do |tube|
-      tube.parents << (1..5).map { |_| create(:multiplexed_library_creation_request).target_asset }
-    end
+    after(:create) { |tube| create(:library_creation_request, target_asset: tube.receptacle) }
   end
 
   factory :broken_multiplexed_library_tube, parent: :multiplexed_library_tube

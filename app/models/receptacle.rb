@@ -7,6 +7,9 @@
 class Receptacle < ActiveRecord::Base
   include Transfer::State
   include Aliquot::Remover
+  include Tag::Associations
+
+  self.inheritance_column = 'sti_type'
 
   class_attribute :stock_message_template, instance_writer: false
 
@@ -14,9 +17,15 @@ class Receptacle < ActiveRecord::Base
 
   belongs_to :map
 
+  # Ideally this would be required, however the current code results in the
+  # creation of 'floating' wells, which later get laid out on the plate.
+  # We should try and move away from this model.
+  belongs_to :labware, required: false
+
   has_many :transfer_requests, class_name: 'TransferRequest', foreign_key: :target_asset_id
   has_many :transfer_requests_as_source, class_name: 'TransferRequest', foreign_key: :asset_id
   has_many :transfer_requests_as_target, class_name: 'TransferRequest', foreign_key: :target_asset_id
+
   has_many :requests, inverse_of: :asset, foreign_key: :asset_id
   has_one  :source_request, ->() { includes(:request_metadata) }, class_name: 'Request', foreign_key: :target_asset_id
   has_many :requests_as_source, ->() { includes(:request_metadata) }, class_name: 'Request', foreign_key: :asset_id
@@ -35,7 +44,24 @@ class Receptacle < ActiveRecord::Base
   has_many :projects, ->() { uniq }, through: :aliquots
   has_one :primary_aliquot, ->() { order(:created_at).readonly }, class_name: 'Aliquot', foreign_key: :receptacle_id
 
+  has_many :state_changes, foreign_key: :target_id
+
   has_many :tags, through: :aliquots
+
+  # Nice!
+  has_many :stock_well_links, ->() { where(type: 'stock') }, class_name: 'Well::Link', foreign_key: :target_well_id
+
+  has_many :stock_wells, through: :stock_well_links, source: :source_well do
+    def attach!(wells)
+      attach(wells).tap do |_|
+        proxy_association.owner.save!
+      end
+    end
+
+    def attach(wells)
+      proxy_association.owner.stock_well_links.build(wells.map { |well| { type: 'stock', source_well: well } })
+    end
+  end
 
   # Our receptacle needs to report its tagging status based on the most highly tagged aliquot. This retrieves it
   has_one :most_tagged_aliquot, ->() { order(tag2_id: :desc, tag_id: :desc).readonly }, class_name: 'Aliquot', foreign_key: :receptacle_id
@@ -46,6 +72,21 @@ class Receptacle < ActiveRecord::Base
   deprecate sample: 'receptacles may contain multiple samples. This method just returns the first.'
   has_one :get_tag, through: :primary_aliquot, source: :tag
   deprecate get_tag: 'receptacles can contain multiple tags.'
+
+  # def map_description
+  delegate :description, to: :map, prefix: true, allow_nil: true
+
+  scope :include_map,         -> { includes(:map) }
+  scope :located_at, ->(location) {
+    joins(:map).where(maps: { description: location })
+  }
+  scope :located_at_position, ->(position) { joins(:map).readonly(false).where(maps: { description: position }) }
+
+  # It feels like we should be able to do this with just includes and order, but oddly this causes more disruption downstream
+  scope :in_column_major_order,         -> { joins(:map).order('column_order ASC').select('assets.*, column_order') }
+  scope :in_row_major_order,            -> { joins(:map).order('row_order ASC').select('assets.*, row_order') }
+  scope :in_inverse_column_major_order, -> { joins(:map).order('column_order DESC').select('assets.*, column_order') }
+  scope :in_inverse_row_major_order,    -> { joins(:map).order('row_order DESC').select('assets.*, row_order') }
 
   # Named scopes for the future
   scope :include_aliquots, -> { includes(aliquots: %i(sample tag bait_library)) }
@@ -66,6 +107,12 @@ class Receptacle < ActiveRecord::Base
   # Scope for caching the samples of the receptacle
   scope :including_samples, -> { includes(samples: :studies) }
 
+  def display_name
+    labware_name = labware.present? ? labware.sanger_human_barcode : '(not on labware)'
+    labware_name ||= labware.display_name # In the even the labware is barcodeless (ie strip tubes) use its name
+    "#{labware_name}:#{map ? map.description : ''}"
+  end
+
   def sample=(sample)
     aliquots.clear
     aliquots << Aliquot.new(sample: sample)
@@ -83,6 +130,7 @@ class Receptacle < ActiveRecord::Base
   deprecate :tag
 
   delegate :tag_count_name, to: :most_tagged_aliquot, allow_nil: true
+  delegate :asset_type_for_request_types, to: :labware
 
   # Returns the map_id of the first and last tag in an asset
   # eg 1-96.
@@ -98,6 +146,19 @@ class Receptacle < ActiveRecord::Base
     when 1; then map_ids.first
     else "#{map_ids.first}-#{map_ids.last}"
     end
+  end
+
+  def attach_tag(tag, tag2 = nil)
+    tags = { tag: tag, tag2: tag2 }.compact
+    return if tags.empty?
+    raise StandardError, 'Cannot tag an empty asset'   if aliquots.empty?
+    raise StandardError, 'Cannot tag multiple samples' if aliquots.size > 1
+    aliquots.first.update_attributes!(tags)
+  end
+  alias attach_tags attach_tag
+
+  def name
+    "#{labware.display_name} #{map_description}"
   end
 
   def default_state
@@ -143,4 +204,14 @@ class Receptacle < ActiveRecord::Base
 
   # Contained samples also works on eg. plate
   alias_attribute :contained_samples, :samples
+
+  self.stock_message_template = 'WellStockResourceIO'
+
+  # Generates a message to broadcast the tube to the stock warehouse
+  # tables. Raises an exception if no template is configured for a give
+  # asset. In most cases this is because the asset is not a stock
+  def register_stock!
+    raise StandardError, "No stock template configured for #{self.class.name}. If #{self.class.name} is a stock, set stock_template on the class." if stock_message_template.nil?
+    Messenger.create!(target: self, template: stock_message_template, root: 'stock_resource')
+  end
 end

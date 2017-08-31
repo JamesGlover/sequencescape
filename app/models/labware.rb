@@ -53,11 +53,15 @@ class Labware < ActiveRecord::Base
   has_many :volume_updates, foreign_key: :target_id
   has_many :events_on_requests, through: :requests, source: :events
 
+  has_many :receptacles, inverse_of: :labware
+  has_many :aliquots, through: :receptacles
+  has_many :samples, through: :aliquots
+
   # TODO: Remove 'requests' and 'source_request' as they are abiguous
-  has_many :requests
-  has_one  :source_request,     ->() { includes(:request_metadata) }, class_name: 'Request', foreign_key: :target_asset_id
-  has_many :requests_as_source, ->() { includes(:request_metadata) },  class_name: 'Request', foreign_key: :asset_id
-  has_many :requests_as_target, ->() { includes(:request_metadata) },  class_name: 'Request', foreign_key: :target_asset_id
+  has_many :requests, through: :receptacles
+  has_one  :source_request, through: :receptacles
+  has_many :requests_as_source, through: :receptacles
+  has_many :requests_as_target, through: :receptacles
   has_many :state_changes, foreign_key: :target_id
 
   scope :include_requests_as_target, -> { includes(:requests_as_target) }
@@ -118,12 +122,12 @@ class Labware < ActiveRecord::Base
   end
  # Named scope for search by query string behaviour
  scope :for_search_query, ->(query, with_includes) {
-    search = '(assets.sti_type != "Well") AND ((assets.name IS NOT NULL AND assets.name LIKE :name)'
+    search = '((labware.name IS NOT NULL AND labware.name LIKE :name)'
     arguments = { name: "%#{query}%" }
 
     # The entire string consists of one of more numeric characters, treat it as an id or barcode
     if /\A\d+\z/ === query
-      search << ' OR (assets.id = :id) OR (assets.barcode = :barcode)'
+      search << ' OR (labware.id = :id) OR (labware.barcode = :barcode)'
       arguments[:id] = query.to_i
       arguments[:barcode] = query.to_s
     end
@@ -132,7 +136,7 @@ class Labware < ActiveRecord::Base
     if match = /\A([A-z]{2})(\d{1,7})[A-z]{0,1}\z/.match(query)
       prefix_id = BarcodePrefix.find_by(prefix: match[1]).try(:id)
       number = match[2]
-      search << ' OR (assets.barcode = :barcode AND assets.barcode_prefix_id = :prefix_id)' unless prefix_id.nil?
+      search << ' OR (labware.barcode = :barcode AND labware.barcode_prefix_id = :prefix_id)' unless prefix_id.nil?
       arguments[:barcode] = number
       arguments[:prefix_id] = prefix_id
     end
@@ -297,37 +301,6 @@ class Labware < ActiveRecord::Base
     nil
   end
 
-  QC_STATES = [
-    ['passed',  'pass'],
-    ['failed',  'fail'],
-    ['pending', 'pending'],
-    [nil, '']
-  ]
-
-  QC_STATES.reject { |k, _v| k.nil? }.each do |state, qc_state|
-    line = __LINE__ + 1
-    class_eval("
-      def qc_#{qc_state}
-        self.qc_state = #{state.inspect}
-        self.save!
-      end
-    ", __FILE__, line)
-  end
-
-  def compatible_qc_state
-    QC_STATES.assoc(qc_state).try(:last) || qc_state
-  end
-
-  def set_qc_state(state)
-    self.qc_state = QC_STATES.rassoc(state).try(:first) || state
-    save
-    set_external_release(qc_state)
-  end
-
-  def has_been_through_qc?
-    qc_state.present?
-  end
-
   def set_external_release(state)
     update_external_release do
       case
@@ -450,15 +423,6 @@ class Labware < ActiveRecord::Base
     AssetLink.create_edge!(parent, self)
   end
 
-  def attach_tag(tag, tag2 = nil)
-    tags = { tag: tag, tag2: tag2 }.compact
-    return if tags.empty?
-    raise StandardError, 'Cannot tag an empty asset'   if aliquots.empty?
-    raise StandardError, 'Cannot tag multiple samples' if aliquots.size > 1
-    aliquots.first.update_attributes!(tags)
-  end
-  alias attach_tags attach_tag
-
   def requests_status(request_type)
     requests.order('id ASC').where(request_type: request_type).pluck(:state)
   end
@@ -528,7 +492,6 @@ class Labware < ActiveRecord::Base
   # tables. Raises an exception if no template is configured for a give
   # asset. In most cases this is because the asset is not a stock
   def register_stock!
-    raise StandardError, "No stock template configured for #{self.class.name}. If #{self.class.name} is a stock, set stock_template on the class." if stock_message_template.nil?
-    Messenger.create!(target: self, template: stock_message_template, root: 'stock_resource')
+    receptacles.each(&:register_stock!)
   end
 end

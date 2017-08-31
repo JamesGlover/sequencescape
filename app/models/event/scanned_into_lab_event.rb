@@ -5,7 +5,7 @@
 # Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
 
 class Event::ScannedIntoLabEvent < Event
-  after_create :set_qc_state_pending, unless: :test?
+  after_create :set_qc_state_pending, if: :qc_state_tracked_and_unset?
   alias_method :asset, :eventful
 
   def self.create_for_asset!(asset, location)
@@ -21,7 +21,8 @@ class Event::ScannedIntoLabEvent < Event
     asset.qc_pending
   end
 
-  def test?
-    (asset.qc_state == 'passed' || asset.qc_state == 'failed')
+  def qc_state_tracked_and_unset?
+    return false unless asset.respond_to?(:qc_state)
+    asset.qc_state != 'passed' && asset.qc_state == 'failed'
   end
 end

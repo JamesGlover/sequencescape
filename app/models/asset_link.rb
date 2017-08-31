@@ -7,7 +7,7 @@
 class AssetLink < ActiveRecord::Base
   include Api::AssetLinkIO::Extensions
 
-  acts_as_dag_links node_class_name: 'Asset'
+  acts_as_dag_links node_class_name: 'Labware'
 
   self.per_page = 500
   include Uuid::Uuidable

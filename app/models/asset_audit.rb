@@ -9,7 +9,7 @@ class AssetAudit < ActiveRecord::Base
   include Uuid::Uuidable
   include ::Io::AssetAudit::ApiIoSupport
 
-  belongs_to :asset
+  belongs_to :asset, class_name: 'Labware'
 
   self.per_page = 500
 

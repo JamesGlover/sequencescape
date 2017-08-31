@@ -18,7 +18,7 @@ class Qcable < ActiveRecord::Base
   include Qcable::Statemachine
 
   belongs_to :lot, inverse_of: :qcables
-  belongs_to :asset
+  belongs_to :asset, class_name: 'Labware'
   belongs_to :qcable_creator, inverse_of: :qcables
 
   has_one :stamp_qcable, inverse_of: :qcable, class_name: 'Stamp::StampQcable'

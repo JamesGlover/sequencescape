@@ -104,16 +104,14 @@ class Plate < Labware
 
   # About 10x faster than going through the wells
   def submission_ids
-    @siat ||= container_associations
-              .joins('LEFT JOIN requests ON requests.target_asset_id = container_associations.content_id')
-              .where.not(requests: { submission_id: nil }).where.not(requests: { state: Request::Statemachine::INACTIVE })
+    @siat ||= requests_as_target
+              .where.not(submission_id: nil).where.not(state: Request::Statemachine::INACTIVE)
               .uniq.pluck(:submission_id)
   end
 
   def submission_ids_as_source
-    @sias ||= container_associations
-              .joins('LEFT JOIN requests ON requests.asset_id = container_associations.content_id')
-              .where(['requests.submission_id IS NOT NULL AND requests.state NOT IN (?)', Request::Statemachine::INACTIVE])
+    @sias ||= requests_as_source
+              .where.not(submission_id: nil).where.not(state: Request::Statemachine::INACTIVE)
               .uniq.pluck(:submission_id)
   end
 
@@ -135,16 +133,16 @@ class Plate < Labware
     s = Submission.select('submissions.*',).uniq
                   .joins([
                     'INNER JOIN requests as reqp ON reqp.submission_id = submissions.id',
-                    'INNER JOIN container_associations AS caplp ON caplp.content_id = reqp.asset_id'
+                    'INNER JOIN receptacles AS well ON well.id = reqp.asset_id'
                   ])
-                  .where(['caplp.container_id = ?', id])
-    return s unless s.blank?
+                  .where(well: { labware_id: id })
+    return s if s.present?
     Submission.select('submissions.*',).uniq
               .joins([
                 'INNER JOIN requests as reqp ON reqp.submission_id = submissions.id',
-                'INNER JOIN container_associations AS caplp ON caplp.content_id = reqp.target_asset_id'
+                'INNER JOIN receptacles AS well ON well.id = reqp.target_asset_id'
               ])
-              .where(['caplp.container_id = ?', id])
+              .where(well: { labware_id: id })
   end
 
   def barcode_dilution_factor_created_at_hash
@@ -159,8 +157,8 @@ class Plate < Labware
   def iteration
     iter = siblings # assets sharing the same parent
            .where(plate_purpose_id: plate_purpose_id, sti_type: sti_type) # of the same purpose and type
-           .where('assets.created_at <= ?', created_at) # created before or at the same time
-           .count('assets.id') # count the siblings.
+           .where('labware.created_at <= ?', created_at) # created before or at the same time
+           .count('labware.id') # count the siblings.
 
     iter.zero? ? nil : iter # Maintains compatibility with legacy version
   end
@@ -221,14 +219,14 @@ class Plate < Labware
   def priority
     Submission.joins([
       'INNER JOIN requests as reqp ON reqp.submission_id = submissions.id',
-      'INNER JOIN container_associations AS caplp ON caplp.content_id = reqp.asset_id'
+      'INNER JOIN receptacles ON receptacles.id = reqp.asset_id'
     ])
-              .where(['caplp.container_id = ?', id]).maximum('submissions.priority') ||
+              .where(receptacles: { labware_id: id }).maximum('submissions.priority') ||
       Submission.joins([
         'INNER JOIN requests as reqp ON reqp.submission_id = submissions.id',
-        'INNER JOIN container_associations AS caplp ON caplp.content_id = reqp.target_asset_id'
+        'INNER JOIN receptacles ON receptacles.id = reqp.target_asset_id'
       ])
-                .where(['caplp.container_id = ?', id]).maximum('submissions.priority') ||
+                .where(receptacles: { labware_id: id }).maximum('submissions.priority') ||
       0
   end
 
@@ -238,8 +236,7 @@ class Plate < Labware
   end
   deprecate study: 'Plates can belong to multiple studies, use #studies instead.'
 
-  has_many :container_associations, foreign_key: :container_id, inverse_of: :plate
-  has_many :wells, through: :container_associations, inverse_of: :plate do
+  has_many :wells, inverse_of: :plate, foreign_key: :labware_id do
     def attach(records)
       ActiveRecord::Base.transaction do
         proxy_association.owner.wells << records
@@ -304,25 +301,12 @@ class Plate < Labware
 
   # TODO: Make these more railsy
   scope :with_sample, ->(sample) {
-      select('assets.*').uniq
-                        .joins([
-                          'LEFT OUTER JOIN container_associations AS wscas ON wscas.container_id = assets.id',
-                          'LEFT JOIN assets AS wswells ON wswells.id = content_id',
-                          'LEFT JOIN aliquots AS wsaliquots ON wsaliquots.receptacle_id = wswells.id'
-                        ])
-                        .where(['wsaliquots.sample_id IN(?)', Array(sample)])
+    joins(:samples).where(samples: { id: sample })
   }
 
- scope :with_requests, ->(requests) {
-   select('assets.*').uniq
-                     .joins([
-                       'INNER JOIN container_associations AS wrca ON wrca.container_id = assets.id',
-                       'INNER JOIN requests AS wrr ON wrr.asset_id = wrca.content_id'
-                     ]).where([
-                       'wrr.id IN (?)',
-                       requests.map(&:id)
-                     ])
-                       }
+  scope :with_requests, ->(requests) {
+    join(:requests_as_source).where(requests: { id: requests })
+  }
 
   scope :output_by_batch, ->(batch) {
       joins(wells: { requests_as_target: :batch })
@@ -402,7 +386,6 @@ class Plate < Labware
   end
 
   def add_well_holder(well)
-    children << well
     wells << well
   end
 
@@ -806,8 +789,8 @@ class Plate < Labware
       'INNER JOIN request_types ON request_types.product_line_id = product_lines.id',
       'INNER JOIN requests ON requests.request_type_id = request_types.id',
       'INNER JOIN well_links ON well_links.source_well_id = requests.asset_id AND well_links.type = "stock"',
-      'INNER JOIN container_associations AS ca ON ca.content_id = well_links.target_well_id'
-    ]).find_by(['ca.container_id = ?', id]).try(:name) || 'UNKNOWN'
+      'INNER JOIN receptacles ON receptacles.id = well_links.target_well_id'
+    ]).find_by(receptacles: { labware_id: id }).try(:name) || 'UNKNOWN'
   end
 
   # Barcode is stored as a string, jet in a number of places is treated as

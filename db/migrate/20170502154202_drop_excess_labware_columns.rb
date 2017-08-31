@@ -7,7 +7,6 @@ class DropExcessLabwareColumns < ActiveRecord::Migration
     remove_column 'labware', 'public_name', :string   ,             limit: 255
     remove_column 'labware', 'archive', :boolean
     remove_column 'labware', 'external_release', :boolean
-    remove_column 'labware', 'two_dimensional_barcode', :string   , limit: 255
     remove_column 'labware', 'volume', :decimal  ,                                precision: 10, scale: 2
     remove_column 'labware', 'concentration', :decimal  ,                         precision: 18, scale: 8
     remove_column 'labware', 'legacy_sample_id', :integer  ,        limit: 4

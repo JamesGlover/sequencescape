@@ -98,7 +98,7 @@ class Order < ActiveRecord::Base
 
   def assets_are_appropriate
     all_assets.each do |asset|
-      errors.add(:asset, "'#{asset.name}' is a #{asset.sti_type} which is not suitable for #{first_request_type.name} requests") unless is_asset_applicable_to_type?(first_request_type, asset)
+      errors.add(:asset, "'#{asset.name}' is a '#{asset.sti_type}' which is not suitable for #{first_request_type.name} requests.") unless is_asset_applicable_to_type?(first_request_type, asset)
     end
     return true if errors.empty?
     false

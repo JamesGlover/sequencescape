@@ -9,7 +9,7 @@ class AssetBarcode < ActiveRecord::Base
   def self.new_barcode
     barcode = (AssetBarcode.create!).id
 
-    while Asset.find_by(barcode: barcode.to_s)
+    while Labware.find_by(barcode: barcode.to_s)
       barcode = (AssetBarcode.create!).id
     end
 

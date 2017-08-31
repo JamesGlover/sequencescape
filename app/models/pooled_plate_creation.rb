@@ -10,7 +10,7 @@ class PooledPlateCreation < AssetCreation
   class ParentAssociation < ActiveRecord::Base
     self.table_name = ('asset_creation_parents')
     belongs_to :asset_creation
-    belongs_to :parent, class_name: 'Asset'
+    belongs_to :parent, class_name: 'Labware'
   end
 
   has_many :parent_associations, foreign_key: 'asset_creation_id', class_name: 'PooledPlateCreation::ParentAssociation'

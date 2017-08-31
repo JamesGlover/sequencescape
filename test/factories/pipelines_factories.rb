@@ -14,7 +14,6 @@ FactoryGirl.define do
 
   factory :labware do
     name                { |_a| generate :asset_name }
-    resource            nil
     barcode
     barcode_prefix { |b| b.association(:barcode_prefix) }
   end
@@ -33,7 +32,6 @@ FactoryGirl.define do
     name                'Control Plate name'
     descriptors         []
     descriptor_fields   []
-    resource            nil
     sti_type            'ControlPlate'
     barcode
   end
@@ -354,8 +352,8 @@ FactoryGirl.define do
   end
 
   factory :asset_link do
-    association(:ancestor, factory: :asset)
-    association(:descendant, factory: :asset)
+    association(:ancestor, factory: :labware)
+    association(:descendant, factory: :labware)
   end
 
   # Converts i to base 4, then substitutes in ATCG to

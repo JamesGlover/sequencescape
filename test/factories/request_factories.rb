@@ -13,8 +13,8 @@
 FactoryGirl.define do
   factory :multiplexed_library_creation_request, parent: :request  do
     sti_type      { RequestType.find_by(name: 'Multiplexed library creation').request_class_name }
-    asset         { |asset| asset.association(:sample_tube)  }
-    target_asset  { |asset| asset.association(:library_tube) }
+    asset         { |asset| asset.association(:receptacle) }
+    target_asset  { |asset| asset.association(:receptacle) }
     request_type  { RequestType.find_by(name: 'Multiplexed library creation') }
     after(:create) do |request|
       request.request_metadata.update_attributes!(
@@ -59,13 +59,13 @@ FactoryGirl.define do
     end
 
     factory(:sequencing_request_with_assets) do
-      association(:asset, factory: :library_tube)
-      association(:target_asset, factory: :lane)
+      association(:asset, factory: :receptacle)
+      association(:target_asset, factory: :receptacle)
     end
   end
 
   factory(:library_creation_request, parent: :request, class: LibraryCreationRequest) do
-    asset         { |asset| asset.association(:sample_tube) }
+    association(:asset, factory: :receptacle)
     request_type  { RequestType.find_by!(name: 'Library creation') }
     after(:create) do |request|
       request.request_metadata.update_attributes!(
@@ -86,7 +86,7 @@ FactoryGirl.define do
 
   factory(:multiplex_request, class: Request::Multiplexing) do
     asset nil
-    association(:target_asset, factory: :multiplexed_library_tube)
+    association(:target_asset, factory: :receptacle)
     request_purpose
   end
 
@@ -117,8 +117,8 @@ FactoryGirl.define do
 
   factory :request, parent: :request_without_assets do
     # the sample should be setup correctly and the assets should be valid
-    association(:asset, factory: :sample_tube)
-    association(:target_asset, factory: :empty_library_tube)
+    association(:asset, factory: :receptacle_with_sample_tube)
+    association(:target_asset, factory: :receptacle_with_labware)
 
     factory :request_with_submission do
       after(:build) do |request|
@@ -137,7 +137,7 @@ FactoryGirl.define do
 
   factory :request_with_sequencing_request_type, parent: :request_without_assets do
     # the sample should be setup correctly and the assets should be valid
-    asset            { |asset|    asset.association(:library_tube) }
+    asset            { |asset|    asset.association(:receptacle) }
     request_metadata { |metadata| metadata.association(:request_metadata_for_standard_sequencing) }
     request_type     { |rt|       rt.association(:sequencing_request_type) }
   end
@@ -150,8 +150,8 @@ FactoryGirl.define do
   end
 
   factory :request_suitable_for_starting, parent: :request_without_assets do
-    asset        { |asset| asset.association(:sample_tube)        }
-    target_asset { |asset| asset.association(:empty_library_tube) }
+    asset        { |asset| asset.association(:receptacle)        }
+    target_asset { |asset| asset.association(:receptacle) }
   end
 
   factory :pooled_cherrypick_request do
@@ -162,7 +162,7 @@ FactoryGirl.define do
   factory :lib_pcr_xp_request, parent: :request_without_assets do
     request_type { |rt|    rt.association(:lib_pcr_xp_request_type) }
     asset        { |asset| asset.association(:well) }
-    target_asset { |asset| asset.association(:empty_library_tube) }
+    target_asset { |asset| asset.association(:receptacle) }
   end
 
   factory :initial_transfer_request, class: TransferRequest::InitialTransfer do

@@ -361,7 +361,7 @@ class AssetsController < ApplicationController
       redirect_to action: 'find_by_barcode'
       return
     elsif barcode.size == 13 && Barcode.check_EAN(barcode)
-      @asset = Asset.with_machine_barcode(barcode).first
+      @asset = Labware.with_machine_barcode(barcode).first
     elsif match = /\A([A-z]{2})([0-9]{1,7})[A-z]{0,1}\z/.match(barcode) # Human Readable
       prefix = BarcodePrefix.find_by(prefix: match[1])
       @asset = Asset.find_by(barcode: match[2], barcode_prefix_id: prefix.id) if prefix

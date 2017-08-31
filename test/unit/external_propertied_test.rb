@@ -8,7 +8,7 @@ require 'test_helper'
 
 class ExternalPropertied < ActiveRecord::Base
   include ExternalProperties
-  self.table_name = :assets
+  self.table_name = :labware
 end
 
 class ExternalPropertiedTest < ActiveSupport::TestCase

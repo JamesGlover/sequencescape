@@ -68,6 +68,6 @@ class LabwhereReception
   private
 
   def assets
-    @assets ||= Asset.with_machine_barcode(asset_barcodes)
+    @assets ||= Labware.with_machine_barcode(asset_barcodes)
   end
 end

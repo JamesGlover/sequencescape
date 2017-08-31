@@ -2,7 +2,7 @@ class CustomMetadatumCollection < ActiveRecord::Base
   include Uuid::Uuidable
 
   belongs_to :user
-  belongs_to :asset
+  belongs_to :asset, class_name: 'Labware'
   has_many :custom_metadata, dependent: :destroy
 
   validates_presence_of :asset_id, :user_id

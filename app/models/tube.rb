@@ -5,16 +5,20 @@
 # Copyright (C) 2011,2012,2013,2014,2015,2016 Genome Research Ltd.
 
 class Tube < Labware
+  include DefaultAttributes
+
   include LocationAssociation::Locatable
   include Barcode::Barcodeable
   include ModelExtensions::Tube
-  include Tag::Associations
   include Asset::Ownership::Unowned
   include Transfer::Associations
   include Transfer::State::TubeState
+  include SingleReceptacle
 
   extend QcFile::Associations
   has_qc_files
+
+  delegate :qc_state, :qc_state=, :aliquots=, to: :receptacle
 
   # Transfer requests into a tube are direct requests where the tube is the target.
   def transfer_requests
@@ -37,7 +41,7 @@ class Tube < Labware
   has_many :submissions, ->() { distinct }, through: :requests_as_target
   scope :include_scanned_into_lab_event, -> { includes(:scanned_into_lab_event) }
 
- scope :with_purpose, ->(*purposes) {
+  scope :with_purpose, ->(*purposes) {
     where(plate_purpose_id: purposes.flatten.map(&:id))
                       }
 

@@ -9,8 +9,6 @@ FactoryGirl.define do
   factory :plate do
     plate_purpose
     name 'Plate name'
-    qc_state            ''
-    resource            nil
     barcode
     size 96
 

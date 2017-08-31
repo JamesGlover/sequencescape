@@ -4,14 +4,19 @@
 # authorship of this file.
 # Copyright (C) 2007-2011,2015 Genome Research Ltd.
 
+# Lanes should probably just be receptacles on the labware 'Flowcell'
 class Lane < Labware
+  include DefaultAttributes
+
   include Api::LaneIO::Extensions
   include LocationAssociation::Locatable
   include AliquotIndexer::Indexable
+  include SingleReceptacle
 
   def subject_type
     'lane'
   end
+  delegate :external_release=, :external_release, to: :receptacle
 
   LIST_REASONS_NEGATIVE = [
     'Failed on yield but sufficient data for experiment',

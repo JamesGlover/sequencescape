@@ -222,8 +222,7 @@ class CherrypickTask < Task
     Request.select(['requests.id AS id', 'plates.barcode AS barcode', 'maps.description AS description'])
            .joins([
              'INNER JOIN assets wells ON requests.asset_id=wells.id',
-             'INNER JOIN container_associations ON container_associations.content_id=wells.id',
-             'INNER JOIN assets plates ON plates.id=container_associations.container_id',
+             'INNER JOIN assets plates ON plates.id=wells.labware_id',
              'INNER JOIN maps ON wells.map_id=maps.id'
            ])
            .order('plates.barcode ASC, maps.column_order ASC')

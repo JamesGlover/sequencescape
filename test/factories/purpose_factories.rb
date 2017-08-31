@@ -1,7 +1,7 @@
 FactoryGirl.define do
   factory :purpose do
     name { generate :purpose_name }
-    target_type 'Asset'
+    target_type 'Labware'
 
     factory :stock_purpose do
       stock_plate true

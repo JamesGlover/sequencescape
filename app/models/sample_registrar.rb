@@ -86,7 +86,7 @@ class SampleRegistrar < ActiveRecord::Base
     # and send the request for the method!
     record.user.send(:is_owner_of, record.sample)
     record.study.samples.concat(record.sample)
-    RequestFactory.create_assets_requests([record.sample_tube], record.study)
+    RequestFactory.create_assets_requests([record.sample_tube.receptacle], record.study)
     sample_tube.register_stock!
   end
 
@@ -99,7 +99,7 @@ class SampleRegistrar < ActiveRecord::Base
     record.sample_tube.name = record.sample.name
   end
   after_create do |record|
-    record.sample_tube.aliquots.create!(sample: record.sample, study: record.study)
+    record.sample_tube.receptacle.aliquots.create!(sample: record.sample, study: record.study)
   end
 
   # SampleTubes are registered within an AssetGroup, unless the AssetGroup is unspecified.
@@ -115,7 +115,7 @@ class SampleRegistrar < ActiveRecord::Base
   end
 
   after_create do |record|
-    record.asset_group.assets.concat(record.sample_tube) unless record.asset_group.blank?
+    record.asset_group.assets.concat(record.sample_tube.receptacle) unless record.asset_group.blank?
   end
 
   def self.create_asset_group_by_name(name, study)
