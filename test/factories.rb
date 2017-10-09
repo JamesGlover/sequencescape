@@ -497,9 +497,9 @@ FactoryGirl.define do
   factory(:lane, parent: :empty_lane) do
   end
 
-  factory  :spiked_buffer do
+  factory :spiked_buffer do
     name { generate :asset_name }
-    association(:receptacle, volume: 50)
+    receptacle {|s| s.association(:receptacle, volume: 50) }
   end
 
   factory  :reference_genome do

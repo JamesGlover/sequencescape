@@ -14,7 +14,7 @@ class AliquotIndexerTest < ActiveSupport::TestCase
         @lane = create :lane
         @tags = [1, 8, 2, 4].map { |map_id| create :tag, map_id: map_id }
         @tag2s = [1, 2].map { |map_id| create :tag, map_id: map_id } * 2
-        @aliquots = Array.new(4) { |i| create :aliquot, receptacle: @lane, tag: @tags[i], tag2: @tag2s[i] }
+        @aliquots = Array.new(4) { |i| create :aliquot, receptacle: @lane.receptacle, tag: @tags[i], tag2: @tag2s[i] }
 
         @aliquot_index = [1, 4, 2, 3]
       end
@@ -37,11 +37,9 @@ class AliquotIndexerTest < ActiveSupport::TestCase
 
       context 'when phix is added' do
         setup do
-          @phix = create :spiked_buffer do |sb|
-            sb.aliquots { |a| a.association(:aliquot, receptacle: sb, tag: @tags[2]) }
-          end
-          a = create :aliquot, receptacle: @phix, tag: @tags[2]
-          @phix.aliquots = [a]
+          @phix = create :spiked_buffer
+          @phix.reload
+          @phix.receptacle.aliquots << create(:aliquot, receptacle: @phix.receptacle, tag: @tags[2])
           @lane.parents << @phix
           @aliquot_index = [1, 5, 3, 4]
         end
@@ -69,7 +67,7 @@ class AliquotIndexerTest < ActiveSupport::TestCase
         @pre_count = AliquotIndex.count
         @lane = create :lane
         @tags = [1, 8, 2, 4].map { |map_id| create :tag, map_id: map_id }
-        @aliquots = Array.new(4) { |i| create :aliquot, receptacle: @lane, tag: @tags[i], tag2_id: -1 }
+        @aliquots = Array.new(4) { |i| create :aliquot, receptacle: @lane.receptacle, tag: @tags[i], tag2_id: -1 }
 
         @aliquot_index = [1, 4, 2, 3]
       end
@@ -95,7 +93,8 @@ class AliquotIndexerTest < ActiveSupport::TestCase
           @phix = create :spiked_buffer do |sb|
             sb.aliquots { |a| a.association(:aliquot, receptacle: sb, tag: @tags[2]) }
           end
-          a = create :aliquot, receptacle: @phix, tag: @tags[2]
+          @phix.reload
+          a = create :aliquot, receptacle: @phix.receptacle, tag: @tags[2]
           @phix.aliquots = [a]
           @lane.parents << @phix
           @aliquot_index = [1, 5, 3, 4]

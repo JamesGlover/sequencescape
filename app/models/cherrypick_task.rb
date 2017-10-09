@@ -221,8 +221,8 @@ class CherrypickTask < Task
   def build_plate_wells_from_requests(requests)
     Request.select(['requests.id AS id', 'plates.barcode AS barcode', 'maps.description AS description'])
            .joins([
-             'INNER JOIN assets wells ON requests.asset_id=wells.id',
-             'INNER JOIN assets plates ON plates.id=wells.labware_id',
+             'INNER JOIN receptacles wells ON requests.asset_id=wells.id',
+             'INNER JOIN labware plates ON plates.id=wells.labware_id',
              'INNER JOIN maps ON wells.map_id=maps.id'
            ])
            .order('plates.barcode ASC, maps.column_order ASC')

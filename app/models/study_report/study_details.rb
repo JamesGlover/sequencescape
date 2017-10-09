@@ -36,7 +36,7 @@ module StudyReport::StudyDetails
 
   def well_report_ids(join, study_condition, plate_purpose_id)
     Well.joins(:plate, join)
-        .where(plates_assets: { plate_purpose_id: plate_purpose_id })
+        .where(labware: { plate_purpose_id: plate_purpose_id })
         .where(study_condition)
         .order(id: :asc).uniq.pluck(:id)
   end

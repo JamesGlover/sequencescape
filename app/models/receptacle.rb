@@ -8,6 +8,7 @@ class Receptacle < ActiveRecord::Base
   include Transfer::State
   include Aliquot::Remover
   include Tag::Associations
+  include Uuid::Uuidable
 
   self.inheritance_column = 'sti_type'
 
@@ -83,10 +84,10 @@ class Receptacle < ActiveRecord::Base
   scope :located_at_position, ->(position) { joins(:map).readonly(false).where(maps: { description: position }) }
 
   # It feels like we should be able to do this with just includes and order, but oddly this causes more disruption downstream
-  scope :in_column_major_order,         -> { joins(:map).order('column_order ASC').select('assets.*, column_order') }
-  scope :in_row_major_order,            -> { joins(:map).order('row_order ASC').select('assets.*, row_order') }
-  scope :in_inverse_column_major_order, -> { joins(:map).order('column_order DESC').select('assets.*, column_order') }
-  scope :in_inverse_row_major_order,    -> { joins(:map).order('row_order DESC').select('assets.*, row_order') }
+  scope :in_column_major_order,         -> { joins(:map).order('column_order ASC').select('receptacles.*, column_order') }
+  scope :in_row_major_order,            -> { joins(:map).order('row_order ASC').select('receptacles.*, row_order') }
+  scope :in_inverse_column_major_order, -> { joins(:map).order('column_order DESC').select('receptacles.*, column_order') }
+  scope :in_inverse_row_major_order,    -> { joins(:map).order('row_order DESC').select('receptacles.*, row_order') }
 
   # Named scopes for the future
   scope :include_aliquots, -> { includes(aliquots: %i(sample tag bait_library)) }
@@ -129,8 +130,39 @@ class Receptacle < ActiveRecord::Base
   end
   deprecate :tag
 
+    # We only support wells for the time being
+  def latest_stock_metrics(_product, *_args)
+    []
+  end
+
   delegate :tag_count_name, to: :most_tagged_aliquot, allow_nil: true
   delegate :asset_type_for_request_types, to: :labware
+
+  extend EventfulRecord
+  has_many_events do
+    # TODO: Work out which ones we need.
+    event_constructor(:create_external_release!,       ExternalReleaseEvent,          :create_for_asset!)
+    event_constructor(:create_pass!,                   Event::AssetSetQcStateEvent,   :create_updated!)
+    event_constructor(:create_fail!,                   Event::AssetSetQcStateEvent,   :create_updated!)
+    event_constructor(:create_state_update!,           Event::AssetSetQcStateEvent,   :create_updated!)
+    event_constructor(:create_scanned_into_lab!,       Event::ScannedIntoLabEvent,    :create_for_asset!)
+    event_constructor(:create_plate!,                  Event::PlateCreationEvent,     :create_for_asset!)
+    event_constructor(:create_plate_with_date!,        Event::PlateCreationEvent,     :create_for_asset_with_date!)
+    event_constructor(:create_sequenom_stamp!,         Event::PlateCreationEvent,     :create_sequenom_stamp_for_asset!)
+    event_constructor(:create_sequenom_plate!,         Event::PlateCreationEvent,     :create_sequenom_plate_for_asset!)
+    event_constructor(:create_gel_qc!,                 Event::SampleLogisticsQcEvent, :create_gel_qc_for_asset!)
+    event_constructor(:create_pico!,                   Event::SampleLogisticsQcEvent, :create_pico_result_for_asset!)
+    event_constructor(:created_using_sample_manifest!, Event::SampleManifestEvent,    :created_sample!)
+    event_constructor(:updated_using_sample_manifest!, Event::SampleManifestEvent,    :updated_sample!)
+    event_constructor(:updated_fluidigm_plate!, Event::SequenomLoading, :updated_fluidigm_plate!)
+    event_constructor(:update_gender_markers!,         Event::SequenomLoading,        :created_update_gender_makers!)
+    event_constructor(:update_sequenom_count!,         Event::SequenomLoading,        :created_update_sequenom_count!)
+  end
+  has_many_lab_events
+
+  has_one_event_with_family 'moved_to_2d_tube'
+
+  delegate :barcode, :sanger_human_barcode, :ean13_barcode, to: :labware
 
   # Returns the map_id of the first and last tag in an asset
   # eg 1-96.

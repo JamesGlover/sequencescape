@@ -2,6 +2,7 @@ class DropExcessReceptacleColumns < ActiveRecord::Migration
   def change
     remove_column 'receptacles', 'name', :string   ,                    limit: 255
     remove_column 'receptacles', 'value', :string   ,                   limit: 255
+    remove_column 'receptacles', 'barcode', :string   ,                 limit: 255
     remove_column 'receptacles', 'size', :integer  ,                    limit: 4
     remove_column 'receptacles', 'closed', :boolean  ,                  default: false
     remove_column 'receptacles', 'public_name', :string   ,             limit: 255

@@ -203,9 +203,9 @@ class SubmissionsControllerTest < ActionController::TestCase
         @asset_a = create :sample_tube, sample:  @sample
         @asset_b = create :sample_tube, sample:  @sample
         @secondary_submission = create :submission
-        @secondary_order = create :order, assets: [@asset_b], template_name: @shared_template, submission: @secondary_submission
+        @secondary_order = create :order, assets: [@asset_b.receptacle], template_name: @shared_template, submission: @secondary_submission
         @submission = create :submission
-        @order = create :order, assets: [@asset_a], template_name: @shared_template, submission: @submission
+        @order = create :order, assets: [@asset_a.receptacle], template_name: @shared_template, submission: @submission
       end
 
       should 'warn the user about duplicates' do
@@ -224,7 +224,7 @@ class SubmissionsControllerTest < ActionController::TestCase
         @sample  = create :sample
         @asset_a = create :sample_tube, sample: @sample
         @submission = create :submission
-        @order = create :order, assets: [@asset_a], template_name: @shared_template, submission: @submission
+        @order = create :order, assets: [@asset_a.receptacle], template_name: @shared_template, submission: @submission
       end
 
       should 'not warn the user about duplicates' do

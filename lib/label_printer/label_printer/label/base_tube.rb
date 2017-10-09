@@ -16,7 +16,7 @@ module LabelPrinter
       end
 
       def middle_line(tube)
-        tube.barcode
+        tube.labware.barcode
       end
 
       def bottom_line(_tube)
@@ -24,15 +24,15 @@ module LabelPrinter
       end
 
       def round_label_top_line(tube)
-        tube.prefix
+        tube.labware.prefix
       end
 
       def round_label_bottom_line(tube)
-        tube.barcode
+        tube.labware.barcode
       end
 
       def barcode(tube)
-        tube.ean13_barcode
+        tube.labware.ean13_barcode
       end
 
       def tubes

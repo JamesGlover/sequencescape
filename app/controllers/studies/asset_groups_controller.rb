@@ -100,7 +100,7 @@ class Studies::AssetGroupsController < ApplicationController
       redirect_to study_asset_groups_path(@study)
       return
     else
-      @assets = Asset.where(['name like ?', "%#{query}%"])
+      @assets = Receptacle.where(['name like ?', "%#{query}%"])
     end
     @asset_group = AssetGroup.find(params[:id])
     respond_to do |format|
@@ -114,7 +114,7 @@ class Studies::AssetGroupsController < ApplicationController
     @study = Study.find(params[:study_id])
     if params[:asset]
       ids = params[:asset].map { |a| a[1] == '1' ? a[0] : nil }.select { |a| !a.nil? }
-      @assets = Asset.find(ids)
+      @assets = Receptacle.find(ids)
       @asset_group.assets << @assets
     end
 

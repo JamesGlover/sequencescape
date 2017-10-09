@@ -633,18 +633,18 @@ ActiveRecord::Schema.define(version: 20170830153401) do
   add_index "lab_interface_workflows", ["pipeline_id"], name: "index_lab_interface_workflows_on_pipeline_id", using: :btree
 
   create_table "labware", force: :cascade do |t|
-    t.string   "name",              limit: 255
-    t.text     "descriptors",       limit: 65535
-    t.text     "descriptor_fields", limit: 65535
-    t.string   "sti_type",          limit: 50
-    t.string   "barcode",           limit: 255
+    t.string   "name",                    limit: 255
+    t.text     "descriptors",             limit: 65535
+    t.text     "descriptor_fields",       limit: 65535
+    t.string   "sti_type",                limit: 50
+    t.string   "barcode",                 limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "size",              limit: 4
-    t.boolean  "closed",                          default: false
+    t.integer  "size",                    limit: 4
+    t.boolean  "closed",                                default: false
     t.string   "two_dimensional_barcode", limit: 255
-    t.integer  "plate_purpose_id",  limit: 4
-    t.integer  "barcode_prefix_id", limit: 4
+    t.integer  "plate_purpose_id",        limit: 4
+    t.integer  "barcode_prefix_id",       limit: 4
   end
 
   add_index "labware", ["barcode"], name: "index_assets_on_barcode", using: :btree
@@ -1144,7 +1144,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.text     "descriptors",       limit: 65535
     t.text     "descriptor_fields", limit: 65535
     t.string   "sti_type",          limit: 50
-    t.string   "barcode",           limit: 255
     t.string   "qc_state",          limit: 20
     t.boolean  "resource"
     t.datetime "created_at"
@@ -1156,7 +1155,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer  "labware_id",        limit: 4
   end
 
-  add_index "receptacles", ["barcode"], name: "index_assets_on_barcode", using: :btree
   add_index "receptacles", ["labware_id"], name: "fk_rails_2201f76983", using: :btree
   add_index "receptacles", ["map_id"], name: "index_assets_on_map_id", using: :btree
   add_index "receptacles", ["updated_at"], name: "index_assets_on_sti_type_and_updated_at", using: :btree
@@ -1989,6 +1987,8 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at",             null: false
     t.datetime "updated_at",             null: false
   end
+
+  add_index "work_order_types", ["name"], name: "index_work_order_types_on_name", unique: true, using: :btree
 
   create_table "work_orders", force: :cascade do |t|
     t.integer  "work_order_type_id", limit: 4, null: false

@@ -64,23 +64,23 @@ class ReceptionsControllerTest < ActionController::TestCase
     context '#confirm reception' do
       context 'where asset exists' do
         setup do
-          @asset_count = Asset.count
+          @asset_count = Labware.count
           post :confirm_reception, asset_id: { '0' => @plate.id }, location_id: @location.id
         end
 
-        should 'change Asset.count by 0' do
-          assert_equal 0, Asset.count - @asset_count, 'Expected Asset.count to change by 0'
+        should 'change Labware.count by 0' do
+          assert_equal 0, Labware.count - @asset_count, 'Expected Labware.count to change by 0'
         end
         should respond_with :success
       end
       context 'where asset doesnt exist' do
         setup do
-          @asset_count = Asset.count
+          @asset_count = Labware.count
           post :confirm_reception, asset_id: { '0' => 999999 }, location_id: @location.id
         end
 
-        should 'change Asset.count by 0' do
-          assert_equal 0, Asset.count - @asset_count, 'Expected Asset.count to change by 0'
+        should 'change Labware.count by 0' do
+          assert_equal 0, Labware.count - @asset_count, 'Expected Labware.count to change by 0'
         end
         should set_flash.to(/not found/)
       end
@@ -101,14 +101,14 @@ class ReceptionsControllerTest < ActionController::TestCase
     ['index', 'snp_import'].each do |controller_method|
       context "##{controller_method}" do
         setup do
-          @asset_count = Asset.count
+          @asset_count = Labware.count
           get controller_method, id: @plate.id
         end
 
         should respond_with :success
 
-        should 'change Asset.count by 0' do
-          assert_equal 0, Asset.count - @asset_count, 'Expected Asset.count to change by 0'
+        should 'change Labware.count by 0' do
+          assert_equal 0, Labware.count - @asset_count, 'Expected Labware.count to change by 0'
         end
       end
     end

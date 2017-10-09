@@ -431,7 +431,7 @@ class Batch < ActiveRecord::Base
   end
 
   def add_control(control_name, control_count)
-    asset = Asset.find_by(name: control_name, resource: true)
+    asset = Receptacle.joins(:labware).find_by(labware: { name: control_name }, resource: true)
 
     control_count = space_left if control_count == 0
 

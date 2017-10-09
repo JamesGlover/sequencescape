@@ -16,7 +16,7 @@ class SampleManifestTubeTest < ActiveSupport::TestCase
     @tubes = [tube1, tube2, tube3]
 
     @prefix = 'NT'
-    @barcode1 = tube1.barcode
+    @barcode1 = tube1.labware.barcode
 
     options = { sample_manifest: @manifest, only_first_label: false }
     @tube_label = LabelPrinter::Label::SampleManifestTube.new(options)
@@ -25,7 +25,7 @@ class SampleManifestTubeTest < ActiveSupport::TestCase
                bottom_line: (Date.today.strftime('%e-%^b-%Y')).to_s,
                round_label_top_line: prefix,
                round_label_bottom_line: barcode1,
-               barcode: tube1.ean13_barcode }
+               barcode: tube1.labware.ean13_barcode }
   end
 
   test 'should return the right list of tubes' do

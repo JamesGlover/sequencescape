@@ -23,14 +23,14 @@ class SampleTest < ActiveSupport::TestCase
       setup do
         @sample = create :sample
         @tube_a = create :empty_library_tube
-        @tube_b = create :empty_sample_tube
+        @tube_b = create :sample_tube, sample: @sample
 
-       create(:aliquot, sample: @sample, receptacle: @tube_b)
-       create(:aliquot, sample: @sample, receptacle: @tube_a)
+       create(:aliquot, sample: @sample, receptacle: @tube_a.receptacle)
       end
 
       should 'have the first tube it was added to as a primary asset' do
-        assert_equal @sample.reload.primary_receptacle, @tube_b
+        assert_equal @sample.reload.primary_receptacle, @tube_b.receptacle
+        assert_equal @sample.reload.primary_labware, @tube_b
       end
     end
 

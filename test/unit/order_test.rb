@@ -17,7 +17,7 @@ class OrderTest < ActiveSupport::TestCase
     setup do
       @shared_template = 'shared_template'
       @asset_a = create :sample_tube
-      @order   = create :order, assets: [@asset_a], template_name: @shared_template
+      @order   = create :order, assets: [@asset_a.receptacle], template_name: @shared_template
     end
 
     should 'not detect duplicates when there are none' do
@@ -27,7 +27,7 @@ class OrderTest < ActiveSupport::TestCase
     context 'with the same asset in a different order' do
       setup do
         @other_template = 'other_template'
-        @secondary_order = create :order, assets: [@asset_a], template_name: @other_template
+        @secondary_order = create :order, assets: [@asset_a.receptacle], template_name: @other_template
       end
       should 'not detect duplicates' do
         refute @order.duplicates_within(1.month)
@@ -38,7 +38,7 @@ class OrderTest < ActiveSupport::TestCase
       setup do
         @asset_b = create :sample_tube, sample: @asset_a.samples.first
         @secondary_submission = create :submission
-        @secondary_order = create :order, assets: [@asset_b], template_name: @shared_template, submission: @secondary_submission
+        @secondary_order = create :order, assets: [@asset_b.receptacle], template_name: @shared_template, submission: @secondary_submission
       end
       should 'detect duplicates' do
         assert @order.duplicates_within(1.month)
@@ -75,17 +75,17 @@ class OrderTest < ActiveSupport::TestCase
   end
 
   test 'order should not be valid if study is not active' do
-    order = build :order, study: study, assets: [asset], project: project
+    order = build :order, study: study, assets: [asset.receptacle], project: project
     refute order.valid?
   end
 
   test 'order should be valid if study is active on create' do
     study.activate!
-    order = create :order, study: study, assets: [asset], project: project
+    order = create :order, study: study, assets: [asset.receptacle], project: project
     assert order.valid?
     study.deactivate!
     new_asset = create :empty_sample_tube
-    order.assets << new_asset
+    order.assets << new_asset.receptacle
     assert order.valid?
   end
 end

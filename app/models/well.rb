@@ -63,7 +63,7 @@ class Well < Receptacle
 
   scope :on_plate_purpose, ->(purposes) {
       joins(:plate)
-        .where(plates_assets: { plate_purpose_id: purposes })
+        .where(labware: { plate_purpose_id: purposes })
   }
 
   scope :for_study_through_sample, ->(study) {
@@ -79,11 +79,11 @@ class Well < Receptacle
   #
   scope :without_report, ->(product_criteria) {
     joins([
-      'LEFT OUTER JOIN qc_metrics AS wr_qcm ON wr_qcm.asset_id = assets.id',
+      'LEFT OUTER JOIN qc_metrics AS wr_qcm ON wr_qcm.asset_id = receptacles.id',
       'LEFT OUTER JOIN qc_reports AS wr_qcr ON wr_qcr.id = wr_qcm.qc_report_id',
       'LEFT OUTER JOIN product_criteria AS wr_pc ON wr_pc.id = wr_qcr.product_criteria_id'
     ])
-      .group('assets.id')
+      .group('receptacles.id')
       .having('NOT BIT_OR(wr_pc.product_id = ? AND wr_pc.stage = ?)', product_criteria.product_id, product_criteria.stage)
   }
 
@@ -96,7 +96,7 @@ class Well < Receptacle
   }
 
   scope :target_wells_for, ->(wells) {
-    select('assets.*, well_links.source_well_id AS stock_well_id')
+    select('receptacles.*, well_links.source_well_id AS stock_well_id')
       .joins(:stock_well_links).where(well_links: {
         source_well_id: wells
         })

@@ -117,13 +117,13 @@ class BatchTest < ActiveSupport::TestCase
 
     context 'create requests' do
       setup do
-        @asset_count = Asset.count
+        @asset_count = Receptacle.count
         @requests    = Array.new(4) { create(:request, request_type: @pipeline.request_types.last) }
         @batch       = @pipeline.batches.create!(requests: @requests)
       end
 
-      should 'change Asset.count by 8' do
-        assert_equal 8,  Asset.count - @asset_count, 'Expected Asset.count to change by 8'
+      should 'change Receptacle.count by 8' do
+        assert_equal 8,  Receptacle.count - @asset_count, 'Expected Receptacle.count to change by 8'
       end
 
       should 'not have same asset name' do
@@ -258,21 +258,21 @@ class BatchTest < ActiveSupport::TestCase
     context 'create requests' do
       setup do
         @requests = create_list(:request, 4, request_type: @pipeline.request_types.last, target_asset: nil)
-        @asset_count = Asset.count
+        @asset_count = Labware.count
         @batch = @pipeline.batches.create!(requests: @requests)
       end
 
       should 'create target assets for each request' do
         # This is dependent of some aspects of pipelines and request types.
         # Its all a bit convoluted and inconsistent.
-        assert_equal 4, Asset.count - @asset_count, 'Expected Asset.count to change by 4'
+        assert_equal 4, Labware.count - @asset_count, 'Expected Labware.count to change by 4'
         @requests.each do |r|
           assert r.reload.target_asset.present?, 'Request has no target asset'
         end
       end
 
       should 'not have same asset name' do
-        assert_not_equal Asset.first.name, Asset.last.name
+        assert_not_equal Labware.first.name, Labware.last.name
       end
 
       should 'create a batch_request for every associated request' do
@@ -533,7 +533,7 @@ class BatchTest < ActiveSupport::TestCase
           # Separate context because we need to setup the DB first and we cannot check the changes made.
           context 'checking DB changes' do
             setup do
-              @asset_count = Asset.count
+              @asset_count = Receptacle.count
               @batchrequest_count = BatchRequest.count
               @request_count = Request.count
               @batch_count = Batch.count
@@ -542,7 +542,7 @@ class BatchTest < ActiveSupport::TestCase
 
             should 'remove the requests from the batch but not destroy them' do
               assert_equal(-2,  BatchRequest.count - @batchrequest_count, 'Expected BatchRequest.count to change by -2')
-              assert_equal(-2,  Asset.count - @asset_count, 'Expected Asset.count to change by -2')
+              assert_equal(-2,  Receptacle.count - @asset_count, 'Expected Receptacle.count to change by -2')
               assert_equal 0,  Request.count - @request_count, 'Expected Request.count to change by 0'
               assert_equal 0,  Batch.count - @batch_count, 'Expected Batch.count to change by 0'
             end

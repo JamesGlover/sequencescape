@@ -74,7 +74,7 @@ class Labware < ActiveRecord::Base
   has_many :submitted_assets
   has_many :orders, through: :submitted_assets
   has_many :messengers, as: :target, inverse_of: :target
-  has_one :custom_metadatum_collection
+  has_one :custom_metadatum_collection, foreign_key: :asset_id
   delegate :metadata, to: :custom_metadatum_collection
 
   scope :requests_as_source_is_a?, ->(t) { joins(:requests_as_source).where(requests: { sti_type: [t, *t.descendants].map(&:name) }) }
@@ -467,11 +467,6 @@ class Labware < ActiveRecord::Base
   # See Receptacle for handling of assets with contents
   def tag_count
     nil
-  end
-
-  # We only support wells for the time being
-  def latest_stock_metrics(_product, *_args)
-    []
   end
 
   def contained_samples; []; end

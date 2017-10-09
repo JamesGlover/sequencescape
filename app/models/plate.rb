@@ -292,11 +292,12 @@ class Plate < Labware
   before_create :set_plate_name_and_size
 
   scope :qc_started_plates, -> {
-    select('DISTINCT assets.*')
+    select('labware.*')
       .joins('LEFT OUTER JOIN `events` ON events.eventful_id = assets.id LEFT OUTER JOIN `asset_audits` ON asset_audits.asset_id = assets.id')
       .where(["(events.family = 'create_dilution_plate_purpose' OR asset_audits.key = 'slf_receive_plates') AND plate_purpose_id = ?", PlatePurpose.stock_plate_purpose.id])
-      .order('assets.id DESC')
+      .order(id: :desc)
       .includes(:events, :asset_audits)
+      .distinct
   }
 
   # TODO: Make these more railsy
@@ -324,9 +325,9 @@ class Plate < Labware
   end
 
   scope :with_wells, ->(wells) {
-      select('DISTINCT assets.*')
-        .joins(:container_associations)
-        .where(container_associations: { content_id: wells.map(&:id) })
+    join(:wells)
+      .where(receptacles: { id: wells } )
+      .distinct
   }
   #->() {where(:assets=>{:sti_type=>[Plate,*Plate.descendants].map(&:name)})},
   has_many :descendant_plates, class_name: 'Plate', through: :links_as_ancestor, foreign_key: :ancestor_id, source: :descendant

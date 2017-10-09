@@ -90,11 +90,11 @@ class Request < ActiveRecord::Base
     submission_ids = plate.all_submission_ids
     add_joins =
       if plate.stock_plate?
-        ['INNER JOIN assets AS pw ON requests.asset_id=pw.id']
+        ['INNER JOIN receptacles AS pw ON requests.asset_id=pw.id']
       else
         [
           'INNER JOIN well_links ON well_links.source_well_id=requests.asset_id',
-          'INNER JOIN labware AS pw ON well_links.target_well_id=pw.id AND well_links.type="stock"',
+          'INNER JOIN receptacles AS pw ON well_links.target_well_id=pw.id AND well_links.type="stock"',
         ]
       end
 
@@ -188,14 +188,14 @@ class Request < ActiveRecord::Base
 
   # Use container location
   scope :holder_located, ->(location_id) {
-    joins(['INNER JOIN container_associations hl ON hl.content_id = asset_id', 'INNER JOIN location_associations ON location_associations.locatable_id = hl.container_id'])
-      .where(['location_associations.location_id = ?', location_id])
+    joins(asset: :labware)
+      .where(labware: { location_id: location_id })
       .readonly(false)
   }
 
   scope :holder_not_control, -> {
-    joins(['INNER JOIN container_associations hncca ON hncca.content_id = asset_id', 'INNER JOIN assets AS hncc ON hncc.id = hncca.container_id'])
-      .where(['hncc.sti_type != ?', 'ControlPlate'])
+    joins(asset: :labware)
+      .where('labware.sti_type != "ControlPlate"')
       .readonly(false)
   }
   scope :without_asset, -> { where('asset_id is null') }
@@ -329,8 +329,8 @@ class Request < ActiveRecord::Base
   def submission_plate_count
     submission.requests
               .where(request_type_id: request_type_id)
-              .joins('LEFT JOIN container_associations AS spca ON spca.content_id = requests.asset_id')
-              .count('DISTINCT(spca.container_id)')
+              .joins(:asset)
+              .count('DISTINCT(receptacles.labware_id)')
   end
 
   def update_responsibilities!
@@ -374,7 +374,7 @@ class Request < ActiveRecord::Base
   end
 
   def self.get_target_plate_ids(request_ids)
-    Plate.join(:requests_as_target).where(requests: { id: request_ids }).pluck(:id)
+    Plate.joins(:requests_as_target).where(requests: { id: request_ids }).pluck(:id)
   end
 
   # The options that are required for creation.  In other words, the truly required options that must
