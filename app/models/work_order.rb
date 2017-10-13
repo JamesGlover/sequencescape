@@ -18,6 +18,9 @@ class WorkOrder < ApplicationRecord
 
   has_many :samples, ->() { distinct }, through: :example_request
 
+  # Caution! Do not remove or insert values, only append them.
+  enum unit_of_measurement: [ :flowcells, :libraries, :lanes ]
+
   # Will hopefully be variable in the future
   def quantity_units
     'flowcells'

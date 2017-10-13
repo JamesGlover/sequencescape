@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170821140140) do
+ActiveRecord::Schema.define(version: 20171012160820) do
 
   create_table "aliquot_indices", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "aliquot_id", null: false
@@ -1850,6 +1850,8 @@ ActiveRecord::Schema.define(version: 20170821140140) do
     t.integer "work_order_type_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "number", null: false
+    t.integer "unit_of_measurement", null: false
     t.index ["work_order_type_id"], name: "fk_rails_80841fcb4c"
   end
 

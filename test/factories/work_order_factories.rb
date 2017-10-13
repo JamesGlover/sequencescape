@@ -5,5 +5,7 @@ FactoryGirl.define do
 
   factory :work_order do
     work_order_type
+    number 1
+    unit_of_measurement 'flowcells'
   end
 end
