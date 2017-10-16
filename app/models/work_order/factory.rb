@@ -13,14 +13,23 @@ class WorkOrder
 
     delegate :requests, to: :submission
 
-    def initialize(submission)
+    def initialize(submission, unit_of_measurement:)
       @submission = submission
+      @unit_of_measurement = unit_of_measurement
     end
 
     def create_work_orders!
-      requests.group_by(&:asset_id).map do |_asset_id, requests|
+      requests.group_by(&:asset_id).map do |asset_id, requests|
         state = requests.first.state
-        WorkOrder.create!(work_order_type: work_order_type, requests: requests, state: state)
+        WorkOrder.create!(
+          work_order_type: work_order_type,
+          requests: requests,
+          asset_id: asset_id,
+          study_id: requests.first.initial_study_id,
+          project_id: requests.first.initial_project_id,
+          number: requests.length,
+          state: state
+          unit_of_measurement: @unit_of_measurement)
       end
     end
 

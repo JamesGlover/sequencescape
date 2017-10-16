@@ -26,7 +26,7 @@ class Request
         # We go via order as we need to get a particular instance of submission
         return if order&.submission.nil?
         order.submission.register_callback(:once) do
-          WorkOrder::Factory.new(order.submission).create_work_orders!
+          WorkOrder::Factory.new(order.submission, unit_of_measurement: :flowcells).create_work_orders!
         end
       end
     end

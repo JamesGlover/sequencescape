@@ -39,20 +39,6 @@ module Api
         }
       end
 
-      # JSONAPI::Resource doesn't support has_one through relationships by default
-      def study_id
-        _model.example_request.initial_study_id
-      end
-
-      # JSONAPI::Resource doesn't support has_one through relationships by default
-      def project_id
-        _model.example_request.initial_project_id
-      end
-
-      def source_receptacle_id
-        _model.example_request.asset_id
-      end
-
       def order_type
         _model.work_order_type.name
       end

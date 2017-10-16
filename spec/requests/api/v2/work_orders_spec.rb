@@ -56,18 +56,19 @@ describe 'WorkOrders API', with: :api_v2 do
 
   context 'with relationships' do
     let(:study) { create :study }
+    let(:project) { create :project }
     let(:well) { create :untagged_well }
     let(:sample) { well.samples.first }
 
     before do
-      request = create :library_request, initial_study: study, asset: well, project: nil
-      create :work_order, requests: [request]
+      create :work_order, source_receptacle: well, request_count: 1, study: study, project: project
     end
 
     let(:expected_includes) do
       # Note, we don't test the actual resource content here.
       [
         { 'type' => 'studies', 'id' => study.id.to_s },
+        { 'type' => 'projects', 'id' => project.id.to_s },
         { 'type' => 'wells', 'id' => well.id.to_s },
         { 'type' => 'samples', 'id' => sample.id.to_s }
       ]

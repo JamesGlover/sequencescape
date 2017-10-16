@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20171012160820) do
+ActiveRecord::Schema.define(version: 20171016075631) do
 
   create_table "aliquot_indices", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "aliquot_id", null: false
@@ -1852,8 +1852,15 @@ ActiveRecord::Schema.define(version: 20171012160820) do
     t.datetime "updated_at", null: false
     t.integer "number", null: false
     t.integer "unit_of_measurement", null: false
+    t.integer "source_receptacle_id", null: false
+    t.integer "study_id", null: false
+    t.integer "project_id", null: false
     t.string "state", null: false
+    t.index ["project_id"], name: "index_work_orders_on_project_id"
+    t.index ["source_receptacle_id"], name: "index_work_orders_on_source_receptacle_id"
+    t.index ["study_id"], name: "index_work_orders_on_study_id"
     t.index ["work_order_type_id", "state"], name: "index_work_orders_on_work_order_type_id_and_state"
+    t.index ["work_order_type_id"], name: "fk_rails_80841fcb4c"
   end
 
   create_table "workflow_samples", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1881,5 +1888,8 @@ ActiveRecord::Schema.define(version: 20171012160820) do
   add_foreign_key "work_completions", "users"
   add_foreign_key "work_completions_submissions", "submissions"
   add_foreign_key "work_completions_submissions", "work_completions"
+  add_foreign_key "work_orders", "assets", column: "source_receptacle_id"
+  add_foreign_key "work_orders", "projects"
+  add_foreign_key "work_orders", "studies"
   add_foreign_key "work_orders", "work_order_types"
 end

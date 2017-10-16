@@ -33,7 +33,7 @@ describe WorkOrder do
 
     let(:requests_set_a) { create_list(:request, 3, asset: create(:well), request_type: request_type) }
     let(:requests) { requests_set_a + requests_set_b }
-    subject(:factory) { described_class.new(submission) }
+    subject(:factory) { described_class.new(submission, unit_of_measurement: :flowcells) }
 
     context 'where request types match' do
       let(:requests_set_b) { create_list(:request, 3, asset: create(:well), request_type: request_type) }
