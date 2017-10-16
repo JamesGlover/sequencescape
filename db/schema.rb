@@ -1852,7 +1852,8 @@ ActiveRecord::Schema.define(version: 20171012160820) do
     t.datetime "updated_at", null: false
     t.integer "number", null: false
     t.integer "unit_of_measurement", null: false
-    t.index ["work_order_type_id"], name: "fk_rails_80841fcb4c"
+    t.string "state", null: false
+    t.index ["work_order_type_id", "state"], name: "index_work_orders_on_work_order_type_id_and_state"
   end
 
   create_table "workflow_samples", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
