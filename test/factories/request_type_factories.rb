@@ -21,6 +21,11 @@ FactoryGirl.define do
       request_class CustomerRequest
     end
 
+    factory :grid_ion_request_type do
+      asset_type 'Well'
+      request_class Request::Traction::GridIon
+    end
+
     factory :well_request_type do
       asset_type 'Well'
       request_class CustomerRequest

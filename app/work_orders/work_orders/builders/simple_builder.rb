@@ -8,12 +8,29 @@ module WorkOrders::Builders
   # @author Genome Research Ltd.
   #
   class SimpleBuilder
+    attr_reader :request_type_key
+
     def initialize(parameters)
-      # Do nothing
+      @request_type_key = parameters[:request_type]
     end
 
-    def build(_work_order)
+    def build(work_order)
+      work_order.requests = Array.new(work_order.number) do
+        request_type.create!(
+          asset: work_order.source_receptacle,
+          request_metadata_attributes: work_order.options,
+          study: work_order.study,
+          project: work_order.project,
+          work_order: work_order
+        )
+      end
       true
+    end
+
+    private
+
+    def request_type
+      RequestType.find_by(key: request_type_key)
     end
   end
 end
