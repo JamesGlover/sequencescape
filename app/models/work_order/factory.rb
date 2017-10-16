@@ -6,6 +6,8 @@ class WorkOrder
   # Builds work orders for a given submission
   # Currently only supports single request type submissions.
   class Factory
+    IGNORED_METADATA_FIELDS = %w(id request_id created_at updated_at).freeze
+
     include ActiveModel::Validations
     attr_reader :submission
 
@@ -24,16 +26,24 @@ class WorkOrder
         WorkOrder.create!(
           work_order_type: work_order_type,
           requests: requests,
-          asset_id: asset_id,
+          source_receptacle_id: asset_id,
           study_id: requests.first.initial_study_id,
           project_id: requests.first.initial_project_id,
           number: requests.length,
-          state: state
-          unit_of_measurement: @unit_of_measurement)
+          unit_of_measurement: @unit_of_measurement,
+          state: state,
+          options: extract_options(requests.first)
+        )
       end
     end
 
     private
+
+    def extract_options(request)
+      request.request_metadata.attributes.reject do |key, value|
+        IGNORED_METADATA_FIELDS.include?(key) || value.blank?
+      end
+    end
 
     def number_of_request_types
       requests.map(&:request_type_id).uniq.count

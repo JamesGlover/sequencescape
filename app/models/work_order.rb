@@ -23,14 +23,9 @@ class WorkOrder < ApplicationRecord
   # records.
   enum unit_of_measurement: [ :flowcells, :libraries, :lanes ]
 
-  # Will hopefully be variable in the future
-  def quantity_units
-    'flowcells'
-  end
-
-  def quantity_value
-    requests.count
-  end
+  # The options describing the work-order.
+  # Expected options vary between work-order types.
+  serialize :options, Hash
 
   def state=(new_state)
     super
@@ -52,6 +47,7 @@ class WorkOrder < ApplicationRecord
   end
 
   def options=(new_options)
+    super
     requests.each do |request|
       request.request_metadata_attributes = new_options
       request.save!

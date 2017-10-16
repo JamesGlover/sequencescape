@@ -30,13 +30,19 @@ describe WorkOrder do
   describe WorkOrder::Factory do
     let(:submission) { create :submission, requests: requests }
     let(:request_type) { create :request_type }
+    let(:study) { create :study }
+    let(:project) { create :project }
+    let(:options) { { read_length: 200 } }
 
-    let(:requests_set_a) { create_list(:request, 3, asset: create(:well), request_type: request_type) }
+    let(:requests_set_a) { create_list(:library_request, 3, asset: create(:well), request_type: request_type, study: study, project: project) }
     let(:requests) { requests_set_a + requests_set_b }
     subject(:factory) { described_class.new(submission, unit_of_measurement: :flowcells) }
 
     context 'where request types match' do
-      let(:requests_set_b) { create_list(:request, 3, asset: create(:well), request_type: request_type) }
+      let(:requests_set_b) { create_list(:library_request, 3, asset: create(:well), request_type: request_type, study: study, project: project) }
+      let(:expected_options) do
+        { 'fragment_size_required_from' => '1', 'fragment_size_required_to' => '20', 'library_type' => 'Standard', 'read_length' => 76 }
+      end
 
       it { is_expected.to be_valid }
 
@@ -54,6 +60,22 @@ describe WorkOrder do
         work_orders.each do |work_order|
           expect(work_order.work_order_type.name).to eq(request_type.key)
         end
+      end
+
+      it 'imports the request attributes' do
+        work_orders = subject.create_work_orders!
+        work_orders.each do |work_order|
+          expect(work_order.study).to eq(study)
+          expect(work_order.project).to eq(project)
+          expect(work_order.options).to eq(expected_options)
+        end
+      end
+
+      it 'sets the source_receptacle' do
+        work_orders = subject.create_work_orders!
+        actual_receptacles = work_orders.map(&:source_receptacle).sort
+        expected_receptacles = [ requests_set_a.first.asset,requests_set_b.first.asset] .sort
+        expect(actual_receptacles).to eq(expected_receptacles)
       end
 
       it 'sets the state on each work order' do
