@@ -71,8 +71,6 @@ class RequestType < ApplicationRecord
   validates_numericality_of :morphology, in: MORPHOLOGIES
   validates_presence_of :request_class_name
 
-  serialize :request_parameters
-
   delegate :accessioning_required?, to: :request_class
 
  scope :applicable_for_asset, ->(asset) {
@@ -91,10 +89,9 @@ class RequestType < ApplicationRecord
 
     line = __LINE__ + 1
     class_eval("
-      def #{name}(attributes = nil, &block)
+      def #{name}(attributes = {}, &block)
         raise RequestType::DeprecatedError if self.deprecated
-        attributes ||= {}
-        #{target}.#{target_method}(attributes.merge(request_parameters || {})) do |request|
+        #{target}.#{target_method}(attributes) do |request|
           request.request_type = self
           request.request_purpose ||= self.request_purpose
           yield(request) if block_given?

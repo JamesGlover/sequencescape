@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20171016124242) do
+ActiveRecord::Schema.define(version: 20171016160948) do
 
   create_table "aliquot_indices", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "aliquot_id", null: false
@@ -1160,7 +1160,6 @@ ActiveRecord::Schema.define(version: 20171016124242) do
     t.string "target_asset_type"
     t.boolean "multiples_allowed", default: false
     t.string "request_class_name"
-    t.text "request_parameters"
     t.integer "morphology", default: 0
     t.boolean "for_multiplexing", default: false
     t.boolean "billable", default: false
