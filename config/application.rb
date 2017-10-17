@@ -58,6 +58,7 @@ module Sequencescape
     config.autoload_paths += %W{#{Rails.root}/lib}
     config.autoload_paths += %W{#{Rails.root}/lib/sample_manifest_excel}
     config.autoload_paths += %W{#{Rails.root}/lib/accession}
+    config.autoload_paths += %W{#{Rails.root}/work_orders}
 
     config.encoding = 'utf-8'
 

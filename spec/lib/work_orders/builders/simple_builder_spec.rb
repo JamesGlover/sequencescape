@@ -1,7 +1,7 @@
 
 require 'rails_helper'
 
-describe WorkOrders::Builders::SimpleBuilder, type: :model do
+describe WorkOrders::Builders::SimpleBuilder, type: :model, work_order: true do
   let(:library_creation) { create :grid_ion_request_type }
 
   let(:parameters) { { request_type: library_creation.key }  }

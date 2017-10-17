@@ -13,4 +13,14 @@ class WorkOrderType < ApplicationRecord
             # Format constraints are intended mainly to keep things consistent, especially with request type keys.
             format: { with: /\A[a-z0-9_]+\z/, message: 'should only contain lower case letters, numbers and underscores.' },
             uniqueness: true
+
+  def spec
+    type_configuration.find(name)
+  end
+
+  private
+
+  def type_configuration
+    WorkOrders.configuration.work_order_types
+  end
 end

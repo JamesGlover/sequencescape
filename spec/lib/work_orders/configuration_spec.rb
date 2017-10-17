@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe WorkOrders::Configuration, type: :model do
+describe WorkOrders::Configuration, type: :model, work_order: true do
   let(:configuration) { described_class.new }
 
   it 'should be comparable' do

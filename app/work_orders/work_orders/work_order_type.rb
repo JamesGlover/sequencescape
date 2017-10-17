@@ -6,7 +6,7 @@ module WorkOrders
   # @author Genome Research Ltd.
   #
   class WorkOrderType
-    attr_reader :friendly_name, :builder
+    attr_reader :friendly_name, :builder, :name
     def initialize(name, config)
       @name = name
       @friendly_name = config.fetch('friendly_name', name.humanize)

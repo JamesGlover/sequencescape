@@ -32,7 +32,7 @@ module WorkOrders
     end
 
     def work_order_types=(config)
-      @work_order_types = config.freeze
+      @work_order_types = WorkOrderTypesList.new(config).freeze
     end
 
     def loaded?

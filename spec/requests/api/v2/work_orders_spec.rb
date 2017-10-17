@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-describe 'WorkOrders API', with: :api_v2 do
+describe 'WorkOrders API', with: :api_v2, work_order: true do
   context 'with multiple requests' do
     let(:our_request_type) { create :request_type }
     let(:other_request_type) { create :request_type }

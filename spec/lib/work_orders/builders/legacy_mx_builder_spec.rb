@@ -1,7 +1,7 @@
 
 require 'rails_helper'
 
-describe WorkOrders::Builders::LegacyMxBuilder, type: :model do
+describe WorkOrders::Builders::LegacyMxBuilder, type: :model, work_order: true do
   let(:library_creation) { create :request_type }
   let(:multiplexing) { create :request_type }
 

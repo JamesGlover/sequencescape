@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe WorkOrders::WorkOrderTypesList do
+describe WorkOrders::WorkOrderTypesList, work_order: true do
   include ConfigurationLoader::Helpers
 
   let(:folder) { File.join('spec', 'data', 'work_orders') }

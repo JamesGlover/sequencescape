@@ -82,31 +82,28 @@ class RequestType < ApplicationRecord
     ])
                               }
 
-  # Helper method for generating a request constructor, like 'create!'
-  def self.request_constructor(name, options = {})
-    target        = options[:target] || :request_class
-    target_method = options[:method] || name
-
-    line = __LINE__ + 1
-    class_eval("
-      def #{name}(attributes = {}, &block)
-        raise RequestType::DeprecatedError if self.deprecated
-        #{target}.#{target_method}(attributes) do |request|
-          request.request_type = self
-          request.request_purpose ||= self.request_purpose
-          yield(request) if block_given?
-        end.tap do |request|
-          requests << request
-        end
-      end
-    ", __FILE__, line)
+  def construct_request(construct_method, attributes, klass = request_class)
+    raise RequestType::DeprecatedError if deprecated?
+    request_class.public_send(construct_method, attributes) do |request|
+      request.request_type = self
+      request.request_purpose ||= self.request_purpose
+      yield(request) if block_given?
+    end.tap do |request|
+      requests.reset
+    end
   end
 
-  request_constructor(:create!)
-  request_constructor(:new)
-  alias_method(:new_request, :new)
+  def create!(attributes = {})
+    construct_request(:create!, attributes)
+  end
 
-  request_constructor(:create_control!, target: 'ControlRequest', method: :create!)
+  def new(attributes = {})
+    construct_request(:new, attributes)
+  end
+
+  def create_control!(attributes = {})
+    construct_request(:create!, attributes, ControlRequest)
+  end
 
   def request_class
     request_class_name.constantize
@@ -114,10 +111,6 @@ class RequestType < ApplicationRecord
 
   def request_class=(request_class)
     self.request_class_name = request_class.name
-  end
-
-  def self.dna_qc
-    find_by(key: 'dna_qc') or raise 'Cannot find dna_qc request type'
   end
 
   def self.genotyping

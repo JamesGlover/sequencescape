@@ -1,7 +1,7 @@
 require 'rails_helper'
 
-describe WorkOrder do
-  subject { build :work_order, work_order_type: work_order_type }
+describe WorkOrder, work_order: true do
+  subject(:work_order) { build :work_order, work_order_type: work_order_type }
 
   context 'with a work_order_type' do
     let(:work_order_type) { create :work_order_type }
