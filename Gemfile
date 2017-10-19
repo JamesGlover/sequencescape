@@ -9,6 +9,9 @@ group :default do
   gem 'rest-client' # curb substitute.
   gem 'formtastic'
 
+  # Transpile app-like JavaScript. Read more: https://github.com/rails/webpacker
+  gem 'webpacker'
+
   # Caching, primarily of batch.xml Can be removed once our xml interfaces are retired.
   gem 'actionpack-page_caching'
   # Legacy support for parsing XML into params

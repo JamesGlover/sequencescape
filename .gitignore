@@ -31,3 +31,6 @@ spec/examples.txt
 public/public
 doc/*
 .yardoc/*
+/public/packs
+/public/packs-test
+/node_modules
