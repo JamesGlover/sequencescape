@@ -113,4 +113,43 @@ describe 'WorkOrders API', with: :api_v2, work_order: true do
       expect(json.dig('data', 'attributes', 'state')).to eq('started')
     end
   end
+
+  context 'with an existing work_order_collection' do
+    let(:work_order_collection) { create :work_order_collection }
+    let(:work_order_type) { create :work_order_type }
+    let(:study) { create :study }
+    let(:project) { create :project }
+    let(:well) { create :untagged_well }
+
+    let(:payload) do
+      {
+        'data' => {
+          'type' => 'work_orders',
+          'attributes' => {
+            'order_type' => work_order_type.name,
+            'state' => 'pending',
+            'at_risk' => true,
+            'options' => {
+              'example' => 'value'
+            },
+            'quantity' => {
+              'number' => 1,
+              'unit_of_measurement' => 'flowcells'
+            }
+          },
+          'relationships' => {
+            'study' => {'data' => { 'type' => 'studies', 'id' => study.id } },
+            'project' => {'data' => { 'type' => 'projects', 'id' => project.id } },
+            'source_receptacle' => {'data' => { 'type' => 'wells', 'id' => well.id } },
+            'work_order_collection' => {'data' => { 'type' => 'work_order_collections', 'id' => work_order_collection.id } },
+          }
+        }
+      }
+    end
+
+    it 'allows creation of associated work orders' do
+      api_post '/api/v2/work_orders', payload
+      expect(response).to have_http_status(:created)
+    end
+  end
 end

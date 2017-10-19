@@ -12,17 +12,18 @@ module Api
     # interface
     #
     class WorkOrderResource < BaseResource
-      default_includes [{ example_request: :request_metadata }, :work_order_type]
+      default_includes :work_order_type
 
       has_one :study, readonly: true
       has_one :project, readonly: true
       has_one :source_receptacle, readonly: true, polymorphic: true
+      has_one :work_order_collection, readonly: true
       has_many :samples, readonly: true
 
       attribute :order_type, readonly: true
       attribute :quantity, readonly: true
       attribute :state
-      attribute :options
+      attribute :options, format: :hash
       attribute :at_risk
 
       filter :state
@@ -35,6 +36,15 @@ module Api
           number: _model.number,
           unit_of_measurement: _model.unit_of_measurement
         }
+      end
+
+      def quantity=(quantity_hash)
+        _model.number = quantity_hash[:number]
+        _model.unit_of_measurement = quantity_hash[:unit_of_measurement]
+      end
+
+      def order_type=(work_order_type_name)
+        _model.work_order_type = WorkOrderType.find_by(name: work_order_type_name)
       end
 
       def order_type

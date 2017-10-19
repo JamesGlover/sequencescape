@@ -23,6 +23,9 @@ class WorkOrder < ApplicationRecord
   # records.
   enum unit_of_measurement: [ :flowcells, :libraries, :lanes ]
 
+  validates :number, presence: true, numericality: { greater_than: 0 }
+  validates :unit_of_measurement, presence: true
+
   # The options describing the work-order.
   # Expected options vary between work-order types.
   serialize :options, Hash
@@ -35,11 +38,8 @@ class WorkOrder < ApplicationRecord
     end
   end
 
-  def at_risk
-    example_request.customer_accepts_responsibility
-  end
-
   def at_risk=(risk)
+    super
     requests.each do |request|
       request.customer_accepts_responsibility = risk
       request.save!
@@ -47,10 +47,17 @@ class WorkOrder < ApplicationRecord
   end
 
   def options=(new_options)
-    super
+    super(new_options)
     requests.each do |request|
       request.request_metadata_attributes = new_options
       request.save!
     end
+  end
+
+  def source_receptacle_type=(_type)
+    # Do nothing!
+    # Our association isn't actually polymorphic, but JSON API resource thinks it is.
+    # This allows it to use different templates for wells/tubes etc. But it also
+    # means it trys to set the receptacle type here.
   end
 end

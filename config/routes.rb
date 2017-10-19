@@ -5,6 +5,7 @@
 # Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
 
 Sequencescape::Application.routes.draw do
+  resources :work_order_collections
   root to: 'homes#show'
   resource :health, only: [:show]
   resource :home, only: [:show]
@@ -19,6 +20,7 @@ Sequencescape::Application.routes.draw do
       jsonapi_resources :receptacles
       jsonapi_resources :samples
       jsonapi_resources :work_orders
+      jsonapi_resources :work_order_collections
       jsonapi_resources :studies
       jsonapi_resources :projects
     end

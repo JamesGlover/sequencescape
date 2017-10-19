@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20171016160948) do
+ActiveRecord::Schema.define(version: 20171019111423) do
 
   create_table "aliquot_indices", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "aliquot_id", null: false
@@ -1839,6 +1839,13 @@ ActiveRecord::Schema.define(version: 20171016160948) do
     t.index ["work_completion_id"], name: "fk_rails_5ea64f1af2"
   end
 
+  create_table "work_order_collections", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_work_order_collections_on_name", unique: true
+  end
+
   create_table "work_order_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
@@ -1856,9 +1863,12 @@ ActiveRecord::Schema.define(version: 20171016160948) do
     t.integer "project_id", null: false
     t.string "state", null: false
     t.text "options"
+    t.bigint "work_order_collection_id"
+    t.boolean "at_risk"
     t.index ["project_id"], name: "index_work_orders_on_project_id"
     t.index ["source_receptacle_id"], name: "index_work_orders_on_source_receptacle_id"
     t.index ["study_id"], name: "index_work_orders_on_study_id"
+    t.index ["work_order_collection_id"], name: "index_work_orders_on_work_order_collection_id"
     t.index ["work_order_type_id", "state"], name: "index_work_orders_on_work_order_type_id_and_state"
     t.index ["work_order_type_id"], name: "fk_rails_80841fcb4c"
   end
@@ -1891,5 +1901,6 @@ ActiveRecord::Schema.define(version: 20171016160948) do
   add_foreign_key "work_orders", "assets", column: "source_receptacle_id"
   add_foreign_key "work_orders", "projects"
   add_foreign_key "work_orders", "studies"
+  add_foreign_key "work_orders", "work_order_collections"
   add_foreign_key "work_orders", "work_order_types"
 end

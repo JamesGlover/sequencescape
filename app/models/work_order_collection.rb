@@ -7,4 +7,6 @@
 # 1) Provide a convenient means for users to monitor/ask questions about specific batches of work
 # 2) Avoids the need to globally unique identifiers to describe pools/pre-capture-pools
 class WorkOrderCollection < ApplicationRecord
+  has_many :work_orders
+  validates :name, presence: true, uniqueness: true
 end
