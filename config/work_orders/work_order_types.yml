@@ -4,39 +4,46 @@ traction_grid_ion:
     builder_class: SimpleBuilder
     params:
       request_type: 'traction_grid_ion'
+  unit_of_measurement: flowcells
 genotyping:
   friendly_name: Genotyping
   builder:
     builder_class: SimpleBuilder
     params:
       request_type: genotyping
+  unit_of_measurement: units
 cherrypick:
   friendly_name: Cherrypick
   builder:
     builder_class: SimpleBuilder
     params:
       request_type: cherrypick
+  unit_of_measurement: units
 illumina_c_pcr_no_pool:
   friendly_name: Illumina-C Library Creation PCR No Pooling
   builder:
     builder_class: SimpleBuilder
     params:
       request_type: illumina_c_pcr_no_pool
+  unit_of_measurement: libraries
 flexible_cherrypick:
   friendly_name: Flexible Cherrypick
   builder:
     builder_class: SimpleBuilder
     params:
       request_type: flexible_cherrypick
+  unit_of_measurement: units
 illumina_c_no_pcr_no_pool:
   friendly_name: Illumina-C Library Creation No PCR No Pooling
   builder:
     builder_class: SimpleBuilder
     params:
       request_type: illumina_c_no_pcr_no_pool
+  unit_of_measurement: libraries
 limber_lcmb:
   friendly_name: Limber LCMB
   builder:
     builder_class: SimpleBuilder
     params:
       request_type: limber_lcmb
+  unit_of_measurement: libraries

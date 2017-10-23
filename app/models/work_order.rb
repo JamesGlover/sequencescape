@@ -13,8 +13,8 @@ class WorkOrder < ApplicationRecord
   # to get confused by the large number of null entries in requests.work_order_id
   has_one :example_request, ->() { order(id: :asc).where.not(work_order_id: nil).readonly }, class_name: 'CustomerRequest'
 
-  belongs_to :study
-  belongs_to :project
+  belongs_to :study, required: true
+  belongs_to :project, required: true
   belongs_to :source_receptacle, class_name: 'Receptacle'
 
   has_many :samples, ->() { distinct }, through: :source_receptacle, source: 'samples'
@@ -25,6 +25,10 @@ class WorkOrder < ApplicationRecord
 
   validates :number, presence: true, numericality: { greater_than: 0 }
   validates :unit_of_measurement, presence: true
+
+  validate { |record| options_validator.validate(record) unless work_order_type.nil? }
+
+  delegate :options_validator, to: :work_order_type
 
   # The options describing the work-order.
   # Expected options vary between work-order types.

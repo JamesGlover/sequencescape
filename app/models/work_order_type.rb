@@ -18,6 +18,10 @@ class WorkOrderType < ApplicationRecord
     type_configuration.find(name)
   end
 
+  def options_validator
+    spec.options.validator
+  end
+
   private
 
   def type_configuration

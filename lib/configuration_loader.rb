@@ -12,7 +12,7 @@ module ConfigurationLoader
     include Comparable
 
     def to_a
-      attributes.collect { |v| instance_variable_get("@#{v}") }.compact
+      instance_variables.map { |v| instance_variable_get(v) }.compact
     end
 
     ##

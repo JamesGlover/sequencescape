@@ -1,6 +1,6 @@
 
 #
-# Class HahsFormatter provides a means of passing hashes
+# Class HashFormatter provides a means of passing hashes
 # through to objects, not ActionParameters
 # Caution! It results in an unsafe hash. Use sparingly.
 #

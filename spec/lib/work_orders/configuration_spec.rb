@@ -34,7 +34,7 @@ describe WorkOrders::Configuration, type: :model, work_order: true do
     end
 
     it 'should load the work_orders' do
-      # expect(configuration.tags).to eq(Accession::TagList.new(configuration.load_file(folder, 'tags')))
+      expect(configuration.work_order_types).to eq(WorkOrders::WorkOrderTypesList.new(configuration.load_file(folder, 'work_order_types')))
     end
 
     it 'should freeze all of the configuration options' do

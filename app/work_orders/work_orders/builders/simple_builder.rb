@@ -8,6 +8,8 @@ module WorkOrders::Builders
   # @author Genome Research Ltd.
   #
   class SimpleBuilder
+    include ConfigurationLoader::Equality
+
     attr_reader :request_type_key
 
     def initialize(parameters)

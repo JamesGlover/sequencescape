@@ -34,6 +34,10 @@ describe WorkOrder, work_order: true do
     let(:project) { create :project }
     let(:options) { { read_length: 200 } }
 
+    before do
+      create :work_order_type, name: request_type.key
+    end
+
     let(:requests_set_a) { create_list(:library_request, 3, asset: create(:well), request_type: request_type, study: study, project: project) }
     let(:requests) { requests_set_a + requests_set_b }
     subject(:factory) { described_class.new(submission, unit_of_measurement: :flowcells) }

@@ -11,6 +11,8 @@ module WorkOrders
   # @author Genome Research Ltd.
   #
   class WorkOrderTypesList
+    include ConfigurationLoader::Equality
+
     def initialize(config)
       @work_order_types = {}
       @friendly_name_to_name = {}

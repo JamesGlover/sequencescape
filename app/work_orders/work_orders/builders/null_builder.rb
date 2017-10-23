@@ -6,6 +6,8 @@ module WorkOrders::Builders
   # @author Genome Research Ltd.
   #
   class NullBuilder
+    include ConfigurationLoader::Equality
+
     def initialize(*_args)
       # Do nothing
     end

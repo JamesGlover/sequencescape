@@ -30,4 +30,10 @@ describe WorkOrders::WorkOrderType, work_order: true do
     it { is_expected.to be_a WorkOrders::Builders::TestBuilder }
     it { is_expected.to have_attributes(test_param: 'pass') }
   end
+
+  describe '#options' do
+    subject { work_order.options }
+    # We use a test builder class here.
+    it { is_expected.to be_a WorkOrders::Options }
+  end
 end

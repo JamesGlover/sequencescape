@@ -50,7 +50,7 @@ class WorkOrder
     end
 
     def work_order_type
-      @work_order_type ||= WorkOrderType.find_or_create_by!(name: requests.first.request_type.key)
+      @work_order_type ||= WorkOrderType.find_by!(name: requests.first.request_type.key)
     end
   end
 end

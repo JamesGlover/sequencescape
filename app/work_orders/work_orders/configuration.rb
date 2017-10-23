@@ -35,12 +35,13 @@ module WorkOrders
       @work_order_types = WorkOrderTypesList.new(config).freeze
     end
 
-    def loaded?
-      loaded
+    def test_work_order_types
+      raise StandardError, "Can only use test work order types in test environment" unless Rails.env.test?
+      @work_order_types ||= WorkOrderTypesList.new({})
     end
 
-    def attributes
-      [:folder, :work_order_types]
+    def loaded?
+      loaded
     end
   end
 end

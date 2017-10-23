@@ -6,6 +6,8 @@ module WorkOrders::Builders
   # @author Genome Research Ltd.
   #
   class TestBuilder
+    include ConfigurationLoader::Equality
+
     attr_reader :test_param
 
     def initialize(params)

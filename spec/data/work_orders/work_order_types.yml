@@ -4,6 +4,20 @@ test_type:
     builder_class: TestBuilder
     params:
       test_param: 'pass'
+  unit_of_measurement: flowcells
+  options:
+    static:
+      option_a: 'Value'
+      option_b: 'Value 2'
+    dynamic:
+      options_c:
+        default: 1
+        type: numeric
+        options:
+          minimum: 0
+          maximum: 100
+      options_d:
+        type: text
 auto_friendly_name:
   builder:
     builder_class: NullBuilder

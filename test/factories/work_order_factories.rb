@@ -1,6 +1,10 @@
 FactoryGirl.define do
   factory :work_order_type do
     sequence(:name) { |i| "work_order_#{i}" }
+
+    after(:build) do |work_order, evaluator|
+      WorkOrders.configuration.test_work_order_types.send(:register_work_order, work_order.name, {}) unless work_order.name.blank?
+    end
   end
 
   factory :work_order do

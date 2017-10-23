@@ -6,6 +6,8 @@ module WorkOrders::Builders
   # @author Genome Research Ltd.
   #
   class LegacyMxBuilder
+    include ConfigurationLoader::Equality
+
     def initialize(parameters)
       # Do nothing
     end
