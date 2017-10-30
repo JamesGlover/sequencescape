@@ -9,12 +9,12 @@
 # well_links to the plate on which the orignal library_creation
 # requests were made. This provides a means of finding the library
 # creation requests.
-class WorkCompletion < ActiveRecord::Base
+class WorkCompletion < ApplicationRecord
   include Uuid::Uuidable
   # The user who performed the state change
   belongs_to :user, required: true
   # The plate on which requests were completed
-  belongs_to :target, class_name: Asset, required: true
+  belongs_to :target, class_name: 'Asset', required: true
   # The submissions which were passed. Mainly kept for auditing
   # purposes
   has_many :work_completions_submissions, dependent: :destroy
@@ -31,14 +31,9 @@ class WorkCompletion < ActiveRecord::Base
 
   def connect_requests
     target_wells.each do |target_well|
-      target_well.stock_wells.each do |source_well|
-        # We may have multiple requests out of each well, however we're only concerned
-        # about those associated with the active submission.
-        # We've already eager loaded requests out of the stock wells, so filter in Ruby.
-        upstream = source_well.requests.detect do |r|
-          r.library_creation? && submission_ids.include?(r.submission_id)
-        end || raise("Could not find matching upstream requests for #{target_well.map_description}")
-
+      next if target_well.stock_wells.empty?
+      # Upstream requests our on our stock wells.
+      detect_upstream_requests(target_well).each do |upstream|
         # We need to find the downstream requests BEFORE connecting the upstream
         # This is because submission.next_requests tries to take a shortcut through
         # the target_asset if it is defined.
@@ -60,6 +55,25 @@ class WorkCompletion < ActiveRecord::Base
     end
   end
 
+  def detect_upstream_requests(target_well)
+    upstream_requests = target_well.stock_wells.each_with_object([]) do |source_well, found_upstream_requests|
+      # We may have multiple requests out of each well, however we're only concerned
+      # about those associated with the active submission.
+      # We've already eager loaded requests out of the stock wells, so filter in Ruby.
+      source_well.requests.each do |r|
+        found_upstream_requests << r if suitable_request?(r)
+      end
+    end
+    # We've looked at all the requests, on all the stock wells and still haven't found
+    # what we're looking for.
+    raise("Could not find matching upstream requests for #{target_well.map_description}") if upstream_requests.empty?
+    upstream_requests
+  end
+
+  def suitable_request?(request)
+    request.library_creation? && submission_ids.include?(request.submission_id)
+  end
+
   def update_stock_wells
     target_wells.each do |target_well|
       target_well.stock_wells = [target_well]
@@ -67,6 +81,6 @@ class WorkCompletion < ActiveRecord::Base
   end
 
   def target_wells
-    @target_wells ||= target.wells.include_stock_wells.include_requests_as_target
+    @target_wells ||= target.wells.include_stock_wells.include_requests_as_target.where(requests: { submission_id: submissions })
   end
 end

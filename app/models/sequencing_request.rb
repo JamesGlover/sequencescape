@@ -14,10 +14,10 @@ class SequencingRequest < CustomerRequest
 
   has_metadata as: Request do
     # redundant with library creation , but THEY are using it .
-    attribute(:fragment_size_required_from, required: true, integer: true)
-    attribute(:fragment_size_required_to, required: true, integer: true)
+    custom_attribute(:fragment_size_required_from, required: true, integer: true)
+    custom_attribute(:fragment_size_required_to, required: true, integer: true)
 
-    attribute(:read_length, integer: true, validator: true, required: true, selection: true)
+    custom_attribute(:read_length, integer: true, validator: true, required: true, selection: true)
   end
 
   include Request::CustomerResponsibility
@@ -50,7 +50,7 @@ class SequencingRequest < CustomerRequest
 
   def ready?
     # Reject any requests with missing or empty assets.
-    return false if asset.nil? || asset.aliquots.empty?
+    return false if asset.nil? || !asset.aliquots.exists?
     # It's ready if I don't have any lib creation requests or if all my lib creation requests are closed and
     # at least one of them is in 'passed' status
     library_creation_requests = upstream_requests.customer_requests
@@ -70,5 +70,9 @@ class SequencingRequest < CustomerRequest
     dna = lab_events_for_batch(batch).first.descriptor_value('DNA Volume')
     rsb = lab_events_for_batch(batch).first.descriptor_value('RSB Volume')
     "#{dna}μl DNA in #{rsb}μl RSB"
+  end
+
+  def billing_product_identifier
+    request_metadata.read_length
   end
 end

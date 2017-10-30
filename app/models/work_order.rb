@@ -5,16 +5,18 @@
 # A work order groups requests together based on submission and asset
 # providing a unified interface for external applications.
 # It is likely that its behaviour will be extended in future
-class WorkOrder < ActiveRecord::Base
+class WorkOrder < ApplicationRecord
   has_many :requests
   belongs_to :work_order_type, required: true
 
+  # where.not(work_order_id: nil assists the MySQL query optimizer as otherwise is seems
+  # to get confused by the large number of null entries in requests.work_order_id
+  has_one :example_request, ->() { order(id: :asc).where.not(work_order_id: nil).readonly }, class_name: 'CustomerRequest'
   has_one :study, through: :example_request, source: :initial_study
   has_one :project, through: :example_request, source: :initial_project
   has_one :source_receptacle, through: :example_request, source: :asset
-  has_one :example_request, ->() { order(id: :asc).readonly }, class_name: 'CustomerRequest'
 
-  has_many :samples, ->() { distinct }, through: :requests
+  has_many :samples, ->() { distinct }, through: :example_request
 
   # Will hopefully be variable in the future
   def quantity_units
@@ -30,11 +32,10 @@ class WorkOrder < ActiveRecord::Base
       request.state = new_state
       request.save!
     end
+    example_request.reload
   end
 
-  def state
-    requests.first.state
-  end
+  delegate :state, to: :example_request
 
   def at_risk
     example_request.customer_accepts_responsibility

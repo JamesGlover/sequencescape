@@ -8,8 +8,8 @@ class Request
       after_create :register_work_orders
 
       has_metadata as: Request do
-        attribute(:library_type, required: true, validator: true, selection: true)
-        attribute(:file_type,    required: true, validator: true, selection: true)
+        custom_attribute(:library_type, required: true, validator: true, selection: true)
+        custom_attribute(:data_type,    required: true, validator: true, selection: true)
       end
 
       validates :state, presence: true
@@ -19,7 +19,7 @@ class Request
       # We've destroyed the stat_machine, but its validation remains.
       # Here we override it to allow custom states.
       def aasm_validate_states
-        return true
+        true
       end
 
       def register_work_orders

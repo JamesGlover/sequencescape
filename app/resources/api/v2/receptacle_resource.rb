@@ -9,6 +9,8 @@ module Api
 
       immutable # uncomment to make the resource immutable
 
+      default_includes :uuid_object
+
       ::Tube.descendants.each do |subclass|
         model_hint model: subclass, resource: :tube
       end

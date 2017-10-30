@@ -6,7 +6,7 @@
 
 require 'aasm'
 
-class Request < ActiveRecord::Base
+class Request < ApplicationRecord
   # Include
   include ModelExtensions::Request
   include Aliquot::DeprecatedBehaviours::Request
@@ -64,12 +64,17 @@ class Request < ActiveRecord::Base
   has_many :request_events, ->() { order(:current_from) }, inverse_of: :request
   has_many :upstream_requests, through: :asset, source: :requests_as_target
 
+  belongs_to :billing_product, class_name: 'Billing::Product'
+  has_many :billing_items, class_name: 'Billing::Item'
+
   # Validations
   # On create we perform a full and complete validation.
   validates_presence_of :request_purpose, on: :create
   # Just makes sure we don't set it to nil. Avoids the need to load request_purpose
   # EVERY time we touch a request.
   validates_presence_of :request_purpose_id
+
+  broadcast_via_warren
 
   # Scopes
   scope :for_pipeline, ->(pipeline) {
@@ -98,7 +103,13 @@ class Request < ActiveRecord::Base
         ]
       end
 
-    select('uuids.external_id AS pool_id, GROUP_CONCAT(DISTINCT pw_location.description ORDER BY pw.map_id ASC SEPARATOR ",") AS pool_into, MIN(requests.id) AS id, MIN(requests.sti_type) AS sti_type, MIN(requests.submission_id) AS submission_id, MIN(requests.request_type_id) AS request_type_id')
+    select(%{uuids.external_id AS pool_id,
+              GROUP_CONCAT(DISTINCT pw_location.description ORDER BY pw.map_id ASC SEPARATOR ",") AS pool_into,
+              SUM(requests.state = 'passed') > 0 AS pool_complete,
+              MIN(requests.id) AS id,
+              MIN(requests.sti_type) AS sti_type,
+              MIN(requests.submission_id) AS submission_id,
+              MIN(requests.request_type_id) AS request_type_id})
       .joins(add_joins + [
         'INNER JOIN maps AS pw_location ON pw.map_id=pw_location.id',
         'INNER JOIN container_associations ON container_associations.content_id=pw.id',
@@ -205,7 +216,8 @@ class Request < ActiveRecord::Base
 
   # Note: These scopes use preload due to a limitation in the way rails handles custom selects with eager loading
   # https://github.com/rails/rails/issues/15185
-  scope :loaded_for_inbox_display, -> { preload([{ submission: { orders: :study }, asset: [:scanned_into_lab_event, :studies] }]) }
+  scope :loaded_for_inbox_display, -> { preload([{ submission: { orders: :study }, asset: %i(scanned_into_lab_event studies) }]) }
+  scope :loaded_for_sequencing_inbox_display, -> { preload([{ submission: { orders: :study }, asset: %i(requests scanned_into_lab_event most_tagged_aliquot) }, { request_type: :product_line }]) }
   scope :loaded_for_grouped_inbox_display, -> { preload([{ submission: :orders }, :target_asset]) }
   scope :loaded_for_pacbio_inbox_display, -> { preload([{ submission: :orders }, :request_type, :target_asset]) }
 
@@ -255,8 +267,6 @@ class Request < ActiveRecord::Base
 
   scope :for_initial_study_id, ->(id) { where(initial_study_id: id) }
 
-  delegate :study, :study_id, to: :asset, allow_nil: true
-
   scope :for_workflow, ->(workflow) { joins(:workflow).where(workflow: { key: workflow }) }
   scope :for_request_types, ->(types) { joins(:request_type).where(request_types: { key: types }) }
 
@@ -284,8 +294,40 @@ class Request < ActiveRecord::Base
   # we now need to be explicit in how we want it delegated.
   delegate :name, to: :request_metadata
 
+  delegate :date_for_state, to: :request_events
+
+  delegate :study, :study_id, to: :asset, allow_nil: true
+
   def self.delegate_validator
     DelegateValidation::AlwaysValidValidator
+  end
+
+  def self.group_requests(options = {})
+    target = options[:by_target] ? 'target_asset_id' : 'asset_id'
+    groupings = options.delete(:group) || {}
+
+    select('requests.*, tca.container_id AS container_id, tca.content_id AS content_id')
+      .joins("INNER JOIN container_associations tca ON tca.content_id=#{target}")
+      .readonly(false)
+      .group(groupings)
+  end
+
+  def self.for_study(study)
+    Request.for_study_id(study.id)
+  end
+
+  # TODO: There is probably a MUCH better way of getting this information. This is just a rewrite of the old approach
+  def self.get_target_plate_ids(request_ids)
+    ContainerAssociation.joins('INNER JOIN requests ON content_id = target_asset_id')
+                        .where(['requests.id IN  (?)', request_ids]).uniq.pluck(:container_id)
+  end
+
+  def self.number_expected_for_submission_id_and_request_type_id(submission_id, request_type_id)
+    Request.where(submission_id: submission_id, request_type_id: request_type_id)
+  end
+
+  def self.accessioning_required?
+    false
   end
 
   def validator_for(request_option)
@@ -336,26 +378,6 @@ class Request < ActiveRecord::Base
     return asset.studies.uniq if asset.present?
     return submission.studies if submission.present?
     []
-  end
-
-  def self.group_requests(options = {})
-    target = options[:by_target] ? 'target_asset_id' : 'asset_id'
-    groupings = options.delete(:group) || {}
-
-    select('requests.*, tca.container_id AS container_id, tca.content_id AS content_id')
-      .joins("INNER JOIN container_associations tca ON tca.content_id=#{target}")
-      .readonly(false)
-      .group(groupings)
-  end
-
-  def self.for_study(study)
-    Request.for_study_id(study.id)
-  end
-
-  # TODO: There is probably a MUCH better way of getting this information. This is just a rewrite of the old approach
-  def self.get_target_plate_ids(request_ids)
-    ContainerAssociation.joins('INNER JOIN requests ON content_id = target_asset_id')
-                        .where(['requests.id IN  (?)', request_ids]).uniq.pluck(:container_id)
   end
 
   # The options that are required for creation.  In other words, the truly required options that must
@@ -426,16 +448,12 @@ class Request < ActiveRecord::Base
     target_asset if target_asset.is_a?(Tube)
   end
 
-  def previous_failed_requests
-    asset.requests.select { |previous_failed_request| (previous_failed_request.failed? or previous_failed_request.blocked?) }
+  def previous_failed_requests?
+    asset.requests.any?(&:failed?)
   end
 
   def add_comment(comment, user)
     comments.create(description: comment, user: user)
-  end
-
-  def self.number_expected_for_submission_id_and_request_type_id(submission_id, request_type_id)
-    Request.where(submission_id: submission_id, request_type_id: request_type_id)
   end
 
   def return_pending_to_inbox!
@@ -490,7 +508,8 @@ class Request < ActiveRecord::Base
 
   # Adds any pool information to the structure so that it can be reported to client applications
   def update_pool_information(pool_information)
-    # Does not need anything here
+    pool_information[:request_type] = request_type.key
+    pool_information[:for_multiplexing] = request_type.for_multiplexing?
   end
 
   # def submission_siblings
@@ -510,10 +529,6 @@ class Request < ActiveRecord::Base
     order.try(:role)
   end
 
-  def self.accessioning_required?
-    false
-  end
-
   def ready?
     true
   end
@@ -527,6 +542,8 @@ class Request < ActiveRecord::Base
   end
 
   def manifest_processed!; end
+
+  def billing_product_identifier; end
 end
 
 require_dependency 'system_request'

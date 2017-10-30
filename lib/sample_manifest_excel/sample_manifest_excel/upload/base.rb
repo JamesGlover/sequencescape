@@ -18,9 +18,10 @@ module SampleManifestExcel
 
       validates_presence_of :start_row, :sanger_sample_id_column, :sample_manifest
       validate :check_columns, :check_processor, :check_rows
-      validate :check_processor, if: 'processor.present?'
+      validate :check_processor, if: :processor?
 
       delegate :processed?, to: :processor
+      delegate :data_at, to: :rows
 
       def initialize(attributes = {})
         super
@@ -30,6 +31,7 @@ module SampleManifestExcel
         @rows = Rows.new(data, columns)
         @sample_manifest = get_sample_manifest
         @processor = create_processor
+        @reuploaded = @sample_manifest.completed? if sample_manifest.present?
       end
 
       def inspect
@@ -57,8 +59,21 @@ module SampleManifestExcel
         end
       end
 
+      def data_at(column_name)
+        required_column = columns.find_by(:name, column_name)
+        rows.data_at(required_column.number) if required_column.present?
+      end
+
+      def broadcast_sample_manifest_updated_event(user)
+        sample_manifest.updated_broadcast_event(user, samples_to_be_broadcasted)
+      end
+
       def complete
         sample_manifest.finished!
+      end
+
+      def reuploaded?
+        @reuploaded
       end
 
       private
@@ -96,6 +111,14 @@ module SampleManifestExcel
             errors.add key, value
           end
         end
+      end
+
+      def processor?
+        processor.present?
+      end
+
+      def samples_to_be_broadcasted
+        rows.map { |row| row.sample.id }
       end
     end
   end

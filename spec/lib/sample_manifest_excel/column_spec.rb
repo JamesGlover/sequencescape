@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe SampleManifestExcel::Column, type: :model, sample_manifest_excel: true do
-  let(:range_list)  { build(:range_list, options: { FactoryGirl.attributes_for(:validation)[:range_name] => FactoryGirl.attributes_for(:range) }) }
+  let(:range_list)  { build(:range_list, ranges_data: { FactoryGirl.attributes_for(:validation)[:range_name] => FactoryGirl.attributes_for(:range) }) }
   let(:worksheet)   { Axlsx::Workbook.new.add_worksheet }
   let(:options)     {
     { heading: 'PUBLIC NAME', name: :public_name, type: :string, value: 10, number: 125, attribute: :barcode,
@@ -165,8 +165,8 @@ RSpec.describe SampleManifestExcel::Column, type: :model, sample_manifest_excel:
     end
 
     it 'combines the conditional formattings correctly if there is a formula' do
-      arguments = SampleManifestExcel::Column.build_arguments(columns[:supplier_sample_name], 'supplier_sample_name', defaults)
-      expect(arguments[:conditional_formattings][:len][:formula]).to eq(defaults.find(:len).combine(columns[:supplier_sample_name][:conditional_formattings][:len])[:formula])
+      arguments = SampleManifestExcel::Column.build_arguments(columns[:supplier_name], 'supplier_name', defaults)
+      expect(arguments[:conditional_formattings][:len][:formula]).to eq(defaults.find(:len).combine(columns[:supplier_name][:conditional_formattings][:len])[:formula])
     end
   end
 end
