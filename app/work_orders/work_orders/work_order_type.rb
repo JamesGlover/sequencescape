@@ -8,12 +8,13 @@ module WorkOrders
   class WorkOrderType
     include ConfigurationLoader::Equality
 
-    attr_reader :friendly_name, :builder, :name, :options
+    attr_reader :friendly_name, :builder, :name, :options, :unit_of_measurement
     def initialize(name, config)
       @name = name
-      @friendly_name = config.fetch('friendly_name', name.humanize)
-      self.builder = config['builder'] || Builders.default
-      self.options = config['options'] || {}
+      @friendly_name = config.fetch(:friendly_name, name.humanize)
+      self.builder = config.fetch(:builder, Builders.default)
+      self.options = config.fetch(:options, {})
+      @unit_of_measurement = config.fetch('unit_of_measurement','units')
     end
 
     def builder=(builder_config)

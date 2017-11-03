@@ -21,7 +21,8 @@ class WorkOrder < ApplicationRecord
 
   # Caution! Do not remove or insert values, only append them. Changing the index of existing entries will affect existing
   # records.
-  enum unit_of_measurement: [ :flowcells, :libraries, :lanes ]
+  # Units is a very generic catch all, don't use it unless you have to.
+  enum unit_of_measurement: [ :units, :flowcells, :libraries, :lanes ]
 
   validates :number, presence: true, numericality: { greater_than: 0 }
   validates :unit_of_measurement, presence: true

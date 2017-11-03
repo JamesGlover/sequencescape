@@ -23,10 +23,8 @@
           ],
           colHeaders: defaultColumns
         },
-        allWOTypes: [
-          { friendly_name: "Boris", name: "boris" },
-          { friendly_name: "Joe", name: "joe" }
-        ]
+        allWOTypes: [],
+        lastErrof: null
       };
     },
     components: {
@@ -34,8 +32,17 @@
       WorkOrderTypesSelector
     },
     beforeMount() {
-      // Import data from the root element
-      this.allWOTypes = JSON.parse(this.$el.attributes['data-work-order-types'].value);
+      created() {
+        this.$http.get('work_order_types')
+          .then(response => {
+            this.allWOTypes = response.data
+            this.loading = false
+          })
+          .catch(e => {
+            this.lastError = e
+            this.loading = false
+          })
+      }
     }
   }
 </script>

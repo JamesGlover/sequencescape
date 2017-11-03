@@ -7,6 +7,9 @@
 
 import Vue from 'vue'
 import App from '../work_order_collection_creator/app.vue'
+import Api from '../shared/api.js'
+
+Vue.prototype.$http = Api;
 
 document.addEventListener('DOMContentLoaded', () => {
   const app = new Vue(App).$mount('#work-order-collection-creator')

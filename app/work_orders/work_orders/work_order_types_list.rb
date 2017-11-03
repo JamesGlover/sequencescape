@@ -47,7 +47,7 @@ module WorkOrders
     private
 
     def register_work_order(name, config)
-      new_type = WorkOrderType.new(name, config)
+      new_type = WorkOrders::WorkOrderType.new(name, config)
       @work_order_types[name] = new_type
       @friendly_name_to_name[new_type.friendly_name.downcase] = name
     end

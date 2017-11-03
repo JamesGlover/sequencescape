@@ -20,6 +20,7 @@ Sequencescape::Application.routes.draw do
       jsonapi_resources :receptacles
       jsonapi_resources :samples
       jsonapi_resources :work_orders
+      jsonapi_resources :work_order_types
       jsonapi_resources :work_order_collections
       jsonapi_resources :studies
       jsonapi_resources :projects

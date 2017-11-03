@@ -14,12 +14,19 @@ class WorkOrderType < ApplicationRecord
             format: { with: /\A[a-z0-9_]+\z/, message: 'should only contain lower case letters, numbers and underscores.' },
             uniqueness: true
 
+
+  delegate :options, :unit_of_measurement, :friendly_name, to: :spec
+
   def spec
     type_configuration.find(name)
   end
 
   def options_validator
     spec.options.validator
+  end
+
+  def options_hash
+    options.hash
   end
 
   private

@@ -72,11 +72,12 @@ module WorkOrders
       end
     end
 
-    attr_reader :defaults, :dynamic, :validator
+    attr_reader :defaults, :dynamic, :validator, :hash
 
     def initialize(config)
       @defaults = {}
       @validator = WorkOrders::Options::Validator.new
+      @hash = config
       self.static = config.fetch('static', {})
       self.dynamic = config.fetch('dynamic', {})
     end

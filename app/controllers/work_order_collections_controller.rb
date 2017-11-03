@@ -12,7 +12,6 @@ class WorkOrderCollectionsController < ApplicationController
 
   # GET /work_order_collections/new
   def new
-    binding.pry
     @work_order_types = WorkOrderType.all.to_json
     @work_order_collection = WorkOrderCollection.new
   end
