@@ -74,8 +74,8 @@ class Batch < ApplicationRecord
     includes(requests: [
       :uuid_object, :request_metadata, :request_type,
       { submission: :uuid_object },
-      { asset: [:uuid_object, :barcode_prefix, { aliquots: [:sample, :tag] }] },
-      { target_asset: [:uuid_object, :barcode_prefix, { aliquots: [:sample, :tag] }] }
+      { asset: [:uuid_object, :primary_barcode, { aliquots: [:sample, :tag] }] },
+      { target_asset: [:uuid_object, :primary_barcode, { aliquots: [:sample, :tag] }] }
     ])
   }
 
@@ -247,8 +247,6 @@ class Batch < ApplicationRecord
     Plate.output_by_batch(self).with_wells_and_requests.first
   end
 
-  ## WARNING! This method is used in the sanger barcode gem. Do not remove it without
-  ## refactoring the sanger barcode gem.
   def output_plate_purpose
     output_plates[0].plate_purpose unless output_plates[0].nil?
   end
@@ -265,17 +263,11 @@ class Batch < ApplicationRecord
 
   def plate_group_barcodes
     return nil unless pipeline.group_by_parent || requests.first.target_asset.is_a?(Well)
-    latest_plate_group = output_plate_group
-    return latest_plate_group unless latest_plate_group.empty?
-    input_plate_group
+    output_plate_group.presence || input_plate_group
   end
 
   def plate_barcode(barcode)
-    if barcode
-      barcode
-    else
-      requests.first.target_asset.plate.barcode
-    end
+    barcode.presence || requests.first.target_asset.plate.human_barcode
   end
 
   def mpx_library_name
@@ -315,7 +307,7 @@ class Batch < ApplicationRecord
   def verify_tube_layout(barcodes, user = nil)
     requests.each do |request|
       barcode = barcodes[request.position - 1]
-      unless barcode == request.asset.barcode.to_i
+      unless barcode == request.asset.machine_barcode
         expected_barcode = request.asset.sanger_human_barcode
         errors.add(:base, "The tube at position #{request.position} is incorrect: expected #{expected_barcode}.")
       end

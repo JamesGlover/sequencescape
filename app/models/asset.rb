@@ -69,6 +69,7 @@ class Asset < ApplicationRecord
   has_many :asset_groups, through: :asset_group_assets
   has_many :asset_audits
   has_many :volume_updates, foreign_key: :target_id
+  has_many :barcodes, foreign_key: :asset_id, inverse_of: :asset, dependent: :destroy
 
   # TODO: Remove 'requests' and 'source_request' as they are abiguous
   # :requests should go before :events_on_requests, through: :requests
@@ -87,7 +88,6 @@ class Asset < ApplicationRecord
   has_one :creation_request, class_name: 'Request', foreign_key: :target_asset_id
 
   belongs_to :map
-  belongs_to :barcode_prefix
 
   extend EventfulRecord
   has_many_events do
@@ -132,7 +132,7 @@ class Asset < ApplicationRecord
   scope :position_name, ->(description, size) {
     joins(:map).where(description: description, asset_size: size)
   }
-  scope :for_summary, -> { includes([:map, :barcode_prefix]) }
+  scope :for_summary, -> { includes(:map, :barcodes) }
 
   scope :of_type, ->(*args) { where(sti_type: args.map { |t| [t, *t.descendants] }.flatten.map(&:name)) }
 
@@ -176,42 +176,19 @@ class Asset < ApplicationRecord
     end
   }
 
-  # We accept not only an individual barcode but also an array of them.  This builds an appropriate
-  # set of conditions that can find any one of these barcodes.  We map each of the individual barcodes
-  # to their appropriate query conditions (as though they operated on their own) and then we join
-  # them together with 'OR' to get the overall conditions.
-  scope :with_machine_barcode, ->(*barcodes) {
-    query_details = barcodes.flatten.map do |source_barcode|
-      case source_barcode.to_s
-      when /^\d{13}$/ # An EAN13 barcode
-        barcode_number = Barcode.number_to_human(source_barcode)
-        prefix_string  = Barcode.prefix_from_barcode(source_barcode)
-        barcode_prefix = BarcodePrefix.find_by(prefix: prefix_string)
-
-        if barcode_number.nil? or prefix_string.nil? or barcode_prefix.nil?
-          { query: 'FALSE' }
-        else
-          { query: '(barcode=? AND barcode_prefix_id=?)', parameters: [barcode_number, barcode_prefix.id] }
-        end
-      when /^\d{10}$/ # A Fluidigm barcode
-        { joins: 'JOIN plate_metadata AS pmmb ON pmmb.plate_id = assets.id', query: '(pmmb.fluidigm_barcode=?)', parameters: source_barcode.to_s }
-      else
-        { query: 'FALSE' }
-      end
-    end.inject(query: ['FALSE'], parameters: [nil], joins: []) do |building, current|
-      building.tap do
-        building[:joins]      << current[:joins]
-        building[:query]      << current[:query]
-        building[:parameters] << current[:parameters]
-      end
+  # We accept not only an individual barcode but also an array of them.
+  scope :with_barcode, ->(*barcodes) {
+    db_barcodes = barcodes.flatten.each_with_object([]) do |source_bc, store|
+      next if source_bc.blank?
+      store << source_bc
+      human_bc = SBCF::SangerBarcode.from_machine(source_bc).human_barcode
+      store << human_bc unless human_bc.nil?
     end
-
-    where([query_details[:query].join(' OR '), *query_details[:parameters].flatten.compact])
-      .joins(query_details[:joins].compact.uniq)
+    joins(:barcodes).where(barcodes: { barcode: db_barcodes }).distinct
   }
 
   scope :source_assets_from_machine_barcode, ->(destination_barcode) {
-    destination_asset = find_from_machine_barcode(destination_barcode)
+    destination_asset = find_from_barcode(destination_barcode)
     if destination_asset
       source_asset_ids = destination_asset.parents.map(&:id)
       if source_asset_ids.empty?
@@ -227,18 +204,15 @@ class Asset < ApplicationRecord
   def self.find_from_any_barcode(source_barcode)
     if source_barcode.blank?
       nil
-    elsif source_barcode.size == 13 && Barcode.check_EAN(source_barcode)
-      with_machine_barcode(source_barcode).first
-    elsif match = /\A([A-z]{2})([0-9]{1,7})\w{0,1}\z/.match(source_barcode) # Human Readable
-      prefix = BarcodePrefix.find_by(prefix: match[1])
-      find_by(barcode: match[2], barcode_prefix_id: prefix.id)
     elsif /\A[0-9]{1,7}\z/.match?(source_barcode) # Just a number
-      find_by(barcode: source_barcode)
+      joins(:barcodes).where('barcodes.barcode LIKE "__?_"', source_barcode)
+    else
+      find_from_barcode(source_barcode)
     end
   end
 
-  def self.find_from_machine_barcode(source_barcode)
-    with_machine_barcode(source_barcode).first
+  def self.find_from_barcode(source_barcode)
+    with_barcode(source_barcode).first
   end
 
   def summary_hash
@@ -260,14 +234,6 @@ class Asset < ApplicationRecord
   # Receptacles. This method just ensures all assets respond to studies
   def studies
     Study.none
-  end
-
-  def barcode_and_created_at_hash
-    return {} if barcode.blank?
-    {
-      barcode: generate_machine_barcode,
-      created_at: created_at
-    }
   end
 
   def study_ids
@@ -416,10 +382,6 @@ class Asset < ApplicationRecord
       AssetLink.create_edge(parent, self)
     end
     AssetLink.create_edge(self, child)
-  end
-
-  def generate_machine_barcode
-    (Barcode.calculate_barcode(barcode_prefix.prefix, barcode.to_i)).to_s
   end
 
   def external_release_text

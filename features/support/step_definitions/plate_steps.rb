@@ -46,19 +46,19 @@ Given /^plate "([^"]*)" has "([^"]*)" wells with samples$/ do |plate_barcode, nu
 end
 
 Then /^plate with barcode "([^"]*)" should exist$/ do |plate_barcode|
-  plate = Plate.find_from_machine_barcode(plate_barcode)
+  plate = Plate.find_from_barcode(plate_barcode)
   assert_not_nil plate
 end
 
 Then /^plate with barcode "([^"]*)" is part of study "([^"]*)"$/ do |plate_barcode, study_name|
-  plate = Plate.find_from_machine_barcode(plate_barcode)
+  plate = Plate.find_from_barcode(plate_barcode)
   assert_not_nil plate
   study = Study.find_by(name: study_name)
   assert_equal study, plate.study
 end
 
 Given /^plate "([^"]*)" has concentration and sequenom results$/ do |plate_barcode|
-  plate = Plate.find_from_machine_barcode(plate_barcode)
+  plate = Plate.find_from_barcode(plate_barcode)
   plate.wells.walk_in_column_major_order do |well, index|
     well.well_attribute.update_attributes!(
       pico_pass: 'Pass',
@@ -70,7 +70,7 @@ Given /^plate "([^"]*)" has concentration and sequenom results$/ do |plate_barco
 end
 
 Given /^plate "([^\"]*)" has concentration and volume results$/ do |plate_barcode|
-  plate = Plate.find_from_machine_barcode(plate_barcode)
+  plate = Plate.find_from_barcode(plate_barcode)
   plate.wells.each_with_index do |well, index|
     well.well_attribute.update_attributes!(
       current_volume: 10 + (index % 30),
@@ -80,7 +80,7 @@ Given /^plate "([^\"]*)" has concentration and volume results$/ do |plate_barcod
 end
 
 Given /^plate "([^\"]*)" has low concentration and volume results$/ do |plate_barcode|
-  plate = Plate.find_from_machine_barcode(plate_barcode)
+  plate = Plate.find_from_barcode(plate_barcode)
   plate.wells.each_with_index do |well, index|
     well.well_attribute.update_attributes!(
       current_volume: 10 + (index % 30),
@@ -90,7 +90,7 @@ Given /^plate "([^\"]*)" has low concentration and volume results$/ do |plate_ba
 end
 
 Given /^plate "([^\"]*)" has concentration and high volume results$/ do |plate_barcode|
-  plate = Plate.find_from_machine_barcode(plate_barcode)
+  plate = Plate.find_from_barcode(plate_barcode)
   plate.wells.each_with_index do |well, index|
     well.well_attribute.update_attributes!(
       current_volume: 30 + (index % 30),
@@ -106,7 +106,7 @@ Given /^plate with barcode "([^"]*)" has a well$/ do |plate_barcode|
 end
 
 Then /^plate "([^"]*)" should have a child plate of type "([^"]*)"$/ do |machine_barcode, plate_type|
-  plate = Asset.find_from_machine_barcode(machine_barcode)
+  plate = Asset.find_from_barcode(machine_barcode)
   assert plate
   assert plate.child.is_a?(plate_type.constantize)
 end
@@ -157,8 +157,8 @@ Given /^a stock plate with barcode "([^"]*)" exists$/ do |machine_barcode|
 end
 
 Then /^plate "([^"]*)" is the parent of plate "([^"]*)"$/ do |parent_plate_barcode, child_plate_barcode|
-  parent_plate = Asset.find_from_machine_barcode(parent_plate_barcode)
-  child_plate = Asset.find_from_machine_barcode(child_plate_barcode)
+  parent_plate = Asset.find_from_barcode(parent_plate_barcode)
+  child_plate = Asset.find_from_barcode(child_plate_barcode)
   assert parent_plate
   assert child_plate
   parent_plate.children << child_plate
@@ -277,7 +277,7 @@ Then /^the plate with the barcode "(.*?)" should have a label of "(.*?)"$/ do |b
 end
 
 Then(/^the volume of each well in "(.*?)" should be:$/) do |machine, table|
-  plate = Plate.with_machine_barcode(machine).first
+  plate = Plate.with_barcode(machine).first
   table.rows.each { |well, volume| assert_equal volume.to_f, plate.wells.located_at(well).first.get_current_volume }
 end
 

@@ -18,7 +18,7 @@ class SampleManifestPlateTest < ActiveSupport::TestCase
       @plate1 = plates.first
       @plate2 = plates.last
       @study_abbreviation = 'WTCCC'
-      @barcode1 = plate1.barcode.to_s
+      @barcode1 = plate1.barcode_number.to_s
 
       options = { sample_manifest: manifest, only_first_label: false, purpose: @purpose }
       @plate_label = LabelPrinter::Label::SampleManifestPlate.new(options)

@@ -5,22 +5,24 @@ module DownloadHelpers
   PATH = Rails.root.join('tmp', 'downloads')
 
   def self.downloads
-    Dir[PATH.join('*')]
+    PATH.children
   end
 
-  def self.downloaded_file(file)
-    wait_for_download
-    File.read(PATH.join(file))
-  end
-
-  def self.wait_for_download
-    Timeout.timeout(TIMEOUT) do
-      sleep 0.5 until downloaded?
+  def self.downloaded_file(file, timeout: TIMEOUT)
+    wait_for_download(file, timeout)
+    File.read(PATH.join(file)).tap do |_|
+      remove_downloads
     end
   end
 
-  def self.downloaded?
-    !downloading? && downloads.any?
+  def self.wait_for_download(file, timeout = TIMEOUT)
+    Timeout.timeout(timeout) do
+      sleep 0.1 until downloaded?(file)
+    end
+  end
+
+  def self.downloaded?(file)
+    !downloading? && PATH.join(file).exist?
   end
 
   def self.downloading?

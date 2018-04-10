@@ -24,12 +24,12 @@ class Api::RequestIO < Api::Base
             :user, {
               asset: [
                 :uuid_object,
-                :barcode_prefix,
+                :primary_barcode,
                 { primary_aliquot: { sample: :uuid_object } }
               ],
               target_asset: [
                 :uuid_object,
-                :barcode_prefix,
+                :primary_barcode,
                 { primary_aliquot: { sample: :uuid_object } }
               ],
               initial_study: :uuid_object,
@@ -107,9 +107,7 @@ class Api::RequestIO < Api::Base
       end
     end
 
-    with_association(:barcode_prefix) do
-      map_attribute_to_json_attribute(:prefix, 'source_asset_barcode_prefix')
-    end
+    map_attribute_to_json_attribute(:prefix, 'source_asset_barcode_prefix')
   end
 
   with_association(:target_asset) do
@@ -132,9 +130,7 @@ class Api::RequestIO < Api::Base
       end
     end
 
-    with_association(:barcode_prefix) do
-      map_attribute_to_json_attribute(:prefix, 'target_asset_barcode_prefix')
-    end
+    map_attribute_to_json_attribute(:prefix, 'target_asset_barcode_prefix')
   end
 
   with_association(:request_type) do

@@ -169,7 +169,9 @@ RSpec.describe SampleManifestExcel::Worksheet, type: :model, sample_manifest_exc
                                                                     password: '1111')
       save_file
       expect(spreadsheet.sheet(0).cell(4, 1)).to eq('Multiplexed library tube barcode:')
-      expect(spreadsheet.sheet(0).cell(4, 2)).to eq(Tube.find_by(barcode: worksheet.sample_manifest.barcodes.first.gsub(/\D/, '')).requests.first.target_asset.sanger_human_barcode)
+      mx_tubes = Tube.with_barcode(worksheet.sample_manifest.barcodes).map { |tube| tube.requests.first.target_asset }.uniq
+      expect(mx_tubes.length).to eq(1)
+      expect(spreadsheet.sheet(0).cell(4, 2)).to eq(mx_tubes.first.human_barcode)
     end
   end
 

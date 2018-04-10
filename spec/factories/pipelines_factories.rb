@@ -19,9 +19,6 @@ FactoryGirl.define do
     name                { |_a| generate :asset_name }
     value               ''
     qc_state            ''
-    resource            nil
-    barcode
-    barcode_prefix { |b| b.association(:barcode_prefix) }
   end
 
   factory :plate_creator_purpose, class: Plate::Creator::PurposeRelationship do |_t|

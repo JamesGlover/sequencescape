@@ -57,18 +57,6 @@ class AssetsController < ApplicationController
     @valid_purposes_options = @asset.compatible_purposes.pluck(:name, :id)
   end
 
-  def find_parents(text)
-    return [] unless text.present?
-    names = text.lines.map(&:chomp).reject { |l| l.blank? }
-    objects = Asset.where(id: names).all
-    objects += Asset.where(barcode: names).all
-    name_set = Set.new(names)
-    found_set = Set.new(objects.map(&:name))
-    not_found = name_set - found_set
-    raise InvalidInputException, "#{Asset.table_name} #{not_found.to_a.join(", ")} not founds" unless not_found.empty?
-    objects
-  end
-
   def create
     count = first_param(:count)
     count = count.present? ? count.to_i : 1
@@ -78,7 +66,7 @@ class AssetsController < ApplicationController
       # Find the parent asset up front
       parent, parent_param = nil, first_param(:parent_asset)
       if parent_param.present?
-        parent = Asset.find_from_machine_barcode(parent_param) || Asset.find_by(name: parent_param) || Asset.find_by(id: parent_param)
+        parent = Asset.find_from_barcode(parent_param) || Asset.find_by(name: parent_param) || Asset.find_by(id: parent_param)
         raise StandardError, "Cannot find the parent asset #{parent_param.inspect}" if parent.nil?
       end
 
@@ -130,7 +118,7 @@ class AssetsController < ApplicationController
             asset.aliquots.create!(aliquot_attributes)
           end
           tag.tag!(asset) if tag.present?
-          asset.update_attributes!(barcode: AssetBarcode.new_barcode) if asset.barcode.nil?
+          asset.update!(barcode: AssetBarcode.new_barcode) if asset.barcode_number.nil?
           asset.comments.create!(user: current_user, description: "asset has been created by #{current_user.login}")
           asset
         end
@@ -151,8 +139,8 @@ class AssetsController < ApplicationController
         format.json { render json: @assets, status: :created, location: assets_url(@assets) }
       else
         format.html { redirect_to action: 'new' }
-        format.xml  { render xml: @assets.errors, status: :unprocessable_entity }
-        format.json { render json: @assets.errors, status: :unprocessable_entity }
+        format.xml  { render xml: flash, status: :unprocessable_entity }
+        format.json { render json: flash, status: :unprocessable_entity }
       end
     end
   end
@@ -355,7 +343,7 @@ class AssetsController < ApplicationController
       redirect_to action: 'find_by_barcode'
       return
     elsif barcode.size == 13 && Barcode.check_EAN(barcode)
-      @asset = Asset.with_machine_barcode(barcode).first
+      @asset = Asset.with_barcode(barcode).first
     elsif match = /\A([A-z]{2})([0-9]{1,7})[A-z]{0,1}\z/.match(barcode) # Human Readable
       prefix = BarcodePrefix.find_by(prefix: match[1])
       @asset = Asset.find_by(barcode: match[2], barcode_prefix_id: prefix.id) if prefix

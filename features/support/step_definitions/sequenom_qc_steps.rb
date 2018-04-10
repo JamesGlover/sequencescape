@@ -51,7 +51,7 @@ end
 
 When /^well "([^"]*)" should come from well "([^"]*)" on plate "([^"]*)"$/ do |seq_well_description, source_well_description, plate_barcode|
   unless plate_barcode.blank?
-    plate          = Plate.find_from_machine_barcode(plate_barcode)
+    plate          = Plate.find_from_barcode(plate_barcode)
     source_well    = plate.find_well_by_name(source_well_description)
     sequenom_plate = SequenomQcPlate.last
     sequenom_well  = sequenom_plate.find_well_by_name(seq_well_description)

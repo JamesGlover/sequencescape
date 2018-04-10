@@ -8,20 +8,28 @@ FactoryGirl.define do
       asset.create_scanned_into_lab_event!(content: '2018-01-01')
     end
   end
+  trait :tube_barcode do
+    transient do
+      barcode { generate :barcode_number }
+    end
+    after(:build) do |tube, evaluator|
+      bc = build(:sanger_ean13_tube, barcode_number: evaluator.barcode, asset: tube)
+      tube.primary_barcode = bc
+      tube.barcodes << bc
+    end
+  end
 
   factory :tube do
     name { generate :asset_name }
     association(:purpose, factory: :tube_purpose)
   end
 
-  factory :empty_sample_tube, class: SampleTube do
+  factory :empty_sample_tube, class: SampleTube, traits: [:tube_barcode] do
     name                { generate :asset_name }
     value               ''
     descriptors         []
     descriptor_fields   []
     qc_state            ''
-    resource            nil
-    barcode
     purpose { Tube::Purpose.standard_sample_tube }
   end
 
@@ -47,9 +55,10 @@ FactoryGirl.define do
     barcode
   end
 
-  factory :multiplexed_library_tube do
+  factory :multiplexed_library_tube, traits: [:tube_barcode] do
     name    { |_a| generate :asset_name }
     purpose { Tube::Purpose.standard_mx_tube }
+    association(:primary_barcode, factory: :sanger_ean13_tube)
   end
 
   factory :pulldown_multiplexed_library_tube do

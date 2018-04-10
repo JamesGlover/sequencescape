@@ -191,9 +191,9 @@ class Plate < Asset
   end
 
   def barcode_dilution_factor_created_at_hash
-    return {} if barcode.blank?
+    return {} if primary_barcode.blank?
     {
-      barcode: generate_machine_barcode,
+      barcode: ean13_barcode.to_s,
       dilution_factor: dilution_factor.to_s,
       created_at: created_at
     }
@@ -330,7 +330,7 @@ class Plate < Asset
       .with_plate_purpose_ids(plate_purpose_ids)
       .created_after(start_date)
       .created_before(end_date)
-      .where.not(barcode: nil)
+      .joins(:barcodes)
       .distinct
   end
 
@@ -585,21 +585,22 @@ class Plate < Asset
 
   def self.create_with_barcode!(*args, &block)
     attributes = args.extract_options!
-    barcode    = args.first || attributes[:barcode]
+    barcode    = attributes[:barcode]
     # If this gets called on plate_purpose.plates it implicitly scopes
     # plate to the plate purpose of choice.
-    barcode    = nil if barcode.present? and unscoped.find_by(barcode: barcode).present?
+    barcode    = nil if barcode.present? && Barcode.sanger_barcode(attributes[:barcode_prefix].prefix, barcode).exists?
     barcode  ||= PlateBarcode.create.barcode
-    create!(attributes.merge(barcode: barcode), &block)
+    sanger_ean13 = Barcode.build_sanger_ean13(number: barcode, prefix: attributes[:barcode_prefix].prefix)
+    create!(attributes.merge(primary_barcode: sanger_ean13), &block)
   end
 
   #--
-  # NOTE: I'm getting odd behaviour where '&method(:find_from_machine_barcode)' raises a SecurityError.  I haven't
+  # NOTE: I'm getting odd behaviour where '&method(:find_from_barcode)' raises a SecurityError.  I haven't
   # been able to track down why, and it only happens under 'rake cucumber', so somewhere something is doing something
   # nasty.
   #++
   def self.plates_from_scanned_plates_and_typed_plate_ids(source_plate_barcodes)
-    scanned_plates = source_plate_barcodes.scan(/\d+/).map { |v| find_from_machine_barcode(v) }
+    scanned_plates = source_plate_barcodes.scan(/\d+/).map { |v| find_from_barcode(v) }
     typed_plates   = source_plate_barcodes.scan(/\d+/).map { |v| find_by(barcode: v) }
 
     (scanned_plates | typed_plates).compact
@@ -744,7 +745,7 @@ class Plate < Asset
   end
 
   def set_plate_name_and_size
-    self.name = "Plate #{barcode}" if name.blank?
+    self.name = "Plate #{human_barcode}" if name.blank?
     self.size = default_plate_size if size.nil?
   end
 end

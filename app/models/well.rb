@@ -305,17 +305,6 @@ class Well < Receptacle
   # def map_description
   delegate :description, to: :map, prefix: true, allow_nil: true
 
-  def valid_well_on_plate
-    return false unless is_a?(Well)
-    well_plate = plate
-    return false unless well_plate.is_a?(Plate)
-    return false if well_plate.barcode.blank?
-    return false if map_id.nil?
-    return false unless map.description.is_a?(String)
-
-    true
-  end
-
   def create_child_sample_tube
     Tube::Purpose.standard_sample_tube.create!(map: map, aliquots: aliquots.map(&:dup)).tap do |sample_tube|
       AssetLink.create_edge(self, sample_tube)

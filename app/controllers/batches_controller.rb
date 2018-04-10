@@ -282,7 +282,7 @@ class BatchesController < ApplicationController
 
     @output_assets.each do |parent, _children|
       unless parent.nil?
-        plate_barcode = parent.barcode
+        plate_barcode = parent.human_barcode
         if plate_barcode.present?
           @output_barcodes << plate_barcode
         end
@@ -405,10 +405,7 @@ class BatchesController < ApplicationController
   end
 
   def verify_tube_layout
-    tube_barcodes = Array.new(@batch.requests.count) do |i|
-      scanned_barcode = params["barcode_#{i}"]
-      SBCF::SangerBarcode.from_machine(scanned_barcode).number
-    end
+    tube_barcodes = Array.new(@batch.requests.count) { |i| params["barcode_#{i}"] }
 
     results = @batch.verify_tube_layout(tube_barcodes, current_user)
 

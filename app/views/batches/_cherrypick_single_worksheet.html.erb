@@ -26,7 +26,7 @@
      <tbody>
        <% source_plate_colour = {} %>
        <% robot_plate_layout[1].sort{|a,b| a[1]<=>b[1]}.each do |barcode,index| -%>
-         <% plate = Plate.find_from_machine_barcode(barcode) %>
+         <% plate = Plate.find_from_barcode(barcode) %>
          <% source_plate_colour["#{barcode}"] = "colour#{index%12}" %>
        <tr>
          <td>SCRC<%= index %></td>
@@ -52,7 +52,7 @@
      </thead>
      <tbody>
        <% robot_plate_layout[0].sort{|a,b| a[1]<=>b[1]}.each do |barcode,index| -%>
-         <% plate = Plate.find_from_machine_barcode(barcode) %>
+         <% plate = Plate.find_from_barcode(barcode) %>
        <tr>
          <td>DEST<%= index %></td>
          <th><%= plate.barcode %></td>
@@ -68,7 +68,7 @@
 
 <div id="plate_layouts">
   <% robot_plate_layout[0].sort{|a,b| a[1]<=>b[1]}.each do |barcode,index| -%>
-      <% plate = Plate.find_from_machine_barcode(barcode) %>
+      <% plate = Plate.find_from_barcode(barcode) %>
       <% if plate.buffer_required? %>
         <h3> Buffer Required </h3>
       <% end %>

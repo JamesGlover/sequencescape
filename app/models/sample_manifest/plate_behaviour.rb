@@ -67,7 +67,7 @@ module SampleManifest::PlateBehaviour
 
       # Ensure we maintain the information we need for printing labels and generating
       # the CSV file
-      @plates  = plates.sort_by(&:barcode)
+      @plates  = plates.sort_by(&:human_barcode)
       @details = []
       plates.each do |plate|
         well_data.slice!(0, plate.size).each do |map, sample_id|
@@ -162,7 +162,7 @@ module SampleManifest::PlateBehaviour
     study_abbreviation = study.abbreviation
 
     well_data = []
-    plates = Array.new(count) { purpose.create!(:without_wells) }.sort_by(&:barcode)
+    plates = Array.new(count) { purpose.create!(:without_wells) }.sort_by(&:human_barcode)
 
     plates.each do |plate|
       sanger_sample_ids = generate_sanger_ids(plate.size)

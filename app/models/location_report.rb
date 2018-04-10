@@ -121,7 +121,7 @@ class LocationReport < ApplicationRecord
 
   def generate_plates_list
     @plates_list = if type_barcodes?
-                     Plate.with_machine_barcode(barcodes)
+                     Plate.with_barcode(barcodes)
                    elsif type_selection?
                      search_for_plates_by_selection
                    else
