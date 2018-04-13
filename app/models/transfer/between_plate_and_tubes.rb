@@ -8,7 +8,7 @@ class Transfer::BetweenPlateAndTubes < Transfer
   DESTINATION_INCLUDES = {
     destination: [
       :uuid_object,
-      :barcode_prefix
+      :primary_barcode
     ]
   }
 
@@ -61,8 +61,8 @@ class Transfer::BetweenPlateAndTubes < Transfer
 
   def barcode_to_hash(barcoded)
     yield({
-      number: barcoded.barcode,
-      prefix: barcoded.barcode_prefix.prefix,
+      number: barcoded.barcode_number,
+      prefix: barcoded.prefix,
       two_dimensional: barcoded.two_dimensional_barcode,
       ean13: barcoded.ean13_barcode,
       type: barcoded.barcode_type

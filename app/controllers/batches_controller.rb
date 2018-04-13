@@ -255,18 +255,6 @@ class BatchesController < ApplicationController
     redirect_to batch_path(@batch)
   end
 
-  def create_training_batch
-    control = Control.find(params[:control][:id])
-    pipeline = control.pipeline
-    limit = pipeline.item_limit
-
-    batch = pipeline.batches.create!(item_limit: limit, user_id: current_user.id)
-    batch.add_control(control.name, pipeline.item_limit)
-
-    flash[:notice] = 'Training batch created'
-    redirect_to action: 'show', id: batch.id
-  end
-
   def print_labels
   end
 
@@ -388,7 +376,7 @@ class BatchesController < ApplicationController
       @plate = @batch.requests.first.asset.plate
     elsif @pipeline.is_a?(CherrypickingPipeline)
       @plates = if params[:barcode]
-                  [Plate.find_by(barcode: params[:barcode])]
+                  Plate.with_barcode(params[:barcode])
                 else
                   @batch.output_plates
                 end

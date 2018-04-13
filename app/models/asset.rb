@@ -181,9 +181,7 @@ class Asset < ApplicationRecord
   scope :with_barcode, ->(*barcodes) {
     db_barcodes = barcodes.flatten.each_with_object([]) do |source_bc, store|
       next if source_bc.blank?
-      store << source_bc
-      human_bc = SBCF::SangerBarcode.from_machine(source_bc).human_barcode
-      store << human_bc unless human_bc.nil?
+      store.concat(Barcode.extract_barcode(source_bc))
     end
     joins(:barcodes).where(barcodes: { barcode: db_barcodes }).distinct
   }

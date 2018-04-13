@@ -10,7 +10,7 @@ class AssetPlateTest < ActiveSupport::TestCase
     @plate_name = 'Plate name'
     @barcode1 = '11111'
     @prefix = 'DN'
-    @plate1 = create :child_plate, barcode: barcode1
+    @plate1 = create :child_plate, barcode: barcode1, name: @plate_name
     @plate2 = create :child_plate
     @plates = [plate1, plate2]
     @plate_label = LabelPrinter::Label::AssetPlate.new(plates)

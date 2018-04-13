@@ -38,7 +38,7 @@ class Api::SampleTubeIO < Api::Base
     map_attribute_to_json_attribute(:content, 'scanned_in_date')
   end
 
-  map_attribute_to_json_attribute(:prefix)
+  map_attribute_to_json_attribute(:prefix, 'barcode_prefix')
   with_association(:primary_aliquot_if_unique) do
     with_association(:sample) do
       map_attribute_to_json_attribute(:uuid, 'sample_uuid')

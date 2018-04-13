@@ -72,7 +72,7 @@
 <div class="help">You edit these roles independently of any changes above.</div>
 <div id="role_list">
   <% if @users_roles.empty? %>
-    <h3 style="text-align:center"><%= display_empty_table "This user has no roles. Use the form below to add the first one" -%></h3>
+    <h3 style="text-align:center"><%= display_empty_table "This user has no roles. Use the 'Add new roles' form to add the first one" -%></h3>
   <% else %>
     <%= render partial: "roles" -%>
   <% end %>

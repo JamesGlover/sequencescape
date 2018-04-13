@@ -126,9 +126,8 @@ FactoryGirl.define do
       transfers nil
     end
 
-    factory(:between_tubes_transfer_template) do
-      name 'Transfer from tube to tube by submission'
-      transfer_class_name 'Transfer::BetweenTubesBySubmission.name'
+    factory :between_tubes_transfer_template do
+      transfer_class_name 'Transfer::BetweenTubesBySubmission'
       transfers nil
     end
   end
@@ -228,7 +227,7 @@ FactoryGirl.define do
   end
 
   factory(:isc_request, class: Pulldown::Requests::IscLibraryRequest, aliases: [:pulldown_isc_request]) do
-    request_type { |_target| RequestType.find_by(name: 'Pulldown ISC') || raise(StandardError, "Could not find 'Pulldown ISC' request type") }
+    request_type { RequestType.find_by!(name: 'Pulldown ISC') }
     asset        { |target| target.association(:well_with_sample_and_plate) }
     target_asset { |target| target.association(:empty_well) }
     request_purpose :standard

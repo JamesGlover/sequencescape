@@ -11,7 +11,7 @@
   <td><%= plate.name %></td>
   <td class="strong faint"><%= plate.created_at.to_s(:sortable) %></td>
   <td><%= index + 1 %></td>
-  <td><%= link_to source_plate.barcode, show_plate_asset_path(source_plate) %></td>
+  <td><%= link_to source_plate.human_barcode, show_plate_asset_path(source_plate) %></td>
   <td><%= source_plate.number_of_blank_samples %></td>
   <td>
     <% source_plate.studies.each do |study| %>

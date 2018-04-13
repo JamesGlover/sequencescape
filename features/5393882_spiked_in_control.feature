@@ -77,7 +77,7 @@ Feature: Creating Spiked phiX
   Scenario: The cluster formation team member create a batch that will use spiked in controls.
     Given I have a batch with 8 requests for the "Cluster formation PE (spiked in controls)" pipeline
     And  I have a hybridization spiked buffer called "Aliquot #1"
-    And the "barcode" of the asset called "Aliquot #1" is "1"
+    And the barcode for the asset "Aliquot #1" is "NT1O"
 
     When I on batch page
     And I follow "Add Spiked in Control"
@@ -140,7 +140,7 @@ Feature: Creating Spiked phiX
     And I should see "Aliquot #1"
     And I should see "Aliquot #2"
 
-    Given the "barcode" of the asset called "Aliquot #1" is "1"
+    And the barcode for the asset "Aliquot #1" is "NT1O"
 
     Given I have a batch with 8 requests for the "Cluster formation PE (spiked in controls)" pipeline
     When I on batch page

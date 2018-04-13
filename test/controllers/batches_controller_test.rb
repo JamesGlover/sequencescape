@@ -190,9 +190,6 @@ class BatchesControllerTest < ActionController::TestCase
             should '#add control' do
               get :add_control, params: { id: @batch_one, control: { id: @cn.id } }
             end
-            should '#create_training_batchl' do
-              get :create_training_batch, params: { id: @batch_one, control: { id: @cn.id } }
-            end
           end
         end
 

@@ -13,6 +13,7 @@ class LibPoolNormTubeGeneratorTest < ActiveSupport::TestCase
   def setup
     @user = create(:admin)
     @study = create(:study)
+    create :between_tubes_transfer_template # Needed by LibPoolNormTubeGenerator.new
   end
 
   def mock_transfer(generator)
@@ -57,7 +58,6 @@ class LibPoolNormTubeGeneratorTest < ActiveSupport::TestCase
     setup do
       @plate = valid_plate
       Plate.stubs(:with_barcode).returns(Plate.where(id: plate.id))
-      create :between_tubes_transfer_template # Needed by LibPoolNormTubeGenerator.new
       @generator = LibPoolNormTubeGenerator.new(plate.ean13_barcode, user, study)
       generator.stubs(:plate).returns(valid_plate)
     end

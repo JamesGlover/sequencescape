@@ -61,12 +61,12 @@ FactoryGirl.define do
     association(:primary_barcode, factory: :sanger_ean13_tube)
   end
 
-  factory :pulldown_multiplexed_library_tube do
-    name { |_a| generate :asset_name }
+  factory :pulldown_multiplexed_library_tube, traits: [:tube_barcode] do
+    name { generate :asset_name }
     public_name 'ABC'
   end
 
-  factory :stock_multiplexed_library_tube do
+  factory :stock_multiplexed_library_tube, traits: [:tube_barcode] do
     name    { |_a| generate :asset_name }
     purpose { Tube::Purpose.stock_mx_tube }
 
@@ -75,7 +75,7 @@ FactoryGirl.define do
     end
   end
 
-  factory(:empty_library_tube, class: LibraryTube) do
+  factory(:empty_library_tube, traits: [:tube_barcode], class: LibraryTube) do
     qc_state ''
     name     { generate :asset_name }
     purpose  { Tube::Purpose.standard_library_tube }
@@ -115,8 +115,16 @@ FactoryGirl.define do
   factory :pac_bio_library_tube do
     transient do
       aliquot { build(:tagged_aliquot) }
+      prep_kit_barcode 999
+      smrt_cells_available 1
     end
     barcode
+    pac_bio_library_tube_metadata_attributes do
+      {
+        prep_kit_barcode: prep_kit_barcode,
+        smrt_cells_available: smrt_cells_available
+      }
+    end
     after(:build) do |t, evaluator|
       t.aliquots << evaluator.aliquot
     end

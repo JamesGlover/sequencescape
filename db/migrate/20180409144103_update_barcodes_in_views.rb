@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# The removal of barcode and the prefix association necessitates
+# updating the views used by reports.
 class UpdateBarcodesInViews < ActiveRecord::Migration[5.1]
   def self.up
     # Pulled these from production Sequencescape itself, just in case

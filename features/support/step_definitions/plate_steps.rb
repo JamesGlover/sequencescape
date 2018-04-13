@@ -32,14 +32,14 @@ Given /^the plate with barcode "([^\"]+)" has events:$/ do |barcode, events_tabl
 end
 
 Given /^plate "([^"]*)" has "([^"]*)" wells$/ do |plate_barcode, number_of_wells|
-  plate = Plate.find_by(barcode: plate_barcode)
+  plate = Plate.find_from_barcode('DN' + plate_barcode)
   1.upto(number_of_wells.to_i) do |i|
     Well.create!(plate: plate, map_id: i)
   end
 end
 
 Given /^plate "([^"]*)" has "([^"]*)" wells with samples$/ do |plate_barcode, number_of_wells|
-  plate = Plate.find_by(barcode: plate_barcode)
+  plate = Plate.find_from_barcode('DN' + plate_barcode)
   plate.wells = Array.new(number_of_wells.to_i) do |i|
     FactoryGirl.create(:untagged_well, map_id: i + 1)
   end
@@ -100,7 +100,7 @@ Given /^plate "([^\"]*)" has concentration and high volume results$/ do |plate_b
 end
 
 Given /^plate with barcode "([^"]*)" has a well$/ do |plate_barcode|
-  plate = Plate.find_by(barcode: plate_barcode)
+  plate = Plate.find_from_barcode('DN' + plate_barcode)
   well  = FactoryGirl.create(:empty_well).tap { |well| well.aliquots.create!(sample: FactoryGirl.create(:sample, name: 'Sample1')) }
   plate.add_and_save_well(well, 0, 0)
 end
@@ -118,11 +118,10 @@ Then(/^output all plates for debugging purposes$/) do
   p Asset.all.to_a
 end
 
-Given /^a plate of type "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_type, machine_barcode|
-  plate_type.constantize.create!(
-    barcode: Barcode.number_to_human(machine_barcode.to_s),
-    plate_purpose: "#{plate_type}Purpose".constantize.first
-  )
+Given /^a plate with barcode "([^"]*)" exists$/ do |machine_barcode|
+  bc = SBCF::SangerBarcode.from_machine(machine_barcode)
+  raise 'Currently only supports DN barcodes' unless bc.prefix.human == 'DN'
+  FactoryGirl.create :plate, barcode: bc.number
 end
 
 Given /^a "([^"]*)" plate purpose and of type "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_purpose_name, plate_type, machine_barcode|
@@ -175,11 +174,11 @@ Given /^well "([^"]*)" is holded by plate "([^"]*)"$/ do |well_uuid, plate_uuid|
   well = Uuid.find_by(external_id: well_uuid).resource
   plate = Uuid.find_by(external_id: plate_uuid).resource
   well.update_attributes!(plate: plate, map: Map.find_by(description: 'A1'))
-  plate.update_attributes!(barcode: 1)
+  step("the barcode for plate #{plate.id} is \"DN1S\"")
 end
 
-Then /^plate "([^"]*)" should have a purpose of "([^"]*)"$/ do |_plate_barcode, plate_purpose_name|
-  assert_equal plate_purpose_name, Plate.find_by(barcode: '1234567').plate_purpose.name
+Then /^plate "([^"]*)" should have a purpose of "([^"]*)"$/ do |plate_barcode, plate_purpose_name|
+  assert_equal plate_purpose_name, Plate.find_from_barcode("DN#{plate_barcode}").plate_purpose.name
 end
 
 Given /^the well with ID (\d+) contains the sample "([^\"]+)"$/ do |well_id, name|
@@ -249,7 +248,7 @@ Given /^([0-9]+) wells on (the plate "[^\"]+"|the last plate|the plate with ID [
 end
 
 Given /^plate "([^"]*)" has "([^"]*)" wells with aliquots$/ do |plate_barcode, number_of_wells|
-  plate = Plate.find_by(barcode: plate_barcode)
+  plate = Plate.find_from_barcode('DN' + plate_barcode)
   plate.wells = Array.new(number_of_wells.to_i) do |i|
     FactoryGirl.build :untagged_well, map_id: i + 1
   end
@@ -272,7 +271,7 @@ Given /^(passed|started|pending|failed) transfer requests exist between (\d+) we
 end
 
 Then /^the plate with the barcode "(.*?)" should have a label of "(.*?)"$/ do |barcode, label|
-  plate = Plate.find_by!(barcode: barcode)
+  plate = Plate.find_from_barcode('DN' + barcode)
   assert_equal label, plate.role
 end
 

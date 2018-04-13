@@ -239,7 +239,6 @@ class Plate < Asset
 
   scope :include_wells_and_attributes, -> { includes(wells: %i(map well_attribute)) }
 
-  # has_many :wells, :as => :holder, :class_name => "Well"
   DEFAULT_SIZE = 96
 
   self.per_page = 50
@@ -547,7 +546,7 @@ class Plate < Asset
 
   def self.create_sample_tubes_asset_group_and_print_barcodes(plates, barcode_printer, study)
     return nil if plates.empty?
-    plate_barcodes = plates.map { |plate| plate.barcode }
+    plate_barcodes = plates.map { |plate| plate.barcode_number }
     asset_group = AssetGroup.find_or_create_asset_group("#{plate_barcodes.join('-')} #{Time.now.to_formatted_s(:sortable)} ", study)
     plates.each do |plate|
       next if plate.wells.empty?
@@ -592,18 +591,6 @@ class Plate < Asset
     barcode  ||= PlateBarcode.create.barcode
     sanger_ean13 = Barcode.build_sanger_ean13(number: barcode, prefix: attributes[:barcode_prefix].prefix)
     create!(attributes.merge(primary_barcode: sanger_ean13), &block)
-  end
-
-  #--
-  # NOTE: I'm getting odd behaviour where '&method(:find_from_barcode)' raises a SecurityError.  I haven't
-  # been able to track down why, and it only happens under 'rake cucumber', so somewhere something is doing something
-  # nasty.
-  #++
-  def self.plates_from_scanned_plates_and_typed_plate_ids(source_plate_barcodes)
-    scanned_plates = source_plate_barcodes.scan(/\d+/).map { |v| find_from_barcode(v) }
-    typed_plates   = source_plate_barcodes.scan(/\d+/).map { |v| find_by(barcode: v) }
-
-    (scanned_plates | typed_plates).compact
   end
 
   def number_of_blank_samples
@@ -716,6 +703,11 @@ class Plate < Asset
   def subject_type
     'plate'
   end
+
+  # def name=(name)
+  #   binding.pry if name == 'Plate name'
+  #   super
+  # end
 
   private
 

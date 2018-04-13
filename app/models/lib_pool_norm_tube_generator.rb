@@ -17,7 +17,7 @@ class LibPoolNormTubeGenerator
   end
 
   def transfer_template
-    @transfer_template ||= TransferTemplate.find_by(name: 'Transfer from tube to tube by submission')
+    @transfer_template ||= TransferTemplate.find_by!(transfer_class_name: 'Transfer::BetweenTubesBySubmission')
   end
 
   def plate=(barcode)

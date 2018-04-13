@@ -10,8 +10,8 @@ class AssetGroupRedirectTest < ActiveSupport::TestCase
       @barcode1 = '11111'
       @barcode2 = '22222'
       @barcode3 = '33333'
-      asset1 = create :child_plate, barcode: barcode1
-      asset2 = create :child_plate, barcode: barcode2
+      asset1 = create :child_plate, barcode: barcode1, name: @asset_name
+      asset2 = create :child_plate, barcode: barcode2, name: @asset_name
       asset3 = create :child_plate, barcode: barcode3
       options = { printables: { (asset1.id).to_s => 'true', (asset2.id).to_s => 'true', (asset3.id).to_s => 'false' } }
       @asset_redirect = LabelPrinter::Label::AssetRedirect.new(options)
@@ -47,7 +47,7 @@ class AssetGroupRedirectTest < ActiveSupport::TestCase
       @asset_name = 'Plate name'
       @prefix = 'DN'
       @barcode1 = '11111'
-      @asset = create :child_plate, barcode: barcode1
+      @asset = create :child_plate, barcode: barcode1, name: @asset_name
       options = { printables: asset }
       @asset_redirect = LabelPrinter::Label::AssetRedirect.new(options)
 

@@ -101,7 +101,6 @@ Sequencescape::Application.routes.draw do
       post :swap
       get :gwl_file
       post :fail_items
-      post :create_training_batch
       post :reset_batch
       get :download_spreadsheet
       get :edit_volume_and_concentration
@@ -389,7 +388,6 @@ Sequencescape::Application.routes.draw do
       get :show_comments
       get :batches
       get :summary
-      get :training_batch
       get :setup_inbox
       get :set_inbox
     end

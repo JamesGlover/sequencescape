@@ -33,7 +33,7 @@ module Barcode::Barcodeable
   private :set_default_prefix
 
   def prefix
-    primary_barcode.barcode_prefix
+    primary_barcode&.barcode_prefix
   end
 
   def sanger_human_barcode
@@ -44,16 +44,8 @@ module Barcode::Barcodeable
     {
       type: barcode_type,
       two_dimensional: two_dimensional_barcode
-    }.merge(primary_barcode.summary)
+    }.merge(primary_barcode.try(:summary) || {})
   end
-
-  #  deprecate sanger_human_barcode: 'use #human_barcode instead'
-
-  # def ean13_barcode
-  #   return nil unless barcode.present? and prefix.present?
-  #   Barcode.calculate_barcode(prefix, barcode.to_i).to_s
-  # end
-  # alias_method :machine_barcode, :ean13_barcode
 
   def role
     return nil if no_role?

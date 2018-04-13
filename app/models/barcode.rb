@@ -34,6 +34,14 @@ class Barcode < ApplicationRecord
     new(format: :sanger_ean13, barcode: SBCF::SangerBarcode.from_prefix_and_number(prefix, number).human_barcode)
   end
 
+  # Extract barcode from user input
+  def self.extract_barcode(barcode)
+    [barcode.to_s].tap do |barcodes|
+      barcodes << SBCF::SangerBarcode.from_machine(barcode.to_s).human_barcode if SBCF::MACHINE_BARCODE_FORMAT.match?(barcode.to_s)
+      barcodes << SBCF::SangerBarcode.from_human(barcode.to_s).human_barcode if SBCF::HUMAN_BARCODE_FORMAT.match?(barcode.to_s)
+    end.compact.uniq
+  end
+
   def handler
     @handler ||= handler_class.new(barcode)
   end
