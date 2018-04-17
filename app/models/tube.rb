@@ -28,7 +28,7 @@ class Tube < Receptacle
   end
 
   def barcode!
-    self.barcode = AssetBarcode.new_barcode unless barcode_number
+    self.sanger_barcode = { number: AssetBarcode.new_barcode, prefix: default_prefix } unless barcode_number
     save!
   end
 
@@ -51,7 +51,7 @@ class Tube < Receptacle
     ancestors.order(created_at: :desc).find_by(plate_purpose_id: ancestor_purpose_id)
   end
 
-  alias_method :friendly_name, :sanger_human_barcode
+  alias_method :friendly_name, :human_barcode
 
   def self.delegate_to_purpose(*methods)
     methods.each do |method|

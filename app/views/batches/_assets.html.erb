@@ -24,7 +24,7 @@
       <% unless parent.nil? %>
         <tr>
           <td><%= link_to parent.id, asset_url(parent) %></td>
-          <td><%= parent.sanger_human_barcode %></td>
+          <td><%= parent.human_barcode %></td>
           <td><%= requests.size %></td>
           <% if output_plate %><td><%= purpose_for_plate(parent) %></td><% end %>
           <td><%= link_to 'Show plate', show_plate_asset_url(parent)%></td>

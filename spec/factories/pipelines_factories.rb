@@ -30,68 +30,6 @@ FactoryGirl.define do
     name { generate :plate_creator_name }
   end
 
-  factory :control_plate do
-    plate_purpose { PlatePurpose.find_by(name: 'Stock plate') }
-    name                'Control Plate name'
-    value               ''
-    descriptors         []
-    descriptor_fields   []
-    qc_state            ''
-    resource            nil
-    sti_type            'ControlPlate'
-    barcode
-  end
-
-  factory :dilution_plate do
-    plate_purpose { PlatePurpose.find_by!(name: 'Stock plate') }
-    barcode
-    with_wells
-    size 96
-  end
-  factory :gel_dilution_plate do
-    plate_purpose { PlatePurpose.find_by!(name: 'Gel Dilution') }
-    barcode
-    with_wells
-    size 96
-  end
-  factory :pico_assay_plate do
-    plate_purpose { PlatePurpose.find_by!(name: 'Stock plate') }
-    barcode
-    with_wells
-    size 96
-    factory :pico_assay_a_plate do
-      plate_purpose { PlatePurpose.find_by!(name: 'Pico Assay A') }
-      barcode
-      with_wells
-      size 96
-    end
-    factory :pico_assay_b_plate do
-      plate_purpose { PlatePurpose.find_by!(name: 'Pico Assay B') }
-      barcode
-      with_wells
-      size 96
-    end
-  end
-  factory :pico_dilution_plate do
-    plate_purpose { PlatePurpose.find_by!(name: 'Pico Dilution') }
-    barcode
-    with_wells
-    size 96
-  end
-  factory :sequenom_qc_plate do
-    sequence(:name) { |i| "Sequenom #{i}" }
-    plate_purpose { PlatePurpose.find_by!(name: 'Sequenom') }
-    barcode
-    with_wells
-    size 96
-  end
-  factory :working_dilution_plate do
-    plate_purpose { PlatePurpose.find_by!(name: 'Working Dilution') }
-    barcode
-    with_wells
-    size 96
-  end
-
   factory :control do
     name 'New control'
     pipeline

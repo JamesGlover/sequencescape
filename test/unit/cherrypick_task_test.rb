@@ -183,7 +183,7 @@ class CherrypickTaskTest < ActiveSupport::TestCase
 
           @template.set_control_well(1)
 
-          @control_plate = ControlPlate.create!(barcode: (@barcode += 1), size: 12, plate_purpose: @mini_plate_purpose).tap do |plate|
+          @control_plate = ControlPlate.create!(sanger_barcode: { human_barcode: generate(:sanger_barcode) }, size: 12, plate_purpose: @mini_plate_purpose).tap do |plate|
             Map.where_plate_size(12).where_description(['A1', 'C1', 'A2']).all.each do |location|
               well = plate.wells.create!(map: location)
               well.aliquots.create!(sample: create(:sample))

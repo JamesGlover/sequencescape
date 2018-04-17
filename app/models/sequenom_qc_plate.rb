@@ -68,7 +68,7 @@ class SequenomQcPlate < Plate
 
       # Plate name e.g. QC1234_1235_1236_1237_20100801
       self.name = "#{plate_prefix}#{plate_number(input_plate_names)}#{plate_date}"
-      self.barcode = PlateBarcode.create.barcode
+      self.sanger_barcode = { number: PlateBarcode.create.barcode, prefix: default_prefix }
     end
     true
   end

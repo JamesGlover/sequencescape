@@ -24,22 +24,22 @@
 
     <div class='section'>3. If applicable, scan in the 'parent' asset's barcode,</div>
     <div class='section'>
-      <%= label_tag "parent_asset_", "Parent Asset", {style: 'display:none;'} %><%= text_field :parent_asset, nil %>
+      <%= label_tag "parent_asset_", "Parent Asset", {style: 'display:none;'} %><%= text_field :parent_asset %>
     </div>
     <div class='section'>and enter how much (in &#181;L) was taken from it.</div>
     <div class='section'>
-      <%= label_tag "parent_volume_", "vol.", {style: 'display:none;'} %><%= text_field :parent_volume, nil %> &#181;L
+      <%= label_tag "parent_volume_", "vol.", {style: 'display:none;'} %><%= text_field :parent_volume %> &#181;L
     </div>
 
     <div class='section'>The new asset will be tagged with the following tag number:</div>
     <div class='section'>
       <%= label_tag "tag_", "Tag", {style: 'display:none;'} %>
-      <%= text_field :tag, nil, { readonly: true, value: "#{@phix_tag.map_id}" } %>
+      <%= text_field :tag, { readonly: true, value: "#{@phix_tag.map_id}" } %>
     </div>
     <div class='section'>The sequence for this tag is:</div>
     <div class='section'>
     <%= label_tag "tag_sequence_", "Tag Sequence", {style: 'display:none;'} %>
-    <%= text_field :tag_sequence, nil, { readonly: true, value: "#{@phix_tag.oligo}", disabled: true } %>
+    <%= text_field :tag_sequence, { readonly: true, value: "#{@phix_tag.oligo}", disabled: true } %>
     </div>
 
     <div class='section'>4. Provide the concentration (in nM).</div>

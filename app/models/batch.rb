@@ -308,7 +308,7 @@ class Batch < ApplicationRecord
     requests.each do |request|
       barcode = barcodes[request.position - 1]
       unless barcode == request.asset.machine_barcode
-        expected_barcode = request.asset.sanger_human_barcode
+        expected_barcode = request.asset.human_barcode
         errors.add(:base, "The tube at position #{request.position} is incorrect: expected #{expected_barcode}.")
       end
     end
@@ -530,7 +530,7 @@ class Batch < ApplicationRecord
       # we need to call downstream request before setting the target_asset
       # otherwise, the request use the target asset to find the next request
       target_asset = asset_type.create! do |asset|
-        asset.barcode = AssetBarcode.new_barcode unless [Lane, Well].include?(asset_type)
+        asset.generate_barcode
         asset.generate_name(request.asset.name)
       end
 

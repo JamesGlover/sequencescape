@@ -25,10 +25,6 @@ class SampleTube < Tube
 
   private
 
-  def generate_barcode
-    self.barcode = AssetBarcode.new_barcode
-  end
-
   def generate_name_from_aliquots
     return if name.present? || primary_aliquot.try(:sample).nil?
     self.name = primary_aliquot.sample.name

@@ -24,14 +24,16 @@ class Barcode < ApplicationRecord
   enum format: [:sanger_ean13, :infinium, :fluidigm, :external]
 
   scope(:sanger_barcode, lambda do |prefix, number|
-    sanger_human_barcode = SBCF::SangerBarcode.from_prefix_and_number(prefix, number).human_barcode
-    where(format: :sanger_ean13, barcode: sanger_human_barcode)
+    human_barcode = SBCF::SangerBarcode.from_prefix_and_number(prefix, number).human_barcode
+    where(format: :sanger_ean13, barcode: human_barcode)
   end)
 
   delegate_missing_to :handler
 
-  def self.build_sanger_ean13(prefix:, number:)
-    new(format: :sanger_ean13, barcode: SBCF::SangerBarcode.from_prefix_and_number(prefix, number).human_barcode)
+  def self.build_sanger_ean13(attributes)
+    # We need to symbolize our hash keys to allow them to get passed in to named arguments.
+    safe_attributes = attributes.slice(:number, :prefix, :human_barcode, :machine_barcode).symbolize_keys
+    new(format: :sanger_ean13, barcode: SBCF::SangerBarcode.new(safe_attributes).human_barcode)
   end
 
   # Extract barcode from user input

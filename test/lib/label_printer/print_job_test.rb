@@ -13,7 +13,7 @@ class PrintJobTest < ActiveSupport::TestCase
                     labels: { body:
                   [{ main_label:
                     { top_left: (Date.today.strftime('%e-%^b-%Y')).to_s,
-                      bottom_left: plate.sanger_human_barcode.to_s,
+                      bottom_left: plate.human_barcode.to_s,
                       top_right: plate_purpose.name.to_s,
                       bottom_right: "user #{plate.find_study_abbreviation_from_parent}",
                       top_far_right: plate.parent.try(:barcode_number).to_s,

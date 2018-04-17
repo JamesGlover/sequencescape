@@ -46,19 +46,6 @@ class Asset < ApplicationRecord
 
   class_attribute :stock_message_template, instance_writer: false
 
-  module InstanceMethods
-    # Assets are, by default, non-barcoded
-    def generate_barcode
-      # Does nothing!
-    end
-
-    # Returns nil because assets really don't have barcodes!
-    def barcode_type
-      nil
-    end
-  end
-  include InstanceMethods
-
   class VolumeError < StandardError
   end
 
@@ -309,6 +296,10 @@ class Asset < ApplicationRecord
     asset_group
   end
 
+  def role
+    stock_plate&.stock_role
+  end
+
   def generate_name_with_id
     update_attributes!(name: "#{name} #{id}")
   end
@@ -444,6 +435,16 @@ class Asset < ApplicationRecord
 
   def compatible_purposes
     Purpose.none
+  end
+
+  # By default only barcodeable assets generate barcodes
+  def generate_barcode
+    nil
+  end
+
+  # Returns nil because assets really don't have barcodes!
+  def barcode_type
+    nil
   end
 
   def automatic_move?

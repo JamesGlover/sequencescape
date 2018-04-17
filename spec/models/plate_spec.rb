@@ -7,11 +7,12 @@ describe Plate do
   context 'barcodes' do
     # Maintaining existing barcode behaviour
     context 'sanger barcodes' do
-      let(:barcode_prefix) { create :barcode_prefix, prefix: 'DN' }
-      let(:plate) { create :plate, barcode_prefix: barcode_prefix, barcode: '12345' }
+      let(:prefix) { 'DN' }
+      let(:barcode_prefix) { create :barcode_prefix, prefix: prefix }
+      let(:plate) { create :plate, prefix: prefix, barcode: '12345' }
 
-      describe '#sanger_human_barcode' do
-        subject { plate.sanger_human_barcode }
+      describe '#human_barcode' do
+        subject { plate.human_barcode }
         it { is_expected.to eq 'DN12345U' }
       end
 

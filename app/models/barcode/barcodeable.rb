@@ -6,7 +6,6 @@ module Barcode::Barcodeable
     base.class_eval do
       # Default prefix is the fallback prefix if no purpose is available.
       class_attribute :default_prefix
-      before_create :set_default_prefix
 
       has_one :primary_barcode, -> { order(id: :desc) }, foreign_key: :asset_id, inverse_of: :asset, dependent: :destroy, class_name: 'Barcode'
 
@@ -15,7 +14,7 @@ module Barcode::Barcodeable
   end
 
   def generate_barcode
-    self.barcode = AssetBarcode.new_barcode
+    self.sanger_barcode = { prefix: default_prefix, number: AssetBarcode.new_barcode } unless primary_barcode
   end
 
   def barcode_number
@@ -26,17 +25,11 @@ module Barcode::Barcodeable
     primary_barcode.format
   end
 
-  def set_default_prefix
-    return if primary_barcode.present?
-    self.barcode_prefix = purpose&.barcode_prefix || BarcodePrefix.find_or_create_by(prefix: default_prefix)
-  end
-  private :set_default_prefix
-
   def prefix
     primary_barcode&.barcode_prefix
   end
 
-  def sanger_human_barcode
+  def human_barcode
     human_barcode
   end
 
@@ -47,42 +40,36 @@ module Barcode::Barcodeable
     }.merge(primary_barcode.try(:summary) || {})
   end
 
-  def role
-    return nil if no_role?
-    stock_plate.wells.first.requests.first.role
-  end
-
-  def no_role?
-    if stock_plate.nil?
-      true
-    elsif stock_plate.wells.first.nil?
-      true
-    elsif stock_plate.wells.first.requests.first.nil?
-      true
-    else
-      false
-    end
-  end
-
   def external_identifier
-    sanger_human_barcode
+    human_barcode
   end
 
   def printable_target
     self
   end
 
-  def barcode!
+  def sanger_barcode
+    barcodes.detect(&:sanger_ean13?)
+  end
+
+  def sanger_barcode=(attributes)
+    self.primary_barcode = Barcode.build_sanger_ean13(attributes)
+    # We've effectively modified the barcodes relationship, so lets reset it.
+    # This probably indicates we should handle primary barcode ourself, and load
+    # all barcodes whenever.
+    barcodes.reset
+  end
+
+  deprecate def barcode!
     barcode
   end
 
-  # TODO: Deprecate once tests are passing. Then fix usage.
-  def barcode=(barcode)
+  deprecate def barcode=(barcode)
     @barcode_number ||= barcode
     build_barcode_when_complete
   end
 
-  def barcode_prefix=(barcode_prefix)
+  deprecate def barcode_prefix=(barcode_prefix)
     @barcode_prefix ||= barcode_prefix.prefix
     build_barcode_when_complete
   end

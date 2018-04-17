@@ -432,7 +432,6 @@ Sequencescape::Application.routes.draw do
     end
   end
 
-  get 'assets/snp_import' => 'assets#snp_import'
   get 'assets/lookup' => 'assets#lookup', :as => :assets_lookup
   get 'assets/receive_barcode' => 'assets#receive_barcode'
   get 'assets/import_from_snp' => 'assets#import_from_snp'
@@ -492,12 +491,8 @@ Sequencescape::Application.routes.draw do
   resources :receptions, only: [:index] do
     collection do
       post :confirm_reception
-      get :snp_register
       get :reception
-      get :snp_import
-      get :receive_snp_barcode
       post :receive_barcode
-      get :import_from_snp
     end
   end
 

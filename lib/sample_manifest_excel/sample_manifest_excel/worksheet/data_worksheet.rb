@@ -101,7 +101,7 @@ module SampleManifestExcel
       end
 
       def get_multiplexed_library_tube_barcode
-        Tube.with_barcode(sample_manifest.barcodes).first.requests.first.target_asset.sanger_human_barcode
+        Tube.with_barcode(sample_manifest.barcodes).first.requests.first.target_asset.human_barcode
       rescue
         ''
       end

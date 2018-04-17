@@ -131,7 +131,7 @@ class Plate < Asset
   def summary_hash
     {
       asset_id: id,
-      barcode: { ean13_barcode: ean13_barcode, human_readable: sanger_human_barcode },
+      barcode: { ean13_barcode: ean13_barcode, human_readable: human_barcode },
       occupied_wells: wells.with_aliquots.include_map.map(&:map_description)
     }
   end
@@ -435,6 +435,10 @@ class Plate < Asset
     end
   end
 
+  def stock_role
+    well_requests_as_source.first&.role
+  end
+
   # A plate has a sample with the specified name if any of its wells have that sample.
   def sample?(sample_name)
     wells.any? do |well|
@@ -490,19 +494,6 @@ class Plate < Asset
 
   def submission_time(current_time)
     current_time.strftime('%Y-%m-%dT%H_%M_%SZ')
-  end
-
-  def self.create_plates_with_barcodes(params)
-    begin
-      params[:snp_plates].each do |_index, plate_barcode_id|
-        next if plate_barcode_id.blank?
-        plate = Plate.create(barcode: plate_barcode_id.to_s, name: "Plate #{plate_barcode_id}", size: DEFAULT_SIZE)
-        plate.save!
-      end
-    rescue ActiveRecord::RecordInvalid
-      return false
-    end
-    true
   end
 
   def self.plate_ids_from_requests(requests)
@@ -584,13 +575,16 @@ class Plate < Asset
 
   def self.create_with_barcode!(*args, &block)
     attributes = args.extract_options!
-    barcode    = attributes[:barcode]
-    # If this gets called on plate_purpose.plates it implicitly scopes
-    # plate to the plate purpose of choice.
-    barcode    = nil if barcode.present? && Barcode.sanger_barcode(attributes[:barcode_prefix].prefix, barcode).exists?
-    barcode  ||= PlateBarcode.create.barcode
-    sanger_ean13 = Barcode.build_sanger_ean13(number: barcode, prefix: attributes[:barcode_prefix].prefix)
-    create!(attributes.merge(primary_barcode: sanger_ean13), &block)
+    attributes[:sanger_barcode] = safe_sanger_barcode(attributes[:sanger_barcode] || {})
+    create!(attributes, &block)
+  end
+
+  def self.safe_sanger_barcode(sanger_barcode)
+    if sanger_barcode[:number].blank? || Barcode.sanger_barcode(sanger_barcode[:prefix], sanger_barcode[:number]).exists?
+      { number: PlateBarcode.create.barcode, prefix: sanger_barcode[:prefix] }
+    else
+      sanger_barcode
+    end
   end
 
   def number_of_blank_samples
@@ -699,15 +693,18 @@ class Plate < Asset
     super(barcode.to_s)
   end
 
-  alias_method :friendly_name, :sanger_human_barcode
+  alias_method :friendly_name, :human_barcode
   def subject_type
     'plate'
   end
 
-  # def name=(name)
-  #   binding.pry if name == 'Plate name'
-  #   super
-  # end
+  # Plates use a different counter to tubes, and prior to the foreign barcodes update
+  # this method would have fallen back to Barcodable#generate tubes, and potentially generated
+  # an invalid plate barcode. In the future we probably want to scrap this approach entirely,
+  # and generate all barcodes in the plate style. (That is, as part of the factory on, eg. plate purpose)
+  def generate_barcode
+    raise StandardError, "#generate_barcode has been called on plate, which wasn't supposed to happen, and probably indicates a bug."
+  end
 
   private
 

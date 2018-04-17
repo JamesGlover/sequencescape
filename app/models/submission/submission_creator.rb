@@ -278,7 +278,7 @@ class Submission::SubmissionCreator < Submission::PresenterSkeleton
       when /^[a-z,A-Z][0-9]+$/ # A well
         well = plate.find_well_by_name(map_description)
         if well.nil? or well.aliquots.empty?
-          raise InvalidInputException, "Well #{map_description} on #{plate.sanger_human_barcode} does not exist or is empty."
+          raise InvalidInputException, "Well #{map_description} on #{plate.human_barcode} does not exist or is empty."
         else
           well
         end

@@ -8,18 +8,17 @@ FactoryGirl.define do
       asset.create_scanned_into_lab_event!(content: '2018-01-01')
     end
   end
+
   trait :tube_barcode do
     transient do
+      barcode_number { barcode }
       barcode { generate :barcode_number }
+      prefix 'NT'
     end
-    after(:build) do |tube, evaluator|
-      bc = build(:sanger_ean13_tube, barcode_number: evaluator.barcode, asset: tube)
-      tube.primary_barcode = bc
-      tube.barcodes << bc
-    end
+    sanger_barcode { { prefix: prefix, number: barcode_number } }
   end
 
-  factory :tube do
+  factory :tube, traits: [:tube_barcode] do
     name { generate :asset_name }
     association(:purpose, factory: :tube_purpose)
   end
@@ -51,14 +50,11 @@ FactoryGirl.define do
     end
   end
 
-  factory :qc_tube do
-    barcode
-  end
+  factory :qc_tube, traits: [:tube_barcode]
 
   factory :multiplexed_library_tube, traits: [:tube_barcode] do
-    name    { |_a| generate :asset_name }
+    name    { generate :asset_name }
     purpose { Tube::Purpose.standard_mx_tube }
-    association(:primary_barcode, factory: :sanger_ean13_tube)
   end
 
   factory :pulldown_multiplexed_library_tube, traits: [:tube_barcode] do
@@ -76,7 +72,6 @@ FactoryGirl.define do
   end
 
   factory(:empty_library_tube, traits: [:tube_barcode], class: LibraryTube) do
-    qc_state ''
     name     { generate :asset_name }
     purpose  { Tube::Purpose.standard_library_tube }
 
@@ -102,7 +97,7 @@ FactoryGirl.define do
     end
   end
 
-  factory(:tagged_library_tube, class: LibraryTube) do
+  factory(:tagged_library_tube, class: LibraryTube, traits: [:tube_barcode]) do
     transient do
       tag_map_id 1
     end
@@ -112,13 +107,12 @@ FactoryGirl.define do
     end
   end
 
-  factory :pac_bio_library_tube do
+  factory :pac_bio_library_tube, traits: [:tube_barcode] do
     transient do
       aliquot { build(:tagged_aliquot) }
       prep_kit_barcode 999
       smrt_cells_available 1
     end
-    barcode
     pac_bio_library_tube_metadata_attributes do
       {
         prep_kit_barcode: prep_kit_barcode,

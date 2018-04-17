@@ -231,11 +231,11 @@ Given /^the sample manifest with ID (\d+) has been processed$/ do |id|
 end
 
 Given /^sample tubes are expected by the last manifest$/ do
-  SampleManifest.last.update_attributes(barcodes: SampleTube.all.map(&:sanger_human_barcode))
+  SampleManifest.last.update_attributes(barcodes: SampleTube.all.map(&:human_barcode))
 end
 
 Given /^library tubes are expected by the last manifest$/ do
-  SampleManifest.last.update_attributes(barcodes: LibraryTube.all.map(&:sanger_human_barcode))
+  SampleManifest.last.update_attributes(barcodes: LibraryTube.all.map(&:human_barcode))
 end
 
 Then /^print any manifest errors for debugging$/ do

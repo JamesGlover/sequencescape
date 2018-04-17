@@ -58,24 +58,23 @@ class AssetsController < ApplicationController
   end
 
   def create
-    count = first_param(:count)
-    count = count.present? ? count.to_i : 1
+    count = params.fetch(:count, 1).to_i
     saved = true
 
     begin
       # Find the parent asset up front
-      parent, parent_param = nil, first_param(:parent_asset)
+      parent, parent_param = nil, params[:parent_asset]
       if parent_param.present?
         parent = Asset.find_from_barcode(parent_param) || Asset.find_by(name: parent_param) || Asset.find_by(id: parent_param)
         raise StandardError, "Cannot find the parent asset #{parent_param.inspect}" if parent.nil?
       end
 
       # Find the tag up front
-      tag, tag_param = nil, first_param(:tag)
+      tag, tag_param = nil, params[:tag]
       if tag_param.present?
         conditions = { map_id: tag_param }
         oligo      = params[:tag_sequence]
-        conditions[:oligo] = oligo.first.upcase if oligo.present? and oligo.first.present?
+        conditions[:oligo] = oligo.upcase if oligo.present? and oligo.first.present?
         tag = Tag.where(conditions).first or raise StandardError, "Cannot find tag #{tag_param.inspect}"
       end
 
@@ -90,9 +89,9 @@ class AssetsController < ApplicationController
           # from asset
           if parent.present?
             parent_volume, parent_used = params[:parent_volume], parent
-            if parent_volume.present? and parent_volume.first.present?
+            if parent_volume.present?
 
-              extract = parent_used.transfer(parent_volume.first)
+              extract = parent_used.transfer(parent_volume)
 
               if asset.volume
                 parent_used = extract
@@ -118,14 +117,11 @@ class AssetsController < ApplicationController
             asset.aliquots.create!(aliquot_attributes)
           end
           tag.tag!(asset) if tag.present?
-          asset.update!(barcode: AssetBarcode.new_barcode) if asset.barcode_number.nil?
+          asset.update!(sanger_barcode: { number: AssetBarcode.new_barcode, prefix: asset.default_prefix }) if asset.barcode_number.nil?
           asset.comments.create!(user: current_user, description: "asset has been created by #{current_user.login}")
           asset
         end
       end # transaction
-    rescue Asset::VolumeError => ex
-      saved = false
-      flash[:error] = ex.message
     rescue => exception
       saved = false
       flash[:error] = exception.message
