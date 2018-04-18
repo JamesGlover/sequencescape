@@ -255,12 +255,6 @@ class Batch < ApplicationRecord
     requests.first.try(:role)
   end
 
-  def output_plate_in_batch?(barcode)
-    return false if barcode.nil?
-    return false if Plate.find_by(barcode: barcode).nil?
-    output_plates.any? { |plate| plate.barcode == barcode }
-  end
-
   def plate_group_barcodes
     return nil unless pipeline.group_by_parent || requests.first.target_asset.is_a?(Well)
     output_plate_group.presence || input_plate_group

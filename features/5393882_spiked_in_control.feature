@@ -18,7 +18,6 @@ Feature: Creating Spiked phiX
     Then I should see "Below are the assets which have been created"
     And I should see "indexed phiX"
     And I should see "print"
-
     And the "concentration" of the asset called "indexed phiX" should be "17.0"
     And the "volume" of the asset called "indexed phiX" should be "100.0"
 

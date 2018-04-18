@@ -126,7 +126,7 @@ end
 
 Given /^a "([^"]*)" plate purpose and of type "([^"]*)" with barcode "([^"]*)" exists$/ do |plate_purpose_name, plate_type, machine_barcode|
   plate_type.constantize.create!(
-    barcode: Barcode.number_to_human(machine_barcode.to_s),
+    sanger_barcode: { machine_barcode: machine_barcode },
     plate_purpose: PlatePurpose.find_by(name: plate_purpose_name),
     name: machine_barcode
   )
@@ -142,16 +142,15 @@ Given /^the plate with ID (\d+) has a plate purpose of "([^\"]+)"$/ do |id, name
 end
 
 Given /^a plate with purpose "([^"]*)" and barcode "([^"]*)" exists$/ do |plate_purpose_name, machine_barcode|
-  # Plate.create!(:barcode =>Barcode.number_to_human("#{machine_barcode}"), :plate_purpose => PlatePurpose.find_by_name(plate_purpose_name))
   FactoryGirl.create(:plate,
-                     barcode: Barcode.number_to_human(machine_barcode.to_s),
+                     sanger_barcode: { machine_barcode: machine_barcode },
                      plate_purpose: Purpose.find_by(name: plate_purpose_name))
 end
 
 Given /^a stock plate with barcode "([^"]*)" exists$/ do |machine_barcode|
   @stock_plate = FactoryGirl.create(:plate,
                                     name: 'A_TEST_STOCK_PLATE',
-                                    barcode: Barcode.number_to_human(machine_barcode.to_s),
+                                    sanger_barcode: { machine_barcode: machine_barcode },
                                     plate_purpose: PlatePurpose.find_by(name: 'Stock Plate'))
 end
 

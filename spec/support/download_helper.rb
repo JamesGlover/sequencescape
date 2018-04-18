@@ -5,6 +5,7 @@ module DownloadHelpers
   PATH = Rails.root.join('tmp', 'downloads')
 
   def self.downloads
+    create_directory unless PATH.exist?
     PATH.children
   end
 
@@ -31,5 +32,9 @@ module DownloadHelpers
 
   def self.remove_downloads
     FileUtils.rm_r(downloads, force: true)
+  end
+
+  def self.create_directory
+    PATH.mkdir
   end
 end

@@ -7,10 +7,10 @@
 <div class="info">
   <%= form_for(@asset, as: :asset, url: { controller: "assets", action: "update", id: @asset.id, lab_view: true }, html: { method: :put }) do |f| %>
     <table>
-      <tr><td>Name: </td><td><%= h(@asset.display_name) %></td></tr>
-      <tr><td>Type: </td><td><%= @asset.sti_type %></td></tr>
-      <tr><td>Barcode: </td><td><%= @asset.barcode %></td></tr>
-      <tr><td>Batches: </td></tr>
+      <tr><td>Name</td><td><%= h(@asset.display_name) %></td></tr>
+      <tr><td>Type</td><td><%= @asset.sti_type %></td></tr>
+      <tr><td>Barcode</td><td><%= @asset.human_barcode %></td></tr>
+      <tr><td>Batches</td></tr>
       <% requests = Request.where(asset_id: @asset.id).or(Request.where(target_asset_id: @asset.id)) %>
       <% requests.each do |request| %>
         <% request.batches.each do |batch| %>
@@ -23,8 +23,8 @@
       <% end %>
       <tr><td>&nbsp;</td></tr>
       <tr></tr>
-      <tr><td>Volume (&#181;L): </td><td><%= f.text_field :volume %></td></tr>
-      <tr><td>Concentration (nM): </td><td><%= f.text_field :concentration %></td></tr>
+      <tr><td><%= f.label :volume, 'Volume (µL)' %></td><td><%= f.text_field :volume %></td></tr>
+      <tr><td><%= f.label :concentration, 'Concentration (nM)' %></td><td><%= f.text_field :concentration %></td></tr>
       <tr><td>&nbsp;</td></tr>
       <tr><td></td><td><%= submit_tag 'Update' %></td></tr>
     </table>
