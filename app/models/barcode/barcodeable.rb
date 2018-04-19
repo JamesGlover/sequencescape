@@ -29,10 +29,6 @@ module Barcode::Barcodeable
     primary_barcode&.barcode_prefix
   end
 
-  def human_barcode
-    human_barcode
-  end
-
   def barcode_summary
     {
       type: barcode_type,

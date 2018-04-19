@@ -23,6 +23,8 @@ class Barcode < ApplicationRecord
   # Caution! Do not adjust the index of existing formats.
   enum format: [:sanger_ean13, :infinium, :fluidigm, :external]
 
+  validate :barcode_valid?
+
   scope(:sanger_barcode, lambda do |prefix, number|
     human_barcode = SBCF::SangerBarcode.from_prefix_and_number(prefix, number).human_barcode
     where(format: :sanger_ean13, barcode: human_barcode)
@@ -53,6 +55,10 @@ class Barcode < ApplicationRecord
   end
 
   private
+
+  def barcode_valid?
+    errors.add(:barcode, "is not an acceptable #{format}") unless handler.valid?
+  end
 
   # Re-serialize our barcode, just in case it has been changed.
   def serialize_barcode
