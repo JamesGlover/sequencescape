@@ -37,8 +37,7 @@ module Tasks::CherrypickHandler
     @fluidigm_plate = params[:fluidigm_plate]
 
     if @plate_barcode.present?
-      plate_barcode_id = @plate_barcode.to_i > 11 ? Barcode.number_to_human(@plate_barcode) : @plate_barcode
-      @plate = Plate.find_by(barcode: plate_barcode_id)
+      @plate = Plate.find_from_barcode(@plate_barcode)
       if @plate.nil?
         flash[:error] = 'Invalid plate barcode'
         redirect_to action: 'stage', batch_id: @batch.id, workflow_id: @workflow.id, id: (@stage - 1).to_s
@@ -50,7 +49,7 @@ module Tasks::CherrypickHandler
         redirect_to action: 'stage', batch_id: @batch.id, workflow_id: @workflow.id, id: (@stage - 1).to_s
         return
       end
-      @plate = Plate::Metadata.includes(:plate).where(fluidigm_barcode: @fluidigm_barcode).try(:plate)
+      @plate = Plate.find_from_barcode(@fluidigm_barcode)
     end
 
     @plate_purpose = PlatePurpose.find(params[:plate_purpose_id])

@@ -456,14 +456,6 @@ class Plate < Asset
     plate_purpose.present? ? send(:"#{plate_purpose.barcode_for_tecan}") : ean13_barcode
   end
 
-  def infinium_barcode
-    barcodes.detect(&:infinium?).machine_barcode
-  end
-
-  def infinium_barcode=(barcode)
-    barcodes.infinium.first_or_initialize.barcode = barcode
-  end
-
   def submission_time(current_time)
     current_time.strftime('%Y-%m-%dT%H_%M_%SZ')
   end
@@ -589,7 +581,6 @@ class Plate < Asset
 
   extend Metadata
   has_metadata do
-    custom_attribute(:fluidigm_barcode)
   end
 
   def height
