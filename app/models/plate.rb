@@ -150,10 +150,7 @@ class Plate < Asset
   delegate :barcode_type, to: :plate_purpose, allow_nil: true
   delegate :asset_shape, to: :plate_purpose, allow_nil: true
   delegate :supports_multiple_submissions?, to: :plate_purpose
-  delegate :fluidigm_barcode, to: :plate_metadata
   delegate :dilution_factor, :dilution_factor=, to: :plate_metadata
-
-  validates_length_of :fluidigm_barcode, is: 10, allow_blank: true
 
   scope :include_for_show, ->() {
     includes(
@@ -459,15 +456,12 @@ class Plate < Asset
     plate_purpose.present? ? send(:"#{plate_purpose.barcode_for_tecan}") : ean13_barcode
   end
 
-  delegate :infinium_barcode, to: :plate_metadata
-
-  def infinium_barcode=(barcode)
-    plate_metadata.infinium_barcode = barcode
-    plate_metadata.save!
+  def infinium_barcode
+    barcodes.detect(&:infinium?).machine_barcode
   end
 
-  def valid_infinium_barcode?(_barcode)
-    true
+  def infinium_barcode=(barcode)
+    barcodes.infinium.first_or_initialize.barcode = barcode
   end
 
   def submission_time(current_time)
@@ -595,7 +589,6 @@ class Plate < Asset
 
   extend Metadata
   has_metadata do
-    custom_attribute(:infinium_barcode)
     custom_attribute(:fluidigm_barcode)
   end
 

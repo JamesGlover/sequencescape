@@ -69,7 +69,7 @@ module Barcode::FormatHandlers
 
     def initialize(barcode)
       @human_barcode = barcode
-      @matches = @human_barcode.match(format) || {}
+      @matches = format.match(@human_barcode) || {}
     end
 
     def barcode_prefix
@@ -97,7 +97,7 @@ module Barcode::FormatHandlers
     end
 
     def valid?
-      @human_barcode.match?(format)
+      format.match? @human_barcode
     end
 
     alias code128_barcode human_barcode

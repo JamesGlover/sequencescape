@@ -41,8 +41,7 @@ class Barcode < ApplicationRecord
   # Extract barcode from user input
   def self.extract_barcode(barcode)
     [barcode.to_s].tap do |barcodes|
-      barcodes << SBCF::SangerBarcode.from_machine(barcode.to_s).human_barcode if SBCF::MACHINE_BARCODE_FORMAT.match?(barcode.to_s)
-      barcodes << SBCF::SangerBarcode.from_human(barcode.to_s).human_barcode if SBCF::HUMAN_BARCODE_FORMAT.match?(barcode.to_s)
+      barcodes << SBCF::SangerBarcode.from_user_input(barcode.to_s).human_barcode
     end.compact.uniq
   end
 
@@ -54,15 +53,16 @@ class Barcode < ApplicationRecord
     format.classify
   end
 
+  # If the barcode changes, we'll need a new handler. This allows handlers themselves to be immutable.
+  def barcode=(new_barcode)
+    @handler = nil
+    super
+  end
+
   private
 
   def barcode_valid?
-    errors.add(:barcode, "is not an acceptable #{format}") unless handler.valid?
-  end
-
-  # Re-serialize our barcode, just in case it has been changed.
-  def serialize_barcode
-    self.barcode = handler.serialize_barcode if @handler.present?
+    errors.add(:barcode, "is not an acceptable #{format} barcode") unless handler.valid?
   end
 
   def handler_class
