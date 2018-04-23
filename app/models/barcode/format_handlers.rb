@@ -3,10 +3,12 @@
 require 'sanger_barcode_format'
 # A collection of supported formats
 module Barcode::FormatHandlers
+  # Include in barcode formats which can not be rendered as EAN13s
   module Ean13Incompatible
     def ean13_barcode?
       false
     end
+
     def ean13_barcode
       nil
     end
@@ -107,15 +109,16 @@ module Barcode::FormatHandlers
     alias serialize_barcode human_barcode
   end
 
+  # Infinium barcodes are externally generated barcodes on Illumina Infinium chips
   class Infinium < BaseRegExBarcode
     # Based on ALL existing examples (bar what appears to be accidental usage of the sanger barcode in 5 cases)
     # eg. WG0000001-DNA and WG0000001-BCD
     self.format = /\A(?<prefix>WG)(?<number>[0-9]{7})-(?<suffix>[DNA|BCD]{3})\z/
   end
 
+  # Fluidigm barcodes are externally generated barcodes present on fluidigm plates. They are ten digits long.
   class Fluidigm < BaseRegExBarcode
-    # Based on ALL existing examples (bar what appears to be accidental usage of the sanger barcode in 5 cases)
-    # eg. WG0000001-DNA and WG0000001-BCD
+    # Ten digit barcode
     self.format = /\A(?<number>[0-9]{10})\z/
   end
 

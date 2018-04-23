@@ -7,7 +7,7 @@ module Barcode::Barcodeable
       # Default prefix is the fallback prefix if no purpose is available.
       class_attribute :default_prefix
 
-     # has_one :barcodes, -> { order(id: :desc) }, foreign_key: :asset_id, inverse_of: :asset, dependent: :destroy, class_name: 'Barcode'
+      # has_one :barcodes, -> { order(id: :desc) }, foreign_key: :asset_id, inverse_of: :asset, dependent: :destroy, class_name: 'Barcode'
 
       delegate :ean13_barcode, :machine_barcode, :human_barcode, to: :primary_barcode, allow_nil: true
     end

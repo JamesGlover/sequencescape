@@ -102,10 +102,10 @@ module Tasks::CherrypickHandler
       # Determine if there is a standard plate to use.
       partial_plate, plate_barcode, fluidigm_plate = nil, params[:plate_barcode], params[:fluidigm_plate]
       unless plate_barcode.nil?
-        partial_plate = Plate.find_by(barcode: plate_barcode) or raise ActiveRecord::RecordNotFound, "No plate with barcode #{plate_barcode.inspect}"
+        partial_plate = Plate.find_from_barcode(plate_barcode) or raise ActiveRecord::RecordNotFound, "No plate with barcode #{plate_barcode}"
       end
       if fluidigm_plate.present?
-        partial_plate = Plate::Metadata.find_by(fluidigm_barcode: fluidigm_plate).try(:plate)
+        partial_plate = Plate.find_from_barcode(fluidigm_plate) or raise ActiveRecord::RecordNotFound, "No plate with barcode #{fluidigm_plate}"
       end
 
       # Ensure that we have a plate purpose for any plates we are creating
@@ -145,8 +145,10 @@ module Tasks::CherrypickHandler
         # be needing to create a new one.
         plate = partial_plate
         if plate.nil?
-          barcode = PlateBarcode.create.barcode
-          plate   = plate_purpose.create!(:do_not_create_wells, name: "Cherrypicked #{barcode}", size: size, barcode: barcode, plate_metadata_attributes: { fluidigm_barcode: fluidigm_plate })
+          barcode = { prefix: plate_purpose.prefix, number: PlateBarcode.create.barcode }
+          plate   = plate_purpose.create!(:do_not_create_wells, name: "Cherrypicked #{barcode}", size: size, sanger_barcode: barcode) do |new_plate|
+            new_plate.fluidigm_barcode = fluidigm_plate unless fluidigm_plate.blank?
+          end
         end
 
         # Set the plate type, regardless of what it was.  This may change the standard plate.

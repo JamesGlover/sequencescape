@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+# Move the barcodes from metadata to the new tables.
 class MigrateOtherBarcodesToNewTables < ActiveRecord::Migration[5.1]
   def up
     Barcode.transaction do
@@ -6,13 +9,13 @@ class MigrateOtherBarcodesToNewTables < ActiveRecord::Migration[5.1]
         say "Fetching batch #{i}"
         barcodes = batch.pluck(:plate_id, :infinium_barcode)
         say "From #{barcodes.first.first} to #{barcodes.last.first}"
-        say "Building hashes"
+        say 'Building hashes'
         barcodes_hash = barcodes.map do |asset_id, barcode|
           { asset_id: asset_id, barcode: barcode, format: 1 }
         end
-        say "Importing"
+        say 'Importing'
         Barcode.import(barcodes_hash)
-        say "Imported"
+        say 'Imported'
       end
       say 'Finished migrating Infinium Barcodes'
       say 'Migrating Fluidigm barcodes'
@@ -20,15 +23,15 @@ class MigrateOtherBarcodesToNewTables < ActiveRecord::Migration[5.1]
         say "Fetching batch #{i}"
         barcodes = batch.pluck(:plate_id, :fluidigm_barcode)
         say "From #{barcodes.first.first} to #{barcodes.last.first}"
-        say "Building hashes"
+        say 'Building hashes'
         barcodes_hash = barcodes.map do |asset_id, barcode|
           { asset_id: asset_id, barcode: barcode, format: 2 }
         end
-        say "Importing"
+        say 'Importing'
         Barcode.import(barcodes_hash)
-        say "Imported"
+        say 'Imported'
       end
-      say "Finished migrating Fluidigm Barcodes"
+      say 'Finished migrating Fluidigm Barcodes'
     end
   end
 

@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+# Infinium barcode is no longer on metadata
 class RepairInfiniumBarcodeInViews < ActiveRecord::Migration[5.1]
   def up
     ViewsSchema.update_view(

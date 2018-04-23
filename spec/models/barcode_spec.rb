@@ -53,7 +53,6 @@ describe Barcode, type: :model do
     end
   end
 
-
   shared_examples 'not an ean13 barcode' do
     describe '#ean13_barcode?' do
       subject { barcode.ean13_barcode? }
@@ -141,7 +140,7 @@ describe Barcode, type: :model do
     let(:human_barcode) { '1662051218' }
     let(:machine_barcode) { '1662051218' }
     let(:code128_barcode) { '1662051218' }
-    let(:prefix) { nil}
+    let(:prefix) { nil }
 
     let(:summary) do
       {
@@ -173,7 +172,7 @@ describe Barcode, type: :model do
     let(:human_barcode) { 'EXT_135432_D' }
     let(:machine_barcode) { 'EXT_135432_D' }
     let(:code128_barcode) { 'EXT_135432_D' }
-    let(:prefix) { nil}
+    let(:prefix) { nil }
 
     let(:summary) do
       {
@@ -199,7 +198,7 @@ describe Barcode, type: :model do
     let(:human_barcode) { 'Q123RT12E45' }
     let(:machine_barcode) { 'Q123RT12E45' }
     let(:code128_barcode) { 'Q123RT12E45' }
-    let(:prefix) { nil}
+    let(:prefix) { nil }
 
     let(:summary) do
       {

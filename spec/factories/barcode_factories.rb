@@ -27,7 +27,7 @@ FactoryGirl.define do
       transient do
         prefix 'WG'
         suffix 'DNA'
-        sequence(:number) {|i| i.to_s.rjust(7,'0') }
+        sequence(:number) { |i| i.to_s.rjust(7, '0') }
       end
       format 'infinium'
       barcode { "#{prefix}#{number}-#{suffix}" }
@@ -35,7 +35,7 @@ FactoryGirl.define do
 
     factory :fluidigm do
       transient do
-        sequence(:number) {|i| '1' + i.to_s.rjust(9,'0') }
+        sequence(:number) { |i| '1' + i.to_s.rjust(9, '0') }
       end
       format 'fluidigm'
       barcode { number }

@@ -11,7 +11,7 @@ class SampleTube < Tube
 
   self.stock_message_template = 'TubeStockResourceIO'
 
-  before_create :generate_barcode, unless: :barcodes
+  before_create :generate_barcode, unless: :primary_barcode
   after_create :generate_name_from_aliquots, unless: :name?
 
   # All instances are labelled 'SampleTube', unless otherwise specified
