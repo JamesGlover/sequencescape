@@ -60,11 +60,11 @@ end
 Given /^study "([^"]*)" has a plate "([^"]*)" to be volume checked$/ do |study_name, plate_barcode|
   study = Study.find_by(name: study_name)
   plate = FactoryGirl.create :plate, purpose: PlatePurpose.find_by(name: 'Stock Plate'),
-                 barcode: plate_barcode,
-                 well_count: 24,
-                 well_factory: :untagged_well,
-                 well_order: :row_order,
-                 studies: [ study ]
+                                     barcode: plate_barcode,
+                                     well_count: 24,
+                                     well_factory: :untagged_well,
+                                     well_order: :row_order,
+                                     studies: [study]
 
   RequestFactory.create_assets_requests(plate.wells, study)
 end

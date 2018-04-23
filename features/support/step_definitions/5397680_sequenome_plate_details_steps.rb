@@ -37,8 +37,8 @@ end
 
 Given /^there is a (\d+) well "([^"]*)" plate with a barcode of "([^"]*)"$/ do |number_of_wells, plate_purpose_name, plate_barcode|
   new_plate = FactoryGirl.create :plate,
-    sanger_barcode: { machine_barcode: plate_barcode },
-    plate_purpose: PlatePurpose.find_by(name: plate_purpose_name)
+                                 sanger_barcode: { machine_barcode: plate_barcode },
+                                 plate_purpose: PlatePurpose.find_by(name: plate_purpose_name)
 
   sample = FactoryGirl.create :sample_with_gender, name: "#{plate_barcode}_x"
 
