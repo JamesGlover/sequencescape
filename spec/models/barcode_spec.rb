@@ -107,6 +107,9 @@ describe Barcode, type: :model do
 
     let(:barcode_value) { 'WG0010602-DNA' }
     let(:barcode_format) { 'infinium' }
+    let(:number) { 10602 }
+    let(:barcode_prefix) { 'WG' }
+    let(:suffix) { 'DNA' }
     let(:human_barcode) { 'WG0010602-DNA' }
     let(:machine_barcode) { 'WG0010602-DNA' }
     let(:code128_barcode) { 'WG0010602-DNA' }
@@ -118,6 +121,7 @@ describe Barcode, type: :model do
       }
     end
     it_behaves_like 'a basic barcode'
+    it_behaves_like 'a composable barcode'
     it_behaves_like 'not an ean13 barcode'
     it_behaves_like 'a code128 barcode'
 
@@ -156,5 +160,57 @@ describe Barcode, type: :model do
         expect(barcode).not_to be_valid
       end
     end
+  end
+
+  context 'external' do
+    let(:barcode) { build :external, barcode: barcode_value, format: barcode_format }
+
+    let(:barcode_value) { 'EXT_135432_D' }
+    let(:barcode_format) { 'external' }
+    let(:number) { 135432 }
+    let(:barcode_prefix) { 'EXT_' }
+    let(:suffix) { '_D' }
+    let(:human_barcode) { 'EXT_135432_D' }
+    let(:machine_barcode) { 'EXT_135432_D' }
+    let(:code128_barcode) { 'EXT_135432_D' }
+    let(:prefix) { nil}
+
+    let(:summary) do
+      {
+        number: '135432',
+        prefix: 'EXT_',
+        machine_barcode: 'EXT_135432_D'
+      }
+    end
+    it_behaves_like 'a basic barcode'
+    it_behaves_like 'not an ean13 barcode'
+    it_behaves_like 'a composable barcode'
+    it_behaves_like 'a code128 barcode'
+  end
+
+  context 'external - odd format' do
+    let(:barcode) { build :external, barcode: barcode_value, format: barcode_format }
+
+    let(:barcode_value) { 'Q123RT12E45' }
+    let(:barcode_format) { 'external' }
+    let(:number) { nil }
+    let(:barcode_prefix) { nil }
+    let(:suffix) { nil }
+    let(:human_barcode) { 'Q123RT12E45' }
+    let(:machine_barcode) { 'Q123RT12E45' }
+    let(:code128_barcode) { 'Q123RT12E45' }
+    let(:prefix) { nil}
+
+    let(:summary) do
+      {
+        number: '',
+        prefix: nil,
+        machine_barcode: 'Q123RT12E45'
+      }
+    end
+    it_behaves_like 'a basic barcode'
+    it_behaves_like 'not an ean13 barcode'
+    it_behaves_like 'a composable barcode'
+    it_behaves_like 'a code128 barcode'
   end
 end

@@ -3,8 +3,9 @@
 FactoryGirl.define do
   sequence(:barcode_number) { |i| i }
 
-  factory :barcode do
+  factory :barcode, aliases: [:external] do
     association(:asset, factory: :asset)
+    sequence(:barcode) { |i| "EXT_#{i}_A" }
     format 'external'
 
     factory :sanger_ean13 do
@@ -28,7 +29,7 @@ FactoryGirl.define do
         suffix 'DNA'
         sequence(:number) {|i| i.to_s.rjust(7,'0') }
       end
-
+      format 'infinium'
       barcode { "#{prefix}#{number}-#{suffix}" }
     end
 
@@ -36,7 +37,7 @@ FactoryGirl.define do
       transient do
         sequence(:number) {|i| '1' + i.to_s.rjust(9,'0') }
       end
-
+      format 'fluidigm'
       barcode { number }
     end
   end

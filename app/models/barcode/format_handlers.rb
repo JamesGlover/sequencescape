@@ -61,6 +61,8 @@ module Barcode::FormatHandlers
   end
 
   # A basic class for barodes that can be validated and decomposed by simple regular expressions
+  # Classes that inherit from this should define a regular expression with optional names matchers
+  # for prefix, number and suffix. This regex should be assigned to self.format
   class BaseRegExBarcode
     include Ean13Incompatible
     attr_reader :human_barcode
@@ -69,19 +71,19 @@ module Barcode::FormatHandlers
 
     def initialize(barcode)
       @human_barcode = barcode
-      @matches = format.match(@human_barcode) || {}
+      @matches = format.match(@human_barcode)
     end
 
     def barcode_prefix
-      @matches[:prefix] if @matches.names.include?('prefix')
+      @matches[:prefix] if @matches&.names&.include?('prefix')
     end
 
     def number
-      @matches[:number].to_i if @matches.names.include?('number')
+      @matches[:number].to_i if @matches&.names&.include?('number')
     end
 
     def suffix
-      @matches[:suffix] if @matches.names.include?('suffix')
+      @matches[:suffix] if @matches&.names&.include?('suffix')
     end
 
     def code128_barcode?
@@ -115,5 +117,16 @@ module Barcode::FormatHandlers
     # Based on ALL existing examples (bar what appears to be accidental usage of the sanger barcode in 5 cases)
     # eg. WG0000001-DNA and WG0000001-BCD
     self.format = /\A(?<number>[0-9]{10})\z/
+  end
+
+  # External barcodes are almost always valid.
+  class External < BaseRegExBarcode
+    # Extract prefix numbers and suffix if the format is fairly simple.
+    # - A number, surrounded by JUST letters and underscores
+    self.format = /\A(?<prefix>[\w&&[^\d]]*)(?<number>\d+)(?<suffix>[\w&&[^\d]]*)\z/
+
+    def valid?
+      true
+    end
   end
 end
