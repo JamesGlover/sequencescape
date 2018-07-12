@@ -1,6 +1,6 @@
 
 class IlluminaHtp::FinalPlatePurpose < PlatePurpose
-  include PlatePurpose::Library
+  include PlatePurpose::LibraryPlatePurpose
 
   alias_method(:default_transition_to, :transition_to)
 

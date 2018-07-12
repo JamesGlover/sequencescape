@@ -1,12 +1,15 @@
+# frozen_string_literal: true
 
-module PlatePurpose::Library
+# Assigns library information to the aliquots when the plate is passed.
+# This behaviour is now mostly handled by the library creation requests themselves
+module PlatePurpose::LibraryPlatePurpose
   def self.included(base)
     base.class_eval do
       include PlatePurpose::WorksOnLibraryRequests
     end
   end
 
-  STATES_TO_ASSIGN_LIBRARY_INFORMATION = ['started', 'passed']
+  STATES_TO_ASSIGN_LIBRARY_INFORMATION = %w[started passed].freeze
 
   def transition_to(plate, state, user, contents = nil, customer_accepts_responsibility = false)
     super
@@ -16,7 +19,8 @@ module PlatePurpose::Library
   # Ensure that the library information within the aliquots of the well is correct.
   def assign_library_information_to_wells(plate)
     each_well_and_its_library_request(plate) do |well, library_request|
-      library_type, insert_size = library_request.library_type, library_request.insert_size
+      library_type = library_request.library_type
+      insert_size = library_request.insert_size
 
       well.aliquots.each do |aliquot|
         aliquot.library      ||= well

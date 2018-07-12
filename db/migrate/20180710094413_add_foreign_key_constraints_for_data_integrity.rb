@@ -5,6 +5,7 @@
 # associations where there are no current data integrity issues in production.
 class AddForeignKeyConstraintsForDataIntegrity < ActiveRecord::Migration[5.1]
   def change
-    add_foreign_key 'aliquots', 'samples'
+    add_foreign_key :aliquots, :samples
+    add_foreign_key :aliquots, :assets, column: :receptacle_id
   end
 end

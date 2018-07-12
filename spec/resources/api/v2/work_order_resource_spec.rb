@@ -39,14 +39,14 @@ RSpec.describe Api::V2::WorkOrderResource, type: :resource do
   context 'a basic work_order' do
     let(:number_of_requests) { 1 }
     let(:requests) { create_list(:customer_request, number_of_requests) }
-    let(:expected_metadata) { { 'read_length' => 76 } }
+    let(:expected_metadata) { {} }
     it_behaves_like 'a work order resource'
   end
 
   context 'a work_order with multiple requests' do
     let(:number_of_requests) { 3 }
     let(:requests) { create_list(:customer_request, number_of_requests) }
-    let(:expected_metadata) { { 'read_length' => 76 } }
+    let(:expected_metadata) { {} }
     it_behaves_like 'a work order resource'
   end
 

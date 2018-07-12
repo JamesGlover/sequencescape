@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180613160225) do
+ActiveRecord::Schema.define(version: 20180710094413) do
 
   create_table "aker_containers", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.string "barcode"
@@ -631,6 +631,18 @@ ActiveRecord::Schema.define(version: 20180613160225) do
     t.string "release_reason"
     t.datetime "created_at"
     t.datetime "updated_at"
+  end
+
+  create_table "libraries", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.string "name", null: false
+    t.integer "sample_id", null: false
+    t.integer "library_type_id", null: false
+    t.integer "request_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["library_type_id"], name: "index_libraries_on_library_type_id"
+    t.index ["request_id"], name: "index_libraries_on_request_id"
+    t.index ["sample_id"], name: "index_libraries_on_sample_id"
   end
 
   create_table "library_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1937,11 +1949,16 @@ ActiveRecord::Schema.define(version: 20180613160225) do
     t.index ["pipeline_id"], name: "index_workflows_on_pipeline_id"
   end
 
+  add_foreign_key "aliquots", "assets", column: "receptacle_id"
   add_foreign_key "aliquots", "primer_panels"
   add_foreign_key "aliquots", "requests"
+  add_foreign_key "aliquots", "samples"
   add_foreign_key "barcodes", "assets"
   add_foreign_key "billing_items", "requests"
   add_foreign_key "billing_products", "billing_product_catalogues"
+  add_foreign_key "libraries", "library_types"
+  add_foreign_key "libraries", "requests"
+  add_foreign_key "libraries", "samples"
   add_foreign_key "plate_purposes", "barcode_prefixes"
   add_foreign_key "qc_files", "assets"
   add_foreign_key "qc_results", "qc_assays"

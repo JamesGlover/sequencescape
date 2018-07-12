@@ -1,4 +1,4 @@
 
 class Pulldown::LibraryPlatePurpose < PlatePurpose
-  include PlatePurpose::Library
+  include PlatePurpose::LibraryPlatePurpose
 end

@@ -1,7 +1,7 @@
 
 class IlluminaC::AlLibsTaggedPurpose < PlatePurpose
   include PlatePurpose::Initial
-  include PlatePurpose::Library
+  include PlatePurpose::LibraryPlatePurpose
 
   include PlatePurpose::RequestAttachment
 

@@ -149,25 +149,6 @@ FactoryBot.define do
     end
   end
 
-  factory :library_completion, class: IlluminaHtp::Requests::LibraryCompletion do
-    request_type do
-      create(:request_type,
-             name: 'Illumina-B Pooled',
-             key: 'illumina_b_pool',
-             request_class_name: 'IlluminaHtp::Requests::LibraryCompletion',
-             for_multiplexing: true,
-             no_target_asset: false)
-    end
-    asset        { |target| target.association(:well_with_sample_and_plate) }
-    target_asset { |target| target.association(:empty_well) }
-    request_purpose :standard
-    after(:build) do |request|
-      request.request_metadata.fragment_size_required_from = 300
-      request.request_metadata.fragment_size_required_to   = 500
-      request.request_metadata.library_type                = create(:library_type)
-    end
-  end
-
   factory :pulldown_library_creation_pipeline do
     name                  { |_a| FactoryBot.generate :pipeline_name }
     automated             false

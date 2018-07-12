@@ -1,7 +1,7 @@
+# frozen_string_literal: true
 
 ##
 # A lot type governs the behaviour of a lot
-
 class LotType < ApplicationRecord
   include Uuid::Uuidable
 

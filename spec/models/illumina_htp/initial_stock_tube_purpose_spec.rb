@@ -10,7 +10,7 @@ describe IlluminaHtp::InitialStockTubePurpose do
     let(:current_submission) { create :submission }
 
     let(:parent_well) do
-      well = create :well
+      well = create :untagged_well
       well.stock_wells << well
       well
     end
@@ -29,7 +29,7 @@ describe IlluminaHtp::InitialStockTubePurpose do
 
     context 'with siblings' do
       let(:sibling_submission) { current_submission }
-      let(:parents_sibling_well) { create :well }
+      let(:parents_sibling_well) { create :untagged_well }
       it 'works', :aggregate_failures do
         is_expected.to be_a Array
         is_expected.to include(sibling_tube_hash)
@@ -39,7 +39,7 @@ describe IlluminaHtp::InitialStockTubePurpose do
     context 'with wells which are also siblings' do
       let(:sibling_submission) { current_submission }
       let(:sibling_tube) { create(:well) }
-      let(:parents_sibling_well) { create :well }
+      let(:parents_sibling_well) { create :untagged_well }
 
       it 'works', :aggregate_failures do
         is_expected.to be_a Array

@@ -89,7 +89,7 @@ RSpec.describe IlluminaHtp::Requests::StdLibraryRequest, type: :model do
 
       context 'with a valid cycle' do
         let(:pcr_cycles) { 0 }
-        it('is valid') { expect(subject).to be_valid }
+        it { is_expected.to be_valid }
       end
 
       context 'with an invalid cycle' do
@@ -99,7 +99,7 @@ RSpec.describe IlluminaHtp::Requests::StdLibraryRequest, type: :model do
 
       context 'with an nil cycle' do
         let(:pcr_cycles) { nil }
-        it('is valid') { expect(subject).to be_valid }
+        it { is_expected.to be_valid }
         # Defaults are set on a before validate call.
         it('sets defaults') do
           subject.valid?
@@ -115,7 +115,7 @@ RSpec.describe IlluminaHtp::Requests::StdLibraryRequest, type: :model do
 
       context 'with a valid cycle' do
         let(:pcr_cycles) { 5 }
-        it('is valid') { expect(subject).to be_valid }
+        it { is_expected.to be_valid }
       end
 
       context 'with an invalid cycle' do

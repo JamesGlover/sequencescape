@@ -46,11 +46,11 @@ FactoryBot.define do
       request.request_metadata_attributes = attributes_for(metadata_factory) if request.request_metadata.new_record? && FactoryBot.factories.registered?(metadata_factory)
       request.sti_type = request.request_type.request_class_name
     end
+  end
 
-    factory :customer_request, class: CustomerRequest do
-      sti_type 'CustomerRequest' # Oddly, this seems to be necessary!
-      association(:request_type, factory: :customer_request_type)
-    end
+  factory :customer_request do
+    request_purpose :standard
+    association(:request_type, factory: :customer_request_type)
   end
 
   factory :sequencing_request, class: SequencingRequest do
@@ -78,7 +78,7 @@ FactoryBot.define do
 
   # Well based library request as used in eg. Limber pipeline
   factory :library_request, class: IlluminaHtp::Requests::StdLibraryRequest do
-    association(:asset, factory: :well)
+    association(:asset, factory: :untagged_well)
     association(:request_type, factory: :library_request_type)
     request_purpose :standard
     request_metadata_attributes { attributes_for :request_metadata_for_library_manufacture }
@@ -232,5 +232,50 @@ FactoryBot.define do
     submission      { |s|   s.association(:submission) }
     request_type    { |s| s.association(:pac_bio_sequencing_request_type) }
     request_purpose :standard
+  end
+
+  factory :request_library_creation, class: Request::LibraryCreation do
+    association(:asset, factory: :tagged_well)
+    association(:request_type, factory: :library_request_type)
+    request_purpose :standard
+    request_metadata_attributes { attributes_for :request_metadata_for_library_manufacture }
+  end
+
+  factory :library_completion, class: IlluminaHtp::Requests::LibraryCompletion do
+    request_type do
+      create(:request_type,
+             name: 'Illumina-B Pooled',
+             key: 'illumina_b_pool',
+             request_class_name: 'IlluminaHtp::Requests::LibraryCompletion',
+             for_multiplexing: true,
+             no_target_asset: false)
+    end
+    association(:asset, factory: :well_with_sample_and_plate)
+    association(:target_asset, factory: :empty_well)
+    request_purpose :standard
+
+    request_metadata_attributes do
+      {
+        fragment_size_required_from: 300,
+        fragment_size_required_to: 500,
+        library_type: create(:library_type).name
+      }
+    end
+  end
+
+  factory(:re_isc_request, class: Pulldown::Requests::ReIscLibraryRequest) do
+    association(:request_type, factory: :library_request_type)
+    asset        { |target| target.association(:well_with_sample_and_plate) }
+    target_asset { |target| target.association(:empty_well) }
+    request_purpose :standard
+
+    request_metadata_attributes do
+      {
+        fragment_size_required_from: 100,
+        fragment_size_required_to: 400,
+        library_type: create(:library_type).name,
+        bait_library: BaitLibrary.first || create(:bait_library)
+      }
+    end
   end
 end

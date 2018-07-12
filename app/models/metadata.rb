@@ -36,13 +36,9 @@ module Metadata
       class_attribute :lazy_metadata
       self.lazy_metadata = false
 
-      def #{association_name}_with_initialization
-        #{association_name}_without_initialization ||
-        build_#{association_name}
+      def #{association_name}
+        super || build_#{association_name}
       end
-
-      alias_method(:#{association_name}_without_initialization, :#{association_name})
-      alias_method(:#{association_name}, :#{association_name}_with_initialization)
 
       def validating_ena_required_fields=(state)
         @validating_ena_required_fields = !!state

@@ -1,5 +1,5 @@
 class IlluminaHtp::LibraryCompleteOnQcPurpose < PlatePurpose
-  include PlatePurpose::Library
+  include PlatePurpose::LibraryPlatePurpose
   include PlatePurpose::RequestAttachment
   include PlatePurpose::BroadcastLibraryComplete
 
