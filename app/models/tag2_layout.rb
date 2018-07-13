@@ -50,7 +50,6 @@ class Tag2Layout < ApplicationRecord
   def layout_tag2_into_wells
     applicable_wells.each do |well|
       well.assign_tag2(tag)
-      well.set_as_library
     end
   end
 end

@@ -31,7 +31,8 @@ module IlluminaHtp::Requests
         library_type: library_type,
         insert_size: insert_size,
         primer_panel_id: primer_panel_id,
-        request_id: id
+        request_id: id,
+        library_id: library.id
       }
     end
 

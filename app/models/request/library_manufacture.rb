@@ -11,6 +11,19 @@ module Request::LibraryManufacture
 
     base.class_eval do
       extend ClassMethods
+      # In the unlikely event we destroy a request, we destroy a library.
+      # If the library has been used, this process will fail, thanks to the
+      # foreign key on aliquots. This assumes one sample per library_request.
+      has_one :library, dependent: :destroy, foreign_key: :request_id, inverse_of: :request
+      # Generate libraries upfront when the request is generated. Has the following limitations:
+      # - Source assets much contain a single sample
+      # - The sample must be present in the asset when the request is generated
+      # validate :assets_suitable_for_library_creation prevents the restrictions being violated
+      # The second condition may be violated if submission templates end up chaining requests
+      # upstream of library creation, however no such templates are currently active
+      after_create :generate_library
+      # Ensures :generate_library behaves predictably
+      validate :assets_suitable_for_library_creation
     end
 
     base.const_set(:RequestOptionsValidator, Class.new(DelegateValidation::Validator) do
@@ -31,6 +44,24 @@ module Request::LibraryManufacture
       request_metadata.fragment_size_required_from,
       request_metadata.fragment_size_required_to
     )
+  end
+
+  def generate_library
+    create_library!(
+      name: "#{asset.external_identifier}##{id}",
+      sample: samples.first,
+      library_type: LibraryType.find_by!(name: library_type)
+    )
+  end
+
+  # We shouldn't be violating this constraint, but if we do we want to know, as it could result in
+  # data integrity issues.
+  # - If we have multiple samples we can probably just switch to has_many libraries without much issue
+  # - If there are no samples, then its probably a case of the request being part of a request graph, and the source
+  # asset being empty at time of creation. In this case we probably still want to generate the library upfront, but
+  # will need to either pass the sample in, or handle library creation elsewhere.
+  def assets_suitable_for_library_creation
+    errors.add(:asset, "contains #{samples.count} samples. Only 1 sample is allowed.") unless samples.one?
   end
 
   delegate :library_type, to: :request_metadata

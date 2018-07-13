@@ -1,4 +1,6 @@
+# frozen_string_literal: true
 
+# Used in the old-style (Workflow driven) tube based library creation pipelines
 class LibraryCreationRequest < CustomerRequest
   # NOTE: Do not alter the order here:
   #
@@ -24,7 +26,7 @@ class LibraryCreationRequest < CustomerRequest
     ActiveRecord::Base.transaction do
       super
       target_asset.aliquots.each do |aliquot|
-        aliquot.library      ||= target_asset
+        aliquot.library      ||= library
         aliquot.library_type ||= library_type
         aliquot.insert_size  ||= insert_size
         aliquot.save!
@@ -45,7 +47,8 @@ class LibraryCreationRequest < CustomerRequest
       project_id: initial_project_id,
       library_type: library_type,
       insert_size: insert_size,
-      request_id: id
+      request_id: id,
+      library_id: library.id
     }
   end
 end

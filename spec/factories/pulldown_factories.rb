@@ -33,8 +33,8 @@ FactoryBot.define do
 
   factory(:transfer_from_plate_to_tube, class: Transfer::FromPlateToTube) do
     user
-    source      { |target| target.association(:transfer_plate) }
-    destination { |target| target.association(:library_tube) }
+    association(:source, factory: :transfer_plate)
+    association(:destination, factory: :library_tube)
 
     factory(:transfer_from_plate_to_tube_with_transfers) do
       transfers(%w[A1 B1])
@@ -113,24 +113,23 @@ FactoryBot.define do
     walking_algorithm   'TagLayout::WalkWellsOfPlate'
   end
 
-  factory(:plate_creation) do
+  factory :plate_creation do
     user
     barcode { generate :barcode_number }
     association(:parent, factory: :full_plate, well_count: 2)
     association(:child_purpose, factory: :plate_purpose)
   end
 
-  factory(:tube_creation) do
+  factory :tube_creation do
     user
-    association(:parent, factory: :full_plate, well_count: 2)
+    association(:parent, factory: :plate, well_count: 2)
     association(:child_purpose, factory: :child_tube_purpose)
 
     after(:build) do |tube_creation|
       mock_request_type = create(:library_creation_request_type)
 
       # Ensure that the parent plate will pool into two children by setting up a dummy stock plate
-      # stock_plate = PlatePurpose.find(2).create!(:do_not_create_wells, barcode: '999999') { |p| p.wells = [create(:empty_well), create(:empty_well)] }
-      stock_plate = create :full_stock_plate, well_count: 2, barcode: '999999'
+      stock_plate = create :full_stock_plate, well_count: 2, well_factory: :tagged_well
       stock_wells = stock_plate.wells
 
       AssetLink.create!(ancestor: stock_plate, descendant: tube_creation.parent)
@@ -139,7 +138,7 @@ FactoryBot.define do
         submission = create :submission
         pool.each do |well|
           create :transfer_request, asset: stock_wells[i], target_asset: well, submission: submission
-          mock_request_type.create!(asset: stock_wells[i], target_asset: well, submission: submission, request_metadata_attributes: create(:request_metadata_for_library_creation).attributes)
+          create :library_creation_request, asset: stock_wells[i], target_asset: well, submission: submission, request_type: mock_request_type
           create :stock_well_link, target_well: well, source_well: stock_wells[i]
         end
       end

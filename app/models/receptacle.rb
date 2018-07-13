@@ -127,13 +127,6 @@ class Receptacle < Asset
     aliquots.pluck(:library_type).uniq
   end
 
-  def set_as_library
-    aliquots.each do |aliquot|
-      aliquot.set_library
-      aliquot.save!
-    end
-  end
-
   def outer_request(submission_id)
     transfer_requests_as_target.find_by(submission_id: submission_id).try(:outer_request)
   end

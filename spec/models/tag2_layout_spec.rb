@@ -16,14 +16,4 @@ RSpec.describe Tag2Layout, type: :model do
       end
     end
   end
-
-  it 'sets a library on every well of the plate' do
-    expect(subject.plate.wells).to be_present
-    subject.plate.wells.each do |well|
-      expect(well.aliquots).to be_present
-      well.aliquots.each do |aliquot|
-        expect(aliquot.reload.library_id).to eq(well.id)
-      end
-    end
-  end
 end

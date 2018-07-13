@@ -23,13 +23,14 @@ class BatchesControllerTest < ActionController::TestCase
           @project = create(:project)
           @sample = create :sample
           @submission = create :submission_without_order, priority: 3
+          @library = create :library
 
-          @library = create(:empty_library_tube).tap do |library_tube|
-            library_tube.aliquots.create!(sample: @sample, project: @project, study: @study, library: library_tube, library_type: 'Standard')
+          @library_tube = create(:empty_library_tube).tap do |library_tube|
+            library_tube.aliquots = create_list(:untagged_aliquot, 1, sample: @sample, project: @project, library: @library, study: @study, library_type: 'Standard')
           end
           @lane = create(:empty_lane, qc_state: 'failed')
           @request_one = pipeline.request_types.first.create!(
-            asset: @library, target_asset: @lane,
+            asset: @library_tube, target_asset: @lane,
             project: @project, study: @study,
             submission: @submission,
             request_metadata_attributes: { fragment_size_required_from: 100, fragment_size_required_to: 200, read_length: 76 }

@@ -86,31 +86,6 @@ RSpec.describe Aliquot, type: :model do
     end
   end
 
-  describe '#set_library' do
-    let(:receptacle) { create :empty_well }
-    subject { build :aliquot, receptacle: receptacle, library_id: initial_library_id }
-
-    before(:each) do
-      subject.set_library
-    end
-
-    context 'when not set' do
-      let(:initial_library_id) { nil }
-
-      it 'gets set to the receptacle id' do
-        expect(subject.library_id).to eq(receptacle.id)
-      end
-    end
-
-    context 'when previously set' do
-      let(:initial_library_id) { create(:empty_well).id }
-
-      it 'gets set to the receptacle id' do
-        expect(subject.library_id).to eq(receptacle.id)
-      end
-    end
-  end
-
   describe 'for tags substitution' do
     it 'should generate correct substitution hash' do
       aliquot = create :aliquot

@@ -44,7 +44,7 @@ FactoryBot.define do
       project { create(:project) }
     end
 
-    after(:create) do |sample_tube, evaluator|
+    after(:build) do |sample_tube, evaluator|
       sample_tube.aliquots = create_list(:untagged_aliquot, 1, sample: evaluator.sample, receptacle: sample_tube, study: evaluator.study, project: evaluator.project)
     end
 
@@ -85,20 +85,27 @@ FactoryBot.define do
 
   factory(:empty_library_tube, traits: [:tube_barcode], class: LibraryTube) do
     name { generate :asset_name }
-    association(:purpose, factory: :library_tube_purpose) #  { Tube::Purpose.standard_library_tube }
+    association(:purpose, factory: :library_tube_purpose)
 
     transient do
       sample_count 0
       samples { create_list(:sample, sample_count) }
       aliquot_factory { :untagged_aliquot }
+      libraries { samples.map { |s| create :library, sample: s } }
     end
 
     after(:build) do |library_tube, evaluator|
       next if evaluator.sample_count.zero?
-      library_tube.aliquots = evaluator.samples.map { |s| create(evaluator.aliquot_factory, sample: s, library_type: 'Standard', receptacle: library_tube) }
+      library_tube.aliquots = evaluator.samples.each_with_index.map do |sample, index|
+        create(evaluator.aliquot_factory,
+               sample: sample,
+               library_type: 'Standard',
+               receptacle: library_tube,
+               library: evaluator.libraries[index])
+      end
     end
 
-    factory(:library_tube) do
+    factory :library_tube do
       transient { sample_count 1 }
     end
 

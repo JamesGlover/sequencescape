@@ -4,6 +4,7 @@ require 'rails_helper'
 
 RSpec.describe Api::AliquotIO, type: :model do
   let(:well) { create :empty_well }
+  let(:library) { create :library }
   let(:sample) { create :sample }
   let(:study) { create :study }
   let(:project) { create :project }
@@ -15,7 +16,7 @@ RSpec.describe Api::AliquotIO, type: :model do
            sample: sample,
            study: study,
            project: project,
-           library: well,
+           library: library,
            tag: tag,
            insert_size_from: 100,
            insert_size_to: 200,
@@ -29,8 +30,8 @@ RSpec.describe Api::AliquotIO, type: :model do
       'updated_at' => subject.updated_at.to_s,
       'receptacle_uuid' => well.uuid,
       'receptacle_internal_id' => well.id,
-      'library_uuid' => well.uuid,
-      'library_internal_id' => well.id,
+      'library_uuid' => library.uuid,
+      'library_internal_id' => library.id,
       'receptacle_type' => 'well',
       'sample_uuid' => sample.uuid,
       'sample_internal_id' => sample.id,

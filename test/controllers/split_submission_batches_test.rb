@@ -8,9 +8,8 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
       @user = FactoryBot.create :user
       @controller = SubmissionsController.new
       @request    = ActionController::TestRequest.create(@controller)
-      @plate_purpose = PlatePurpose.find_by(name: 'Stock plate')
-      @controller.stubs(:logged_in?).returns(@user)
       session[:user] = @user.id
+      @library_type = FactoryBot.create :library_type
       @project = FactoryBot.create :project
       @study = FactoryBot.create :study
       @asset1 = FactoryBot.create :sample_tube
@@ -29,9 +28,10 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
         submission_template_hash = { name: 'Illumina-C - Library creation - Single ended sequencing',
                                      submission_class_name: 'LinearSubmission',
                                      product_catalogue: 'Generic',
-                                     submission_parameters: { info_differential: 5,
-                                                              request_types: %w[illumina_c_library_creation
-                                                                                illumina_c_single_ended_sequencing] } }
+                                     submission_parameters: {
+                                       request_types: %w[illumina_c_library_creation
+                                                         illumina_c_single_ended_sequencing]
+                                     } }
 
         @submission_template = SubmissionSerializer.construct!(submission_template_hash)
 
@@ -45,12 +45,12 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
                    'fragment_size_required_to' => '400',
                    'bait_library_name' => 'Human all exon 50MB',
                    'fragment_size_required_from' => '100',
-                   'library_type' => 'Agilent Pulldown'
+                   'library_type' => @library_type.name
                  },
                  asset_group_id: @asset_group.id,
                  study_id: @study.id,
                  sample_names_text: '',
-                 plate_purpose_id: @plate_purpose.id,
+                 # plate_purpose_id: @plate_purpose.id,
                  project_name: @project.name,
                  lanes_of_sequencing_required: '5',
                  priority: 1
@@ -104,9 +104,10 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
         submission_template_hash = { name: 'Illumina-C - Multiplexed Library Creation - Single ended sequencing',
                                      submission_class_name: 'LinearSubmission',
                                      product_catalogue: 'Generic',
-                                     submission_parameters: { info_differential: 5,
-                                                              request_types: %w[illumina_c_multiplexed_library_creation
-                                                                                illumina_c_single_ended_sequencing] } }
+                                     submission_parameters: {
+                                       request_types: %w[illumina_c_multiplexed_library_creation
+                                                         illumina_c_single_ended_sequencing]
+                                     } }
 
         @submission_template = SubmissionSerializer.construct!(submission_template_hash)
         @library_pipeline = Pipeline.find_by!(name: 'Illumina-B MX Library Preparation')
@@ -122,7 +123,6 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
                asset_group_id: @asset_group.id.to_s,
                study_id: @study.id.to_s,
                sample_names_text: '',
-               plate_purpose_id: @plate_purpose.id.to_s,
                project_name: @project.name,
                lanes_of_sequencing_required: '5',
                priority: 1

@@ -44,8 +44,8 @@ class Aliquot < ApplicationRecord
   belongs_to :bait_library, optional: true
   belongs_to :primer_panel
 
-  # It can belong to a library asset
-  belongs_to :library, class_name: 'Receptacle', optional: true
+  # It can belong to a library
+  belongs_to :library, optional: true
 
   belongs_to :request
 
@@ -125,10 +125,6 @@ class Aliquot < ApplicationRecord
   # Optimization: Avoids us hitting the database for untagged aliquots
   def tag
     untagged? ? nil : super
-  end
-
-  def set_library
-    self.library = receptacle
   end
 
   # Cloning an aliquot should unset the receptacle ID because otherwise it won't get reassigned.  We should

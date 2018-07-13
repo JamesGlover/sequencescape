@@ -26,12 +26,6 @@ describe TagLayout do
     it 'applies the expected layout' do
       expect(generate_tag_layout(plate)).to eq expected_tags
     end
-
-    it 'updates the library_id of the wells' do
-      plate.wells.with_aliquots.each do |well|
-        expect(well.aliquots.first.library_id).to eq well.id
-      end
-    end
   end
 
   context 'substitutions' do

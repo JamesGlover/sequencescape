@@ -94,7 +94,6 @@ class TagLayout < ApplicationRecord
       tag_index = (index + initial_tag) % tags.length
       tag2_index = (index2 + initial_tag) % tag2s.length if tag2?
       apply_tags(well, tags[tag_index], tag2s[tag2_index || 0])
-      well.set_as_library
     end
   end
 

@@ -147,9 +147,8 @@ class LinearSubmissionTest < ActiveSupport::TestCase
           @assets = (1..SX_ASSET_COUNT).map { |i| create(:sample_tube, name: "Asset#{i}") }
           @asset_group = create :asset_group, name: 'non MPX', assets: @assets
 
-          @request_type_1 = create :request_type, name: 'request type 1'
           @library_creation_request_type = create :library_creation_request_type
-          @request_type_ids = [@request_type_1.id, @library_creation_request_type.id, @sequencing_request_type.id]
+          @request_type_ids = [@library_creation_request_type.id, @sequencing_request_type.id]
 
           @submission = create(:linear_submission,
                                study: @study,
@@ -181,8 +180,8 @@ class LinearSubmissionTest < ActiveSupport::TestCase
             @submission.process!
           end
 
-          should "change Request.count by #{SX_ASSET_COUNT * 3}" do
-            assert_equal SX_ASSET_COUNT * 3, Request.count - @request_count, "Expected Request.count to change by #{SX_ASSET_COUNT * 3}"
+          should "change Request.count by #{SX_ASSET_COUNT * 2}" do
+            assert_equal SX_ASSET_COUNT * 2, Request.count - @request_count, "Expected Request.count to change by #{SX_ASSET_COUNT * 2}"
           end
 
           context '#create_requests_for_items' do
@@ -192,25 +191,16 @@ class LinearSubmissionTest < ActiveSupport::TestCase
               @submission.create_requests
             end
 
-            should "change Request.count by #{SX_ASSET_COUNT * 3}" do
-              assert_equal SX_ASSET_COUNT * 3,  Request.count  - @request_count, "Expected Request.count to change by #{SX_ASSET_COUNT * 3}"
+            should "change Request.count by #{SX_ASSET_COUNT * 2}" do
+              assert_equal SX_ASSET_COUNT * 2,  Request.count  - @request_count, "Expected Request.count to change by #{SX_ASSET_COUNT * 2}"
             end
 
-            should "change Comment.count by #{SX_ASSET_COUNT * 3}" do
-              assert_equal SX_ASSET_COUNT * 3,  Comment.count  - @comment_count, "Expected Comment.count to change by #{SX_ASSET_COUNT * 3}"
+            should "change Comment.count by #{SX_ASSET_COUNT * 2}" do
+              assert_equal SX_ASSET_COUNT * 2,  Comment.count  - @comment_count, "Expected Comment.count to change by #{SX_ASSET_COUNT * 2}"
             end
 
             should 'assign submission ids to the requests' do
               assert_equal @submission, @submission.items.first.requests.first.submission
-            end
-
-            context 'request type 1' do
-              setup do
-                @request_to_check = @submission.items.first.requests.find_by!(request_type_id: @request_type_1.id)
-              end
-
-              subject { @request_to_check.request_metadata }
-              should_default_everything(Request::Metadata)
             end
 
             context 'library creation request type' do

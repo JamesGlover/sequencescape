@@ -5,7 +5,7 @@ require 'rails_helper'
 describe Api::Messages::QcResultIO do
   subject { Api::Messages::QcResultIO.to_hash(qc_result) }
 
-  let(:sample_tube) { create :sample_tube }
+  let(:library) { create :library }
   let(:expected_json) do
     { 'id_qc_result_lims' => qc_result.id,
       'assay' => qc_result.assay,
@@ -22,7 +22,7 @@ describe Api::Messages::QcResultIO do
   end
 
   context 'the qc_result asset is a well' do
-    let(:aliquots) { create_list(:aliquot, 1, library: sample_tube) }
+    let(:aliquots) { create_list(:aliquot, 1, library: library) }
     let(:well) { create :well_with_sample_and_plate, aliquots: aliquots }
     let(:qc_result) { create :qc_result, asset: well }
 
@@ -30,12 +30,13 @@ describe Api::Messages::QcResultIO do
       actual = subject.as_json
       actual.delete('date_created')
       actual.delete('date_updated')
-      expected_json.fetch('aliquots').first['id_library_lims'] = sample_tube.external_identifier
+      expected_json.fetch('aliquots').first['id_library_lims'] = library.name
       expect(actual).to eq(expected_json)
     end
   end
 
-  context 'the qc_result asset is a multiplexed library tube' do
+  context 'the qc_result asset is a tube' do
+    let(:sample_tube) { create :sample_tube }
     let(:qc_result) { create :qc_result, asset: sample_tube }
 
     it 'generates a valid json' do

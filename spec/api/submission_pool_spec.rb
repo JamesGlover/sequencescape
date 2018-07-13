@@ -35,7 +35,7 @@ describe '/api/1/plate-uuid/submission_pools' do
     end
 
     context 'a submission and a used tag 2 template' do
-      let(:plate) { create :input_plate, well_count: 2 }
+      let(:plate) { create :input_plate, well_count: 2, well_factory: :tagged_well }
 
       before do
         plate.wells.each do |well|
@@ -63,7 +63,7 @@ describe '/api/1/plate-uuid/submission_pools' do
     end
 
     context 'a submission and a used tag template' do
-      let(:plate) { create :input_plate, well_count: 2 }
+      let(:plate) { create :input_plate, well_count: 2, well_factory: :tagged_well }
 
       before do
         plate.wells.each do |well|
@@ -91,8 +91,8 @@ describe '/api/1/plate-uuid/submission_pools' do
     end
 
     context 'a multi plate submission' do
-      let(:plate) { create :input_plate, well_count: 2 }
-      let(:plate_b) { create :input_plate, well_count: 2 }
+      let(:plate) { create :input_plate, well_count: 2, well_factory: :tagged_well }
+      let(:plate_b) { create :input_plate, well_count: 2, well_factory: :tagged_well }
 
       before do
         plate.wells.each do |well|
@@ -122,7 +122,7 @@ describe '/api/1/plate-uuid/submission_pools' do
     end
 
     context 'a multi plate submission and a used template on children' do
-      let(:plate_b) { create :input_plate, well_count: 2 }
+      let(:plate_b) { create :input_plate, well_count: 2, well_factory: :tagged_well }
       let(:plate) { create :plate, well_count: 2, parents: [plate_b] }
 
       before do

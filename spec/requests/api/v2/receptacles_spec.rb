@@ -7,7 +7,7 @@ describe 'Receptacles API', with: :api_v2 do
     before do
       create(:untagged_well)
       create(:sample_tube)
-      create(:library_tube)
+      create(:empty_library_tube)
       create(:lane)
     end
 
