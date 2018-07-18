@@ -43,21 +43,11 @@ module Request::LibraryManufacture
   end
 
   def generate_library
-    if upstream_libraries.present?
-      upstream_library = upstream_libraries.first
-      base_name = upstream_library.name.gsub(/#\d+\z/, '')
-      create_library!(
-        name: "#{base_name}##{id}",
-        sample: upstream_library.sample,
-        library_type: LibraryType.find_by!(name: library_type)
-      )
-    else
-      create_library!(
-        name: "#{asset.external_identifier}##{id}",
-        sample: samples.first,
-        library_type: LibraryType.find_by!(name: library_type)
-      )
-    end
+    create_library!(
+      sample: samples.first,
+      parent_library: upstream_libraries.first,
+      library_type: LibraryType.find_by!(name: library_type)
+    )
   end
 
   # We shouldn't be violating this constraint, but if we do we want to know, as it could result in

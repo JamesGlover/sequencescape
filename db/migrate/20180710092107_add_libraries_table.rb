@@ -18,6 +18,7 @@ class AddLibrariesTable < ActiveRecord::Migration[5.1]
       t.references :library_type, type: :integer, null: false, foreign_key: true
       # Ideally this would have a not null constraint, but importing legacy data would likely be tricky
       t.references :request, type: :integer, foreign_key: true
+      t.references :parent_library, foreign_key: { to_table: :libraries }, null: true
       t.timestamps
     end
   end

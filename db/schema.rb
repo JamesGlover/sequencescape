@@ -638,9 +638,11 @@ ActiveRecord::Schema.define(version: 20180710094413) do
     t.integer "sample_id", null: false
     t.integer "library_type_id", null: false
     t.integer "request_id"
+    t.bigint "parent_library_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["library_type_id"], name: "index_libraries_on_library_type_id"
+    t.index ["parent_library_id"], name: "index_libraries_on_parent_library_id"
     t.index ["request_id"], name: "index_libraries_on_request_id"
     t.index ["sample_id"], name: "index_libraries_on_sample_id"
   end
@@ -1956,6 +1958,7 @@ ActiveRecord::Schema.define(version: 20180710094413) do
   add_foreign_key "barcodes", "assets"
   add_foreign_key "billing_items", "requests"
   add_foreign_key "billing_products", "billing_product_catalogues"
+  add_foreign_key "libraries", "libraries", column: "parent_library_id"
   add_foreign_key "libraries", "library_types"
   add_foreign_key "libraries", "requests"
   add_foreign_key "libraries", "samples"
