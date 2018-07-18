@@ -31,6 +31,12 @@ Given /^I have created a sequenom plate$/ do
 end
 
 Given /^there is a (\d+) well "([^"]*)" plate with a barcode of "([^"]*)"$/ do |number_of_wells, plate_purpose_name, plate_barcode|
+  # FactoryBot.create :plate,
+  #   sanger_barcode: { machine_barcode: plate_barcode },
+  #   plate_purpose: PlatePurpose.find_by(name: plate_purpose_name),
+  #   well_count: number_of_wells.to_i,
+  #   well_factory: :untagged_well
+
   new_plate = FactoryBot.create :plate,
                                 sanger_barcode: { machine_barcode: plate_barcode },
                                 plate_purpose: PlatePurpose.find_by(name: plate_purpose_name)

@@ -2,20 +2,28 @@
 # This module can be included where the submission has a linear behaviour, with no branching.
 module Submission::LinearRequestGraph
   # Source data is used to pass information down the request graph
-  SourceData = Struct.new(:asset, :qc_metric, :sample)
-  # TODO: When Item dies this code will not need to hand it around so much!
+  # asset
+  # @param asset             [Asset, nil]   The asset from which the request will be build.
+  #                                        nil indicates no upstream asset in cases where target assets
+  #                                        are generated later.
+  # @param qc_metric         [QcMetric]     The Qc Metric associated with this asset for this request type
+  # @param previous_requests [Array<Request>, nil] Used to pass requests down the chain when building the
+  #                                        request graph. Used to. eg. pass down libraries
+  SourceData = Struct.new(:asset, :qc_metric, :previous_requests)
 
   # Builds the entire request graph for this submission.  If you want to reuse the multiplexing assets then
   # pass them in as the 'multiplexing_assets' parameter; specify a block if you want to know when they have
-  # been used.
-  def build_request_graph!(multiplexing_assets = nil, &block)
+  # been used. Called for each order of the submission, and passes the yielded multiplexed assets of one
+  # order into the next.
+  def build_request_graph!(multiplexing_assets = nil)
     ActiveRecord::Base.transaction do
+      mx_assets_tmp = nil
       create_request_chain!(
         build_request_type_multiplier_pairs,
-        assets.map { |asset| SourceData.new(asset, asset.latest_stock_metrics(product), nil) },
-        multiplexing_assets,
-        &block
-      )
+        assets.map { |asset| SourceData.new(asset, asset.latest_stock_metrics(product), asset.requests_as_target) },
+        multiplexing_assets
+      ) { |a| mx_assets_tmp = a }
+      mx_assets_tmp
     end
   end
 
@@ -62,25 +70,27 @@ module Submission::LinearRequestGraph
       # Now we can iterate over the source assets and target assets building the requests between them.
       # Ensure that the request has the correct comments on it, and that the aliquots of the source asset
       # are transferred into the destination if the request does not do this in some manner itself.
-      source_data_set.each_with_index do |source_data, index|
+      created_requests = source_data_set.each_with_index.map do |source_data, index|
         source_asset = source_data.asset
-        qc_metrics = source_data.qc_metric
+        qc_metrics = source_data.qc_metric.compact.uniq
         target_asset = target_assets[index]
 
         create_request_of_type!(
           request_type,
-          asset: source_asset, target_asset: target_asset
+          asset: source_asset,
+          target_asset: target_asset,
+          qc_metrics: qc_metrics,
+          upstream_requests_at_build: source_data.previous_requests
         ).tap do |request|
           # TODO: AssetLink is supposed to disappear at some point in the future because it makes no real sense
           # given that the request graph describes this relationship.
           # JG: Its removal only really makes sense if we can walk the request graph in a timely manner.
           AssetLink.create_edge!(source_asset, target_asset) if source_asset.present? and target_asset.present?
 
-          request.qc_metrics = qc_metrics.compact.uniq
           request.update_responsibilities!
 
-          comments.split("\n").each do |comment|
-            request.comments.create!(user: user, description: comment)
+          comments.each_line do |comment|
+            request.comments.create!(user: user, description: comment.chomp)
           end if comments.present?
         end
       end
@@ -90,23 +100,26 @@ module Submission::LinearRequestGraph
       # they don't get disrupted by the shift operation at the start of this method.
       next if request_type_and_multiplier_pairs.empty?
 
-      target_assets_items =
+      source_data_for_next_request =
         if request_type.for_multiplexing? # May have many nil assets for non-multiplexing
           if multiplexing_assets.nil?
             criteria = source_data_set.map(&:qc_metric).flatten.uniq
-            target_assets.uniq.map { |asset| SourceData.new(asset, criteria, nil) }
+            target_assets.uniq.map { |asset| SourceData.new(asset, criteria, created_requests) }
           else
+            # If we already have MX assets, then the downstream request graph was built as
+            # part of the previous order. As a result, this order will not actually be building
+            # any more requests, and instead we just want to update the existing ones.
             associate_built_requests(target_assets.uniq.compact)
-            SourceData.new(nil, nil, nil)
+            [] # We have already build the downstream requests, so this never actually gets used.
           end
         else
           target_assets.each_with_index.map do |asset, index|
             source_asset = request_type.no_target_asset? ? source_data_set[index].first : asset
-            SourceData.new(source_asset, source_data_set[index].qc_metric, nil)
+            SourceData.new(source_asset, source_data_set[index].qc_metric, [created_requests[index]])
           end
         end
 
-      create_request_chain!(request_type_and_multiplier_pairs.dup, target_assets_items, multiplexing_assets, &block)
+      create_request_chain!(request_type_and_multiplier_pairs.dup, source_data_for_next_request, multiplexing_assets, &block)
     end
   end
 

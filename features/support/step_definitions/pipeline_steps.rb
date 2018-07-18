@@ -20,7 +20,7 @@ end
 
 def pipeline_name_to_asset_type(pipeline_name)
   return :sample_tube if pipeline_name.downcase.include?('library preparation')
-  return :well if pipeline_name.downcase.include?('from strip-tubes')
+  return :tagged_well if pipeline_name.downcase.include?('from strip-tubes')
   :library_tube
 end
 

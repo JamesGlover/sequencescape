@@ -17,6 +17,9 @@ class Request < ApplicationRecord
   extend EventfulRecord
   extend ::Metadata
 
+  # Used when building submissions
+  attr_accessor :upstream_requests_at_build
+
   # Constants
   # This is used for the default next or previous request check.  It means that if the caller does not specify a
   # block then we can use this one in its place.
@@ -35,6 +38,10 @@ class Request < ApplicationRecord
   has_many_lab_events
 
   has_one :pipeline, through: :batch
+  # In the unlikely event we destroy a request, we destroy a library.
+  # If the library has been used, this process will fail, thanks to the
+  # foreign key on aliquots. This assumes one sample per library_request.
+  has_one :library, dependent: :destroy, foreign_key: :request_id, inverse_of: :request
   belongs_to :item
   belongs_to :request_type, inverse_of: :requests
   belongs_to :user

@@ -114,9 +114,9 @@ Given(/^a full plate called "([^"]*)" exists with purpose "([^"]*)" and barcode 
   FactoryBot.create(:full_plate, well_factory: :untagged_well, name: name, purpose: purpose, barcode: barcode)
 end
 
-Given /^a "([^\"]+)" plate called "([^\"]+)" exists with barcode "([^\"]+)"$/ do |name, plate_name, barcode|
-  plate_purpose = PlatePurpose.find_by!(name: name)
-  plate_purpose.create!(name: plate_name, barcode: barcode)
+Given /^a "([^\"]+)" plate called "([^\"]+)" exists with barcode "([^\"]+)"$/ do |purpose_name, plate_name, barcode|
+  plate_purpose = PlatePurpose.find_by(name: purpose_name) || FactoryBot.create(:plate_purpose, name: purpose_name)
+  FactoryBot.create(:plate, plate_purpose: plate_purpose, name: plate_name, barcode: barcode, well_count: 1)
 end
 
 Given /^a "([^\"]+)" plate called "([^\"]+)" exists as a child of "([^\"]+)"$/ do |name, plate_name, parent_name|

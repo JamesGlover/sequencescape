@@ -67,7 +67,6 @@ class SubmissionTemplate < ApplicationRecord
     # NOTE: Stringifying request_option keys here is NOT a good idea as it affects multipliers
     attributes = submission_attributes.with_indifferent_access.deep_merge(duped_params)
     infos      = SubmissionTemplate.unserialize(attributes.delete(:input_field_infos))
-
     submission_class.new(attributes).tap do |order|
       order.template_name = name
       order.product = product_for(attributes)

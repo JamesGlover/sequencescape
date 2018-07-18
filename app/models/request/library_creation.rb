@@ -32,6 +32,10 @@ class Request::LibraryCreation < CustomerRequest
         custom_attribute(:fragment_size_required_to, maximum_details)
         custom_attribute(:gigabases_expected, positive_float: true)
       end
+      # JG: Had hopped to remove this from here, but excessive meta-programming causes problems.
+      # Essentially we keep declaring Request::Metadata classes, these don't follow the
+      # inheritance of the Request class.
+      include Request::LibraryManufacture
     end
     const_get(:Metadata).class_eval do
       def fragment_size_required_from
@@ -46,10 +50,8 @@ class Request::LibraryCreation < CustomerRequest
 
   has_metadata as: Request do
   end
-
-  # Unfortunately this needs to remain beneath has_metadata, otherwise it modifies
-  # the base Request::Metadata class. This is probably a situation we should fix
   include Request::LibraryManufacture
+
   #
   # Passed into cloned aliquots at the beginning of a pipeline to set
   # appropriate options

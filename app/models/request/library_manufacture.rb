@@ -11,10 +11,6 @@ module Request::LibraryManufacture
 
     base.class_eval do
       extend ClassMethods
-      # In the unlikely event we destroy a request, we destroy a library.
-      # If the library has been used, this process will fail, thanks to the
-      # foreign key on aliquots. This assumes one sample per library_request.
-      has_one :library, dependent: :destroy, foreign_key: :request_id, inverse_of: :request
       # Generate libraries upfront when the request is generated. Has the following limitations:
       # - Source assets much contain a single sample
       # - The sample must be present in the asset when the request is generated
@@ -23,7 +19,7 @@ module Request::LibraryManufacture
       # upstream of library creation, however no such templates are currently active
       after_create :generate_library
       # Ensures :generate_library behaves predictably
-      validate :assets_suitable_for_library_creation
+      validate :assets_suitable_for_library_creation, on: :create
     end
 
     base.const_set(:RequestOptionsValidator, Class.new(DelegateValidation::Validator) do
@@ -47,11 +43,21 @@ module Request::LibraryManufacture
   end
 
   def generate_library
-    create_library!(
-      name: "#{asset.external_identifier}##{id}",
-      sample: samples.first,
-      library_type: LibraryType.find_by!(name: library_type)
-    )
+    if upstream_libraries.present?
+      upstream_library = upstream_libraries.first
+      base_name = upstream_library.name.gsub(/#\d+\z/, '')
+      create_library!(
+        name: "#{base_name}##{id}",
+        sample: upstream_library.sample,
+        library_type: LibraryType.find_by!(name: library_type)
+      )
+    else
+      create_library!(
+        name: "#{asset.external_identifier}##{id}",
+        sample: samples.first,
+        library_type: LibraryType.find_by!(name: library_type)
+      )
+    end
   end
 
   # We shouldn't be violating this constraint, but if we do we want to know, as it could result in
@@ -61,8 +67,14 @@ module Request::LibraryManufacture
   # asset being empty at time of creation. In this case we probably still want to generate the library upfront, but
   # will need to either pass the sample in, or handle library creation elsewhere.
   def assets_suitable_for_library_creation
-    errors.add(:asset, "contains #{samples.count} samples. Only 1 sample is allowed.") unless samples.one?
+    return if samples.one? || upstream_libraries.one?
+    errors.add(:asset, "contains #{samples.count} samples. Only 1 sample is allowed.")
   end
 
   delegate :library_type, to: :request_metadata
+
+  # Currently only operates at submission generation
+  def upstream_libraries
+    (upstream_requests_at_build || []).map(&:library).compact.uniq
+  end
 end

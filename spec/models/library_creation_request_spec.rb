@@ -29,6 +29,19 @@ RSpec.describe LibraryCreationRequest, type: :model do
         expect(library_request.save).to be false
       end
     end
+    context 'with no asset but an upstream request' do
+      let(:upstream_library_request) { create :library_creation_request, asset: source }
+      let(:library_request) { build :library_creation_request, asset: nil, upstream_requests_at_build: [upstream_library_request] }
+      let(:source) { create :sample_tube }
+      it 'generates a library' do
+        library_request.save!
+        expect(library_request.library).to be_a Library
+      end
+      it 'generates a useful name based on the original library and request_id' do
+        library_request.save!
+        expect(library_request.library.name).to eq("#{source.external_identifier}##{library_request.id}")
+      end
+    end
     context 'with a multi-sample tube' do
       # Theoretically we may end up making libraries from already pooled samples.
       # This would necessitate changing has_one to has_many, but otherwise shouldn't

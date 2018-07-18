@@ -5,17 +5,14 @@ Feature: Creating submissions for pulldown
       And the WTSI single sign-on service recognises "I-am-authenticated" as "John Smith"
 
     Given I am using the latest version of the API
-And I have a "full" authorised user with the key "cucumber"
+    And I have a "full" authorised user with the key "cucumber"
 
     Given I have an "active" study called "Testing submission creation"
       And the UUID for the study "Testing submission creation" is "22222222-3333-4444-5555-000000000000"
 
     Given I have a project called "Testing submission creation"
       And the UUID for the project "Testing submission creation" is "22222222-3333-4444-5555-000000000001"
-
-    Given the plate barcode webservice returns "1000001"
-
-    Given a "WGS stock DNA" plate called "Testing the pulldown submissions" exists
+    Given a full plate called "Testing the pulldown submissions" exists with purpose "WGS stock DNA" and barcode "1000001"
       And all of the wells on the plate "Testing the pulldown submissions" are in an asset group called "Testing the pulldown submissions" owned by the study "Testing submission creation"
       And the UUID for the asset group "Testing the pulldown submissions" is "88888888-1111-2222-3333-000000000000"
 

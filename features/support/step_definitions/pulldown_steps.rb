@@ -45,14 +45,17 @@ Transform /^([A-H]\d+)-([A-H]\d+)$/ do |start, finish|
 end
 
 def create_submission_of_assets(template, assets, request_options = {})
-  template.create_with_submission!(
+  submission = template.create_with_submission!(
     user: FactoryBot.create(:user),
     study: FactoryBot.create(:study),
     project: FactoryBot.create(:project),
     assets: assets,
     request_options: request_options
-  ).submission.built!
+  ).submission
+  submission.built!
   step 'all pending delayed jobs are processed'
+  submission.reload
+  raise StandardError, submission.message if submission.state == 'failed'
 end
 
 Given /^"([^\"]+)" of (the plate .+) have been (submitted to "[^"]+")$/ do |range, plate, template|
@@ -103,7 +106,6 @@ end
 def work_pipeline_for(submissions, name, template = nil)
   final_plate_type = PlatePurpose.find_by(name: name) or raise StandardError, "Cannot find #{name.inspect} plate type"
   template       ||= TransferTemplate.find_by(name: 'Pool wells based on submission') or raise StandardError, 'Cannot find pooling transfer template'
-
   source_plates = submissions.map { |submission| submission.requests.first.asset.plate }.uniq
   raise StandardError, "Submissions appear to come from non-unique plates: #{source_plates.inspect}" unless source_plates.size == 1
 
@@ -201,9 +203,9 @@ Given /^all transfer requests are in the last submission$/ do
 end
 
 Given /^(the plate .+) will pool into 1 tube$/ do |plate|
-  stock_plate = PlatePurpose.find(2).create!(:do_not_create_wells) { |p| p.wells = [FactoryBot.create(:empty_well)] }
+  stock_plate = PlatePurpose.find(2).create!(:do_not_create_wells) { |p| p.wells = [FactoryBot.create(:tagged_well)] }
   stock_well  = stock_plate.wells.first
-  submission  = Submission.create!(user: FactoryBot.create(:user))
+  submission  = FactoryBot.create :submission
 
   AssetLink.create!(ancestor: stock_plate, descendant: plate)
 

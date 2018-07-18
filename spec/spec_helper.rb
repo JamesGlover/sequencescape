@@ -38,10 +38,13 @@ end
 Capybara.register_driver :headless_chrome do |app|
   options = Selenium::WebDriver::Chrome::Options.new
 
-  options.add_argument('--headless')
-  options.add_argument('--disable_gpu')
-  # options.add_argument('--disable-popup-blocking')
-  options.add_argument('--window-size=1600,3200')
+  unless ENV['SHOW_CHROME']
+    options.add_argument('--headless')
+    options.add_argument('--disable_gpu')
+    # options.add_argument('--disable-popup-blocking')
+    options.add_argument('--enable-logging=v=1')
+    options.add_argument('--window-size=1600,3200')
+  end
   driver = Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
   enable_chrome_headless_downloads(driver, DownloadHelpers::PATH.to_s)
 end
