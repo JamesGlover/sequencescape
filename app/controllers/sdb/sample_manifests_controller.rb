@@ -36,6 +36,8 @@ class Sdb::SampleManifestsController < Sdb::BaseController
 
   def uploaded_spreadsheet
     @manifest = SampleManifest.find(params[:id])
+    # If we don't have an uploaded manifest, 404
+    raise ActiveRecord::RecordNotFound, 'No manifest uploaded' if @manifest.uploaded_document.nil?
     send_data(@manifest.uploaded_document.current_data,
               filename: "manifest_#{@manifest.id}.csv",
               type: 'application/excel')
