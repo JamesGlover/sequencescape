@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180710094413) do
+ActiveRecord::Schema.define(version: 20180720100019) do
 
   create_table "aker_containers", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.string "barcode"
@@ -636,9 +636,10 @@ ActiveRecord::Schema.define(version: 20180710094413) do
   create_table "libraries", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.string "name", null: false
     t.integer "sample_id", null: false
-    t.integer "library_type_id", null: false
+    t.integer "library_type_id"
     t.integer "request_id"
     t.bigint "parent_library_id"
+    t.boolean "delegate_identity", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["library_type_id"], name: "index_libraries_on_library_type_id"
