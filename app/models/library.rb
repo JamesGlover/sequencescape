@@ -36,6 +36,15 @@ class Library < ApplicationRecord
     delegate_identity ? parent_library_id : id
   end
 
+  # TEMPORARY METHOD REMOVE ONCE 20180720100019 has run
+  def name
+    if super == id.to_s
+      Asset.find_by(id: super)&.external_identifier || super
+    else
+      super
+    end
+  end
+
   #
   # A more meaningful identifier that can now be user-specified, but typically
   # will be names after the source asset external identifier (Barcode or barcode+well)

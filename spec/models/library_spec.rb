@@ -41,6 +41,21 @@ RSpec.describe Library do
     end
   end
 
+  context 'for a limited time only' do
+    # These tests are to reduce the amount of downtime required
+    # They can be removed once 20180720100019 has been run in production
+    context 'when library id matches name' do
+      let(:library) { build :library }
+      it 'Falls back to the asset with the same id for a name' do
+        library.save!
+        library.name = library.id
+        library.save!
+        asset = create :library_tube, id: library.id
+        expect(library.name).to eq(asset.external_identifier)
+      end
+    end
+  end
+
   context 'with a parent' do
     let(:parent_library) { create :library }
     let(:library) { build :library, parent_library: parent_library, delegate_identity: delegate_identity }
