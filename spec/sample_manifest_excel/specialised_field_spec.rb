@@ -12,10 +12,17 @@ RSpec.describe SampleManifestExcel::SpecialisedField, type: :model, sample_manif
     include SampleManifestExcel::SpecialisedField::ValueRequired
   end
 
-  let!(:sample) { create(:sample_with_well) }
+  let(:library) { create :library, library_type: nil }
+  let(:well) do
+    create :well_with_sample_and_plate,
+           aliquot_factory: :untagged_aliquot,
+           aliquot_count: 1,
+           aliquot_options: { library: library, sample: library.sample }
+  end
+  let!(:sample) { well.aliquots.first.sample }
   let!(:library_type) { create(:library_type) }
   let!(:reference_genome) { create(:reference_genome, name: 'new one') }
-  let(:aliquot) { sample.aliquots.first }
+  let(:aliquot) { well.aliquots.first }
 
   describe 'Thing' do
     it 'can be initialized with a value and a sample' do
@@ -46,10 +53,17 @@ RSpec.describe SampleManifestExcel::SpecialisedField, type: :model, sample_manif
       expect(SampleManifestExcel::SpecialisedField::LibraryType.new(value: 'A new library type', sample: sample)).to_not be_valid
     end
 
+    # Library type will probably be shifted completely onto library soon
     it 'will add the the value to the aliquot' do
       specialised_field = SampleManifestExcel::SpecialisedField::LibraryType.new(value: library_type.name)
       specialised_field.update(aliquot: aliquot)
       expect(aliquot.library_type).to eq(library_type.name)
+    end
+
+    it 'will add the the value to the library' do
+      specialised_field = SampleManifestExcel::SpecialisedField::LibraryType.new(value: library_type.name)
+      specialised_field.update(aliquot: aliquot)
+      expect(library.library_type).to eq(library_type)
     end
   end
 

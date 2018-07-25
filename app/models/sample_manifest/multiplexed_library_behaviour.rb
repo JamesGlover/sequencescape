@@ -8,36 +8,14 @@ module SampleManifest::MultiplexedLibraryBehaviour
     end
   end
 
-  class Core
+  class Core < SampleManifest::LibraryBehaviour::Core
     # for #multiplexed_library_tube
     MxLibraryTubeException = Class.new(ActiveRecord::RecordNotFound)
-
-    def initialize(manifest)
-      @manifest = manifest
-    end
 
     delegate :generate_mx_library, to: :@manifest
 
     def generate
       @mx_tube = generate_mx_library
-    end
-
-    delegate :samples, to: :@manifest
-
-    def io_samples
-      samples.map do |sample|
-        {
-          sample: sample,
-          container: {
-            barcode: sample.primary_receptacle.human_barcode
-          },
-          library_information: sample.primary_receptacle.library_information
-        }
-      end
-    end
-
-    def acceptable_purposes
-      Purpose.none
     end
 
     def multiplexed_library_tube
@@ -58,27 +36,12 @@ module SampleManifest::MultiplexedLibraryBehaviour
       multiplexed_library_tube
     end
 
-    def updated_by!(user, samples)
-      # Does nothing at the moment
-    end
-
     def details
       samples.each do |sample|
         yield({
           barcode: sample.assets.first.human_barcode,
           sample_id: sample.sanger_sample_id
         })
-      end
-    end
-
-    def details_array
-      [].tap do |details|
-        samples.each do |sample|
-          details << {
-            barcode: sample.assets.first.human_barcode,
-            sample_id: sample.sanger_sample_id
-          }
-        end
       end
     end
 
@@ -94,6 +57,10 @@ module SampleManifest::MultiplexedLibraryBehaviour
 
     def numeric_fields
       ['INSERT SIZE FROM', 'INSERT SIZE TO']
+    end
+
+    def library_types
+      @library_types ||= Hash.new { |library_types, library_type_name| library_types[library_type_name] = LibraryType.find_by(name: library_type_name) }
     end
 
     # Chances are we're going to use the same tag group multiple times. This avoids the need to poll
@@ -114,7 +81,7 @@ module SampleManifest::MultiplexedLibraryBehaviour
         yield  "#{sample.sanger_sample_id} #{field.downcase} should be greater than 0." unless row[field].to_i > 0
       end
 
-      yield "Couldn't find the library type #{row['LIBRARY TYPE']} for #{sample.sanger_sample_id}." if LibraryType.find_by(name: row['LIBRARY TYPE']).nil?
+      yield "Couldn't find the library type #{row['LIBRARY TYPE']} for #{sample.sanger_sample_id}." if library_types[row['LIBRARY TYPE']].nil?
 
       return yield "#{sample.sanger_sample_id} has no tag group specified." if row[SampleManifest::Headers::TAG_GROUP_FIELD].blank?
 
@@ -139,7 +106,7 @@ module SampleManifest::MultiplexedLibraryBehaviour
       {
         specialized_from_manifest: {
           tag_id: tag_group.tags.detect { |tag| tag.map_id == row['TAG INDEX'].to_i }.id,
-          library_type: row['LIBRARY TYPE'],
+          library_type_from_manifest: library_types[row['LIBRARY TYPE']],
           insert_size_from: row['INSERT SIZE FROM'].to_i,
           insert_size_to: row['INSERT SIZE TO'].to_i
         }
@@ -149,10 +116,6 @@ module SampleManifest::MultiplexedLibraryBehaviour
           params[:specialized_from_manifest].merge!(tag2_id: tag2_group.tags.detect { |tag| tag.map_id == row[SampleManifest::Headers::TAG2_INDEX_FIELD].to_i }.id)
         end
       end
-    end
-
-    def assign_library?
-      true
     end
   end
 

@@ -30,7 +30,7 @@ module SampleManifest::SharedTubeBehaviour
   def tube_sample_creation(samples_data)
     study.samples << samples_data.map do |tube, sanger_sample_id|
       create_sample(sanger_sample_id).tap do |sample|
-        attributes = core_behaviour.assign_library? ? { sample: sample, library_id: tube.id, study: study } : { sample: sample, study: study }
+        attributes = core_behaviour.aliquot_attributes(sample: sample, study: study, asset: tube)
         tube.aliquots.create!(attributes)
       end
     end

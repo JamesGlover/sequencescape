@@ -2,7 +2,7 @@
 # This module is very similar to SampleManifest::MultiplexedLibraryBehaviour
 # Differences are:
 #   (1)this module does not have methods needed for 'old' upload
-#   (2)this module does not creat multiplexed library tube and respective requests
+#   (2)this module does not create multiplexed library tube and respective requests
 # Probably it should be cleaned at some point (20/04/2017)
 module SampleManifest::LibraryBehaviour
   module ClassMethods
@@ -61,8 +61,9 @@ module SampleManifest::LibraryBehaviour
       end
     end
 
-    def assign_library?
-      true
+    def aliquot_attributes(sample:, study:, asset:)
+      library = Library.create!(sample: sample, name: "#{asset.external_identifier}#M##{@manifest.id}")
+      { sample: sample, library: library, study: study }
     end
 
     def labware

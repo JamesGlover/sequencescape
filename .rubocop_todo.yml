@@ -28,7 +28,6 @@ Lint/AmbiguousBlockAssociation:
   Exclude:
     - 'app/models/qcable/statemachine.rb'
     - 'features/support/step_definitions/bulk_submission_steps.rb'
-    - 'spec/models/sample_manifest_spec.rb'
     - 'test/controllers/admin_users_controller_test.rb'
     - 'test/unit/linear_submission_test.rb'
     - 'test/unit/tasks/plate_transfer_task_test.rb'
@@ -4438,7 +4437,6 @@ Style/FrozenStringLiteralComment:
     - 'spec/models/request_event_spec.rb'
     - 'spec/models/request_spec.rb'
     - 'spec/models/request_type_spec.rb'
-    - 'spec/models/sample_manifest_spec.rb'
     - 'spec/models/sample_spec.rb'
     - 'spec/models/sequencing_request_spec.rb'
     - 'spec/models/specific_tube_creations_spec.rb'

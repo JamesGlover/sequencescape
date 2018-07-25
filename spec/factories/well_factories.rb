@@ -6,11 +6,30 @@ FactoryBot.define do
       study { build :study }
       project { build :project }
       aliquot_options { |_e, well| { study: study, project: project, receptacle: well } }
+      aliquot_factory :untagged_aliquot
+      aliquot_count 0
     end
     association(:well_attribute, strategy: :build)
+    aliquots { build_list(aliquot_factory, aliquot_count, aliquot_options) }
 
     factory :untagged_well, parent: :well do
-      aliquots { build_list(:untagged_aliquot, 1, aliquot_options) }
+      transient { aliquot_count 1 }
+    end
+
+    factory :tagged_well, aliases: [:well_with_sample_and_without_plate] do
+      transient do
+        aliquot_count 1
+        aliquot_factory :tagged_aliquot
+      end
+    end
+
+    factory :well_with_sample_and_plate do
+      transient do
+        aliquot_count 1
+        aliquot_factory :tagged_aliquot
+      end
+      map
+      plate
     end
   end
 
@@ -23,18 +42,6 @@ FactoryBot.define do
       pico_pass           'Pass'
       sequenom_count      2
     end
-  end
-
-  factory :tagged_well, parent: :well, aliases: [:well_with_sample_and_without_plate] do
-    transient do
-      aliquot_count 1
-    end
-    aliquots { build_list(:tagged_aliquot, aliquot_count, aliquot_options) }
-  end
-
-  factory :well_with_sample_and_plate, parent: :tagged_well do
-    map
-    plate
   end
 
   factory :cross_pooled_well, parent: :well do

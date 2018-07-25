@@ -112,7 +112,10 @@ FactoryBot.define do
     factory(:library_tube_with_barcode) do
       sequence(:barcode) { |i| i }
       after(:create) do |library_tube|
-        library_tube.aliquots.create!(sample: create(:sample_with_sanger_sample_id), library_type: 'Standard', library_id: library_tube.id)
+        sample = create(:sample_with_sanger_sample_id)
+        library_type = LibraryType.find_by(name: 'Standard') || create(:library_type, name: 'Standard')
+        library = create(:library, library_type: library_type)
+        library_tube.aliquots.create!(sample: sample, library_type: 'Standard', library: library)
       end
     end
   end

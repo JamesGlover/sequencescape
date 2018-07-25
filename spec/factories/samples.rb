@@ -5,9 +5,12 @@ FactoryBot.define do
     name { generate :sample_name }
 
     factory :sample_with_well do
+      transient do
+        library nil
+        aliquot { |sample| create(:untagged_aliquout, sample: sample, library: library) }
+      end
       sequence(:sanger_sample_id, &:to_s)
-      wells { [FactoryBot.create(:well_with_sample_and_plate)] }
-      assets { [wells.first.plate] }
+      wells { create_list(:well_with_sample_and_plate, 1, aliquots: [aliquot]) }
     end
 
     factory :sample_with_gender do

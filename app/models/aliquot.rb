@@ -194,4 +194,12 @@ class Aliquot < ApplicationRecord
       send(attrib) == other.send(attrib)
     end
   end
+
+  # Updates library_type on the aliquot, as well as the library
+  # We don't simply override library_type= as this will likely result in
+  # unexpected mutation of the library.
+  def library_type_from_manifest=(library_type)
+    self.library_type = library_type.name
+    library.update(library_type: library_type)
+  end
 end

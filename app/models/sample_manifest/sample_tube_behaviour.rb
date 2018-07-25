@@ -70,8 +70,8 @@ module SampleManifest::SampleTubeBehaviour
     end
     alias printables labware
 
-    def assign_library?
-      false
+    def aliquot_attributes(sample:, study:, asset: nil)
+      { sample: sample, study: study }
     end
   end
 

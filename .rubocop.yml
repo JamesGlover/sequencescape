@@ -82,3 +82,8 @@ Performance/UnfreezeString:
 Layout/SpaceBeforeBlockBraces:
   EnforcedStyle: space
   EnforcedStyleForEmptyBraces: space
+# Unused keyword arguments are essential if multiple methods are to share
+# the same interface. While positional arguments can use underscores, this
+# isn't an option for keyword arguments.
+Lint/UnusedMethodArgument:
+  AllowUnusedKeywordArguments: true

@@ -12,13 +12,18 @@ module SampleManifestExcel
       validate :check_library_type_exists
 
       def update(attributes = {})
-        attributes[:aliquot].library_type = value if valid? && attributes[:aliquot].present?
+        return unless valid? && attributes[:aliquot].present?
+        attributes[:aliquot].library_type_from_manifest = library_type
       end
 
       private
 
+      def library_type
+        @library_type ||= ::LibraryType.find_by(name: value)
+      end
+
       def check_library_type_exists
-        return if ::LibraryType.find_by(name: value).present?
+        return if library_type.present?
         errors.add(:base, "could not find #{value} library type.")
       end
     end
