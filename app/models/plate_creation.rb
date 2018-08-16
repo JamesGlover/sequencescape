@@ -23,20 +23,19 @@ class PlateCreation < AssetCreation
       end
     end
 
+    private
+
     def target_for_ownership
       child
     end
-    private :target_for_ownership
 
     def children
       [child]
     end
-    private :children
 
     def create_children!
       self.child = child_purpose.create!(barcode: barcode)
     end
-    private :create_children!
   end
   include Children
 

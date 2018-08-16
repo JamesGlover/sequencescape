@@ -27,7 +27,8 @@ class PooledPlateCreation < AssetCreation
   private :record_creation_of_children
 
   def connect_parent_and_children
-    parents.each { |parent| AssetLink.create_edge!(parent, child) }
+    links = parents.map { |parent| [parent.id, child.id] }
+    AssetLink::BuilderJob.create(links)
   end
   private :connect_parent_and_children
 
