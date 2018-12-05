@@ -6,7 +6,7 @@
 
 require 'aasm'
 
-class Request < ActiveRecord::Base
+class Request < ApplicationRecord
   # Include
   include ModelExtensions::Request
   include Aliquot::DeprecatedBehaviours::Request
@@ -70,6 +70,8 @@ class Request < ActiveRecord::Base
   # Just makes sure we don't set it to nil. Avoids the need to load request_purpose
   # EVERY time we touch a request.
   validates_presence_of :request_purpose_id
+
+  broadcast_via_warren
 
   # Scopes
   scope :for_pipeline, ->(pipeline) {
@@ -209,7 +211,7 @@ class Request < ActiveRecord::Base
 
   # Note: These scopes use preload due to a limitation in the way rails handles custom selects with eager loading
   # https://github.com/rails/rails/issues/15185
-  scope :loaded_for_inbox_display, -> { preload([{ submission: { orders: :study }, asset: [:scanned_into_lab_event, :studies] }]) }
+  scope :loaded_for_inbox_display, -> { preload([{ submission: { orders: :study }, asset: %i(scanned_into_lab_event studies) }]) }
   scope :loaded_for_grouped_inbox_display, -> { preload([{ submission: :orders }, :target_asset]) }
   scope :loaded_for_pacbio_inbox_display, -> { preload([{ submission: :orders }, :request_type, :target_asset]) }
 
@@ -374,7 +376,7 @@ class Request < ActiveRecord::Base
   end
 
   def self.get_target_plate_ids(request_ids)
-    Plate.joins(:requests_as_target).where(requests: { id: request_ids }).pluck(:id)
+    Plate.joins(:requests_as_target).where(requests: { id: request_ids }).distinct.pluck(:id)
   end
 
   # The options that are required for creation.  In other words, the truly required options that must

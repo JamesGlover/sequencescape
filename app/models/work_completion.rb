@@ -9,12 +9,12 @@
 # well_links to the plate on which the orignal library_creation
 # requests were made. This provides a means of finding the library
 # creation requests.
-class WorkCompletion < ActiveRecord::Base
+class WorkCompletion < ApplicationRecord
   include Uuid::Uuidable
   # The user who performed the state change
   belongs_to :user, required: true
   # The plate on which requests were completed
-  belongs_to :target, class_name: Asset, required: true
+  belongs_to :target, class_name: 'Asset', required: true
   # The submissions which were passed. Mainly kept for auditing
   # purposes
   has_many :work_completions_submissions, dependent: :destroy
@@ -80,6 +80,6 @@ class WorkCompletion < ActiveRecord::Base
   end
 
   def target_wells
-    @target_wells ||= target.wells.include_stock_wells.include_requests_as_target
+    @target_wells ||= target.wells.include_stock_wells.include_requests_as_target.where(requests: { submission_id: submissions })
   end
 end

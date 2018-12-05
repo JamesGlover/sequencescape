@@ -9,21 +9,20 @@ class BatchesController < ApplicationController
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
 
   before_action :evil_parameter_hack!
-  include XmlCacheHelper::ControllerHelper
 
-  before_action :login_required, except: [:released, :qc_criteria]
-  before_action :find_batch_by_id, only: [
-    :show, :edit, :update, :qc_information, :qc_batch, :save, :fail, :fail_items,
-    :fail_batch, :control, :add_control, :print_labels, :print_plate_labels, :print_multiplex_labels,
-    :print, :verify, :verify_tube_layout, :reset_batch, :previous_qc_state, :filtered, :swap,
-    :download_spreadsheet, :gwl_file, :pacbio_sample_sheet, :sample_prep_worksheet
-  ]
-  before_action :find_batch_by_batch_id, only: [:sort, :print_multiplex_barcodes, :print_pulldown_multiplex_tube_labels, :print_plate_barcodes, :print_barcodes]
+  before_action :login_required, except: %i(released qc_criteria)
+  before_action :find_batch_by_id, only: %i(
+    show edit update qc_information qc_batch save fail fail_items
+    fail_batch control add_control print_labels print_plate_labels print_multiplex_labels
+    print verify verify_tube_layout reset_batch previous_qc_state filtered swap
+    download_spreadsheet gwl_file pacbio_sample_sheet sample_prep_worksheet
+  )
+  before_action :find_batch_by_batch_id, only: %i(sort print_multiplex_barcodes print_pulldown_multiplex_tube_labels print_plate_barcodes print_barcodes)
 
   def index
     if logged_in?
       @user = current_user
-      @batches = Batch.where('assignee_id = :user OR user_id = :user', user: @user).order(id: :desc).page(params[:page])
+      @batches = Batch.where(assignee_id: @user).or(Batch.where(user_id: @user)).order(id: :desc).page(params[:page])
     else
       # Can end up here with XML. And it causes pain.
       @batches = Batch.order(id: :asc).page(params[:page]).limit(10)
@@ -36,21 +35,21 @@ class BatchesController < ApplicationController
   end
 
   def show
-    @submenu_presenter = Presenters::BatchSubmenuPresenter.new(current_user, @batch)
-
-    @pipeline = @batch.pipeline
-    @tasks    = @batch.tasks.sort_by(&:sorted)
-    @rits = @pipeline.request_information_types
-    @input_assets, @output_assets = [], []
-
-    if @pipeline.group_by_parent
-      @input_assets = @batch.input_group
-      @output_assets = @batch.output_group_by_holder unless @pipeline.is_a?(PulldownMultiplexLibraryPreparationPipeline)
-    end
-
     respond_to do |format|
-      format.html
-      format.xml { cache_xml_response(@batch) }
+      format.html do
+        @submenu_presenter = Presenters::BatchSubmenuPresenter.new(current_user, @batch)
+
+        @pipeline = @batch.pipeline
+        @tasks    = @batch.tasks.sort_by(&:sorted)
+        @rits = @pipeline.request_information_types
+        @input_assets, @output_assets = [], []
+
+        if @pipeline.group_by_parent
+          @input_assets = @batch.input_group
+          @output_assets = @batch.output_group_by_holder unless @pipeline.is_a?(PulldownMultiplexLibraryPreparationPipeline)
+        end
+      end
+      format.xml { render layout: false }
     end
   end
 
@@ -89,7 +88,7 @@ class BatchesController < ApplicationController
       @pipeline = Pipeline.find(params[:id])
 
       # TODO: These should be different endpoints
-      requests = @pipeline.extract_requests_from_input_params(params)
+      requests = @pipeline.extract_requests_from_input_params(params.to_unsafe_h)
 
       case params[:action_on_requests]
       when 'cancel_requests'
@@ -143,14 +142,14 @@ class BatchesController < ApplicationController
     # The params fallback here reflects an older route where pipeline got passed in as :id. It should be removed
     # in the near future.
     @pipeline = Pipeline.find(params[:pipeline_id] || params[:id])
-    @batches = @pipeline.batches.pending.order(id: :desc).includes([:user, :pipeline]).page(params[:page])
+    @batches = @pipeline.batches.pending.order(id: :desc).includes(%i(user pipeline)).page(params[:page])
   end
 
   def started
     # The params fallback here reflects an older route where pipeline got passed in as :id. It should be removed
     # in the near future.
     @pipeline = Pipeline.find(params[:pipeline_id] || params[:id])
-    @batches = @pipeline.batches.started.order(id: :desc).includes([:user, :pipeline]).page(params[:page])
+    @batches = @pipeline.batches.started.order(id: :desc).includes(%i(user pipeline)).page(params[:page])
   end
 
   def released
@@ -158,7 +157,7 @@ class BatchesController < ApplicationController
     # in the near future.
     @pipeline = Pipeline.find(params[:pipeline_id] || params[:id])
 
-    @batches = @pipeline.batches.released.order(id: :desc).includes([:user, :pipeline]).page(params[:page])
+    @batches = @pipeline.batches.released.order(id: :desc).includes(%i(user pipeline)).page(params[:page])
     respond_to do |format|
       format.html
       format.xml { render layout: false }
@@ -169,14 +168,14 @@ class BatchesController < ApplicationController
     # The params fallback here reflects an older route where pipeline got passed in as :id. It should be removed
     # in the near future.
     @pipeline = Pipeline.find(params[:pipeline_id] || params[:id])
-    @batches = @pipeline.batches.completed.order(id: :desc).includes([:user, :pipeline]).page(params[:page])
+    @batches = @pipeline.batches.completed.order(id: :desc).includes(%i(user pipeline)).page(params[:page])
   end
 
   def failed
     # The params fallback here reflects an older route where pipeline got passed in as :id. It should be removed
     # in the near future.
     @pipeline = Pipeline.find(params[:pipeline_id] || params[:id])
-    @batches = @pipeline.batches.failed.order(id: :desc).includes([:user, :pipeline]).page(params[:page])
+    @batches = @pipeline.batches.failed.order(id: :desc).includes(%i(user pipeline)).page(params[:page])
   end
 
   def fail
@@ -225,7 +224,8 @@ class BatchesController < ApplicationController
 
   def sort
     @batch.assign_positions_to_requests!(params['requests_list'].map(&:to_i))
-    render nothing: true
+    @batch.rebroadcast
+    head :ok
   end
 
   def save
@@ -283,7 +283,7 @@ class BatchesController < ApplicationController
     @output_assets.each do |parent, _children|
       unless parent.nil?
         plate_barcode = parent.barcode
-        unless plate_barcode.blank?
+        if plate_barcode.present?
           @output_barcodes << plate_barcode
         end
       end

@@ -137,7 +137,7 @@ module Tasks::CherrypickHandler
       # If we overflow the plate we create a new one, even if we subsequently clear the fields.
       plates_with_samples = plates.reject { |_pid, rows| rows.values.map(&:values).flatten.all?(&:empty?) }
 
-      if fluidigm_plate.present? && plates_with_samples.count > 1
+      if fluidigm_plate.present? && plates_with_samples.to_h.size > 1
         raise Cherrypick::Error, 'Sorry, You cannot pick to multiple fluidigm plates in one batch.'
       end
 
@@ -158,8 +158,8 @@ module Tasks::CherrypickHandler
           row_params.each do |col, request_id|
             request, well =
               case
-              when request_id.blank?           then next
-              when request_id.match(/control/) then create_control_request_and_add_to_batch(task, request_id)
+              when request_id.blank? then next
+              when request_id.match?(/control/) then create_control_request_and_add_to_batch(task, request_id)
               else request_and_well[request_id.gsub('well_', '').to_i] or raise ActiveRecord::RecordNotFound, "Cannot find request #{request_id.inspect}"
               end
 

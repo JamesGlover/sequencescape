@@ -10,7 +10,8 @@ require 'external_properties'
 require 'eventful_record'
 require 'external_properties'
 
-class Labware < ActiveRecord::Base
+class Labware < ApplicationRecord
+
   include StudyReport::AssetDetails
   include ModelExtensions::Asset
   include AssetLink::Associations
@@ -51,7 +52,6 @@ class Labware < ActiveRecord::Base
 
   has_many :asset_audits
   has_many :volume_updates, foreign_key: :target_id
-  has_many :events_on_requests, through: :requests, source: :events
 
   has_many :receptacles, inverse_of: :labware
   has_many :aliquots, through: :receptacles
@@ -59,6 +59,7 @@ class Labware < ActiveRecord::Base
 
   # TODO: Remove 'requests' and 'source_request' as they are abiguous
   has_many :requests, through: :receptacles
+  has_many :events_on_requests, through: :requests, source: :events
   has_one  :source_request, through: :receptacles
   has_many :requests_as_source, through: :receptacles
   has_many :requests_as_target, through: :receptacles
@@ -76,6 +77,8 @@ class Labware < ActiveRecord::Base
   has_many :messengers, as: :target, inverse_of: :target
   has_one :custom_metadatum_collection, foreign_key: :asset_id
   delegate :metadata, to: :custom_metadatum_collection
+
+  broadcast_via_warren
 
   scope :requests_as_source_is_a?, ->(t) { joins(:requests_as_source).where(requests: { sti_type: [t, *t.descendants].map(&:name) }) }
 
@@ -96,7 +99,7 @@ class Labware < ActiveRecord::Base
 
   scope :recent_first, -> { order(id: :desc) }
 
-  scope :include_for_show, ->() { includes(requests: :request_metadata) }
+  scope :include_for_show, ->() { includes({ requests: [:request_type, :request_metadata] }, requests_as_target: [:request_type, :request_metadata]) }
 
   # Assets usually have studies through aliquots, which is only relevant to
   # Receptacles. This method just ensures all assets respond to studies
@@ -126,7 +129,7 @@ class Labware < ActiveRecord::Base
     arguments = { name: "%#{query}%" }
 
     # The entire string consists of one of more numeric characters, treat it as an id or barcode
-    if /\A\d+\z/ === query
+    if /\A\d+\z/.match?(query)
       search << ' OR (labware.id = :id) OR (labware.barcode = :barcode)'
       arguments[:id] = query.to_i
       arguments[:barcode] = query.to_s
@@ -396,7 +399,7 @@ class Labware < ActiveRecord::Base
     elsif match = /\A([A-z]{2})([0-9]{1,7})\w{0,1}\z/.match(source_barcode) # Human Readable
       prefix = BarcodePrefix.find_by(prefix: match[1])
       find_by(barcode: match[2], barcode_prefix_id: prefix.id)
-    elsif /\A[0-9]{1,7}\z/ =~ source_barcode # Just a number
+    elsif /\A[0-9]{1,7}\z/.match?(source_barcode) # Just a number
       find_by(barcode: source_barcode)
     end
   end
@@ -469,7 +472,9 @@ class Labware < ActiveRecord::Base
     nil
   end
 
-  def contained_samples; []; end
+  def contained_samples
+    Sample.none
+  end
 
   def source_plate
     nil
