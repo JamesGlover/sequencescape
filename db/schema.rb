@@ -1763,9 +1763,9 @@ ActiveRecord::Schema.define(version: 20181119105427) do
     t.integer "target_asset_id"
     t.integer "submission_id"
     t.integer "order_id"
-    t.index ["asset_id"], name: "index_requests_on_asset_id"
-    t.index ["submission_id"], name: "index_requests_on_submission_id"
-    t.index ["target_asset_id"], name: "index_requests_on_target_asset_id"
+    t.index ["asset_id"], name: "index_transfer_requests_on_asset_id"
+    t.index ["submission_id"], name: "index_transfer_requests_on_submission_id"
+    t.index ["target_asset_id"], name: "index_transfer_requests_on_target_asset_id"
   end
 
   create_table "transfer_templates", id: :integer, force: :cascade do |t|
