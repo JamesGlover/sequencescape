@@ -530,7 +530,7 @@ ActiveRecord::Schema.define(version: 20181119105427) do
   create_table "extraction_attributes", id: :integer, force: :cascade do |t|
     t.integer "target_id"
     t.string "created_by"
-    t.text "attributes_update", limit: 4294967295
+    t.text "attributes_update", limit: 10485760
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
