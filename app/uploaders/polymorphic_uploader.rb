@@ -105,7 +105,7 @@ class PolymorphicUploader < CarrierWave::Uploader::Base
     @column.blank?
   end
 
-  storage CarrierWave::Storage::DirectDatabase
+  storage :postgresql_lo
 
   # This is where files are stored on upload. We are using callbacks to empty it after upload
   def self.cache_dir

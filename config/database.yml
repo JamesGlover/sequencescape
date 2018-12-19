@@ -22,8 +22,17 @@ mysql: &MYSQL
     # is too small for larger pools.
     group_concat_max_len: 67108864
 
+postgres: &postgres
+  adapter: postgresql
+  encoding: unicode
+  database: sequencescape_pg_development
+  username: postgres
+  password:
+  pool: 5
+  timeout: 5000
+
 development:
-  <<: *MYSQL
+  <<: *postgres
   database: sequencescape_development<%= suffix %>
 
   # indentation is deliberate!
@@ -61,7 +70,7 @@ development_snp:
 # Do not set this db to the same as development or production.
 
 test: &test
-  <<: *MYSQL
+  <<: *postgres
   database: sequencescape_test<%= ENV['TEST_ENV_NUMBER'] %><%= suffix %>
   pool: 10
   timeout: 5000

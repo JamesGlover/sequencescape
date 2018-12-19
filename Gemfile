@@ -21,11 +21,10 @@ group :default do
   # Provides bulk insert capabilities
   gem 'activerecord-import'
 
-  gem 'mysql2', platforms: :mri
   gem 'spreadsheet'
   gem 'will_paginate'
   # Will paginate clashes awkwardly with bootstrap
-  gem 'carrierwave'
+  gem 'carrierwave-postgresql'
   gem 'net-ldap'
   gem 'will_paginate-bootstrap'
 
@@ -199,3 +198,5 @@ group :deployment do
   gem 'gmetric', '~>0.1.3'
   gem 'whenever', require: false
 end
+
+gem 'pg', '~> 1.1'

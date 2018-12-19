@@ -426,7 +426,7 @@ ActiveRecord::Schema.define(version: 20181119105427) do
   end
 
   create_table "db_files", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
-    t.binary "data", limit: 4294967295
+    t.column     "data",      :oid,          null: false
     t.integer "owner_id"
     t.string "owner_type", limit: 25, default: "Document", null: false
     t.string "owner_type_extended"
@@ -482,19 +482,6 @@ ActiveRecord::Schema.define(version: 20181119105427) do
     t.string "documentable_extended", limit: 50
     t.index ["documentable_id", "documentable_type"], name: "index_documents_on_documentable_id_and_documentable_type"
     t.index ["documentable_type", "documentable_id"], name: "index_documents_on_documentable_type_and_documentable_id"
-  end
-
-  create_table "documents_shadow", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
-    t.integer "documentable_id"
-    t.integer "size"
-    t.string "content_type"
-    t.string "filename"
-    t.integer "height"
-    t.integer "width"
-    t.integer "parent_id"
-    t.string "thumbnail"
-    t.integer "db_file_id"
-    t.string "documentable_type", limit: 50
   end
 
   create_table "equipment", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -731,8 +718,6 @@ ActiveRecord::Schema.define(version: 20181119105427) do
     t.integer "study_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string "state_to_delete", limit: 20
-    t.string "message_to_delete"
     t.integer "user_id"
     t.text "item_options"
     t.text "request_types"
