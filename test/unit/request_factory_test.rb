@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class RequestcreateTest < ActiveSupport::TestCase
@@ -11,14 +5,14 @@ class RequestcreateTest < ActiveSupport::TestCase
     context '.copy_request' do
       setup do
         @project = create(:project)
-        @project.project_metadata.update_attributes!(budget_division: BudgetDivision.create!(name: 'Test'))
+        @project.project_metadata.update!(budget_division: BudgetDivision.create!(name: 'Test'))
         @order = create(:order, project: @project)
         @request = create(:request, request_type: create(:request_type), project: @project, asset: create(:sample_tube), target_asset: create(:well))
       end
 
       context 'without quotas' do
         setup do
-          @project.update_attributes!(enforce_quotas: false)
+          @project.update!(enforce_quotas: false)
           @copy = RequestFactory.copy_request(@request)
         end
 
@@ -37,7 +31,7 @@ class RequestcreateTest < ActiveSupport::TestCase
 
       context 'with quotas' do
         setup do
-          @project.update_attributes!(enforce_quotas: true)
+          @project.update!(enforce_quotas: true)
         end
 
         should 'not fail' do

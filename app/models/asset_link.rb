@@ -1,17 +1,12 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015,2016 Genome Research Ltd.
-
 class AssetLink < ApplicationRecord
   include Api::AssetLinkIO::Extensions
+  include Uuid::Uuidable
 
   acts_as_dag_links node_class_name: 'Asset'
   broadcast_via_warren
 
   self.per_page = 500
-  include Uuid::Uuidable
+  self.lazy_uuid_generation = true
 
   def destroy!
   end

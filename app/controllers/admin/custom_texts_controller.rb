@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015 Genome Research Ltd.
-
 class Admin::CustomTextsController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
@@ -53,7 +47,7 @@ class Admin::CustomTextsController < ApplicationController
 
   def update
     @custom_text = CustomText.find(params[:id])
-    if @custom_text.update_attributes(params[:custom_text])
+    if @custom_text.update(params[:custom_text])
       flash[:notice] = 'Details have been updated'
       redirect_to admin_custom_text_path(@custom_text)
     else

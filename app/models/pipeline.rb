@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 class PipelinesRequestType < ApplicationRecord
   belongs_to :pipeline, inverse_of: :pipelines_request_types
   belongs_to :request_type, inverse_of: :pipelines_request_types
@@ -24,14 +18,13 @@ class Pipeline < ApplicationRecord
   self.inheritance_column = 'sti_type'
 
   # Custom class attributes
-  class_attribute :batch_worksheet, :display_next_pipeline, :requires_position,
+  class_attribute :batch_worksheet, :requires_position,
                   :inbox_partial, :library_creation, :pulldown, :prints_a_worksheet_per_task,
                   :genotyping, :sequencing, :purpose_information, :can_create_stock_assets,
                   :inbox_eager_loading
 
   # Pipeline defaults
   self.batch_worksheet = 'detailed_worksheet'
-  self.display_next_pipeline = false
   self.requires_position = true
   self.inbox_partial = 'default_inbox'
   self.library_creation = false
@@ -43,14 +36,13 @@ class Pipeline < ApplicationRecord
   self.can_create_stock_assets = false
   self.inbox_eager_loading = :loaded_for_inbox_display
 
-  delegate :item_limit, :has_batch_limit?, to: :workflow
+  delegate :item_limit, :batch_limit?, to: :workflow
 
-  belongs_to :location
   belongs_to :control_request_type, class_name: 'RequestType'
   belongs_to :next_pipeline,     class_name: 'Pipeline'
   belongs_to :previous_pipeline, class_name: 'Pipeline'
 
-  has_one :workflow, class_name: 'LabInterface::Workflow', inverse_of: :pipeline, required: true
+  has_one :workflow, class_name: 'Workflow', inverse_of: :pipeline, required: true
 
   has_many :controls
   has_many :pipeline_request_information_types
@@ -112,11 +104,6 @@ class Pipeline < ApplicationRecord
     requests.group_requests(option).all.group_by(&grouping_function(option))
   end
 
-  def finish_batch(batch, user)
-    batch.complete!(user)
-  end
-  deprecate finish_batch: 'use batch#complete! instead'
-
   def post_finish_batch(batch, user)
   end
 
@@ -130,11 +117,6 @@ class Pipeline < ApplicationRecord
       EventSender.send_request_update(request.id, 'complete', "Completed pipeline: #{name}")
     end
   end
-
-  def release_batch(batch, user)
-    batch.release!(user)
-  end
-  deprecate release_batch: 'use batch#release! instead'
 
   def on_start_batch(batch, user)
     # Do nothing

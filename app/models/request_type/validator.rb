@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014,2015 Genome Research Ltd.
-
 ##
 # A request type validator belongs to a request type, and is responsible for
 # validating a single request option
@@ -45,6 +39,7 @@ class RequestType::Validator < ApplicationRecord
 
     def initialize(array, default)
       raise StandardError, 'Default is not in array' unless array.include?(default)
+
       @default = default
       @array = array
     end
@@ -95,8 +90,8 @@ class RequestType::Validator < ApplicationRecord
 
   def type_cast
     {
-      'read_length'   => :to_i,
-      'insert_size'   => :to_i
+      'read_length' => :to_i,
+      'insert_size' => :to_i
     }[request_option]
   end
 end

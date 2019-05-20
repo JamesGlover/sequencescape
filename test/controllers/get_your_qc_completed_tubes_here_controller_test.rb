@@ -21,7 +21,7 @@ class GetYourQcCompletedTubesHereControllerTest < ActionController::TestCase
         @generator = LibPoolNormTubeGenerator.new(plate.ean13_barcode, user, study)
         generator.stubs(:valid?).returns(true)
         generator.stubs(:create!).returns(true)
-        generator.stubs(:asset_group).returns(AssetGroup.create(assets: create_list(:lib_pcr_xp_tube, 3), study: create(:study), name: 'Asset Group 1'))
+        generator.stubs(:asset_group).returns(AssetGroup.create(assets: create_list(:lib_pool_tube, 3), study: create(:study), name: 'Asset Group 1'))
       end
 
       should 'create some assets, redirect to the asset group' do
@@ -29,7 +29,7 @@ class GetYourQcCompletedTubesHereControllerTest < ActionController::TestCase
         post :create, params: { barcode: plate.ean13_barcode, study: study.id }
         assert_equal 3, assigns(:generator).asset_group.assets.length
         assert_redirected_to study_asset_groups_path(assigns(:generator).study.id)
-        assert_match "QC Completed tubes successfully created for #{plate.sanger_human_barcode}. Go celebrate!", flash[:notice]
+        assert_match "QC Completed tubes successfully created for #{plate.human_barcode}. Go celebrate!", flash[:notice]
       end
 
       should 'return an error message if it fails for some reason' do

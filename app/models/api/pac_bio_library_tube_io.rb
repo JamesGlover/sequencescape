@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2013,2015 Genome Research Ltd.
-
 class Api::PacBioLibraryTubeIO < Api::Base
   module Extensions
     module ClassMethods
@@ -16,7 +10,7 @@ class Api::PacBioLibraryTubeIO < Api::Base
       base.class_eval do
         extend ClassMethods
 
-        scope :including_associations_for_json, -> { includes([:uuid_object, :barcode_prefix, :scanned_into_lab_event]) }
+        scope :including_associations_for_json, -> { includes([:uuid_object, :barcodes, :scanned_into_lab_event]) }
       end
     end
   end
@@ -26,7 +20,7 @@ class Api::PacBioLibraryTubeIO < Api::Base
   map_attribute_to_json_attribute(:uuid)
   map_attribute_to_json_attribute(:id, 'internal_id')
   map_attribute_to_json_attribute(:name)
-  map_attribute_to_json_attribute(:barcode)
+  map_attribute_to_json_attribute(:barcode_number, 'barcode')
   map_attribute_to_json_attribute(:concentration)
   map_attribute_to_json_attribute(:volume)
   map_attribute_to_json_attribute(:qc_state)
@@ -44,9 +38,7 @@ class Api::PacBioLibraryTubeIO < Api::Base
     map_attribute_to_json_attribute(:protocol)
   end
 
-  with_association(:barcode_prefix) do
-    map_attribute_to_json_attribute(:prefix, 'barcode_prefix')
-  end
+  map_attribute_to_json_attribute(:prefix, 'barcode_prefix')
 
   with_association(:scanned_into_lab_event) do
     map_attribute_to_json_attribute(:content, 'scanned_in_date')

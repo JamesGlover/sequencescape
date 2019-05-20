@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 module Accessionable
   class Study < Base
     attr_reader :study_title, :description, :center_study_name, :study_abstract, :existing_study_type, :tags, :related_studies
@@ -21,7 +15,7 @@ module Accessionable
       @center_study_name = @study_title
 
       pid = study.study_metadata.study_project_id
-      @study_id = pid.blank? ? '0' : pid
+      @study_id = pid.presence || '0'
 
       study_abstract = study.study_metadata.study_abstract
       @study_abstract = study_abstract unless study_abstract.blank?
@@ -53,34 +47,34 @@ module Accessionable
       xml.instruct!
       xml.STUDY_SET('xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance') {
         xml.STUDY(alias: self.alias, accession: accession_number) {
-        xml.DESCRIPTOR {
-        xml.STUDY_TITLE         study_title
-        xml.STUDY_DESCRIPTION   description
-        xml.CENTER_PROJECT_NAME center_study_name
-        xml.CENTER_NAME         center_name
-        xml.STUDY_ABSTRACT      study_abstract
+          xml.DESCRIPTOR {
+            xml.STUDY_TITLE         study_title
+            xml.STUDY_DESCRIPTION   description
+            xml.CENTER_PROJECT_NAME center_study_name
+            xml.CENTER_NAME         center_name
+            xml.STUDY_ABSTRACT      study_abstract
 
-        xml.PROJECT_ID(accessionable_id || '0')
-        study_type = existing_study_type
-        if StudyType.include?(study_type)
-          xml.STUDY_TYPE(existing_study_type: study_type)
-        else
-          xml.STUDY_TYPE(existing_study_type: ::Study::Other_type, new_study_type: study_type)
-        end
+            xml.PROJECT_ID(accessionable_id || '0')
+            study_type = existing_study_type
+            if StudyType.include?(study_type)
+              xml.STUDY_TYPE(existing_study_type: study_type)
+            else
+              xml.STUDY_TYPE(existing_study_type: ::Study::Other_type, new_study_type: study_type)
+            end
 
-        xml.RELATED_STUDIES {
-          related_studies.each do |study|
-            study.build(xml)
-          end
-        } unless related_studies.blank?
-        }
-      xml.STUDY_ATTRIBUTES {
-        tags.each do |tag|
-        xml.STUDY_ATTRIBUTE {
-          tag.build(xml)
-        }
-        end
-      } unless tags.blank?
+            xml.RELATED_STUDIES {
+              related_studies.each do |study|
+                study.build(xml)
+              end
+            } unless related_studies.blank?
+          }
+          xml.STUDY_ATTRIBUTES {
+            tags.each do |tag|
+              xml.STUDY_ATTRIBUTE {
+                tag.build(xml)
+              }
+            end
+          } unless tags.blank?
         }
       }
       xml.target!
@@ -129,6 +123,7 @@ module Accessionable
 
     def build(xml)
       return if db_label.blank?
+
       xml.RELATED_STUDY {
         xml.RELATED_LINK {
           xml.DB db_label

@@ -1,13 +1,8 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2013,2014,2015 Genome Research Ltd.
-
 class SequencingPipeline < Pipeline
   self.batch_worksheet = 'simplified_worksheet'
   self.sequencing = true
   self.purpose_information = false
+  self.inbox_eager_loading = :loaded_for_sequencing_inbox_display
 
   def request_actions
     [:remove]
@@ -46,7 +41,7 @@ class SequencingPipeline < Pipeline
     ActiveRecord::Base.transaction do
       request.dup.tap do |request_clone|
         rma = request.request_metadata.attributes.merge(request: request_clone)
-        request_clone.update_attributes!(state: 'pending', target_asset_id: nil, request_metadata_attributes: rma)
+        request_clone.update!(state: 'pending', target_asset_id: nil, request_metadata_attributes: rma)
         request_clone.comments.create!(description: "Automatically created clone of request #{request.id} which was removed from Batch #{batch.id} at #{DateTime.now}")
         request.comments.create!(description: "The request #{request_clone.id} is an automatically created clone of this one")
       end

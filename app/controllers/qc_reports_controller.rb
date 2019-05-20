@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 class QcReportsController < ApplicationController
   before_action :login_required
   before_action :check_required, only: :create
@@ -78,10 +72,12 @@ class QcReportsController < ApplicationController
   def check_required
     return fail('No report options were provided') unless params[:qc_report].present?
     return fail('You must select a product') if params[:qc_report][:product_id].nil?
+
     @product = Product.find_by(id: params[:qc_report][:product_id])
     return fail('Could not find product') if @product.nil?
     return fail("#{product.name} is inactive") if @product.deprecated?
     return fail("#{product.name} does not have any stock criteria set") if @product.stock_criteria.nil?
+
     true
   end
 

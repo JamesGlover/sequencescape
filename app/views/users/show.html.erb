@@ -1,10 +1,5 @@
-<%# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2013,2015 Genome Research Ltd.%>
 
-<% add :title, "Your user profile." -%>
+<% add :about, "Your user profile." -%>
 <% add :menu, "Edit profile" => edit_profile_path(@user) -%>
 <% add :menu, "View Projects" => projects_profile_path(@user) -%>
 <% add :menu, "Qc Reports" => study_reports_profile_path(@user) -%>
@@ -21,18 +16,16 @@
     Your profile not complete!
   <% end %>
 <% end %>
-
+<div class="card-columns">
 <%= summary do
  [
   ['First name', @user.first_name.blank? ? "Unknown" : @user.first_name ],
   ['Last name',  @user.last_name.blank? ? "Unknown" : @user.last_name ],
-  ['Preferred email', @user.email.blank? ? "Unknown" : @user.email ],
-  ['Workflow', @user.workflow_name ]
+  ['Preferred email', @user.email.blank? ? "Unknown" : @user.email ]
  ]
 end %>
 
 <% logged_in_user? do -%>
-<div class="col-md-6">
   <%= panel(:info, title:'API access') do %>
     <dl>
       <dt>API Key</dt>
@@ -40,5 +33,34 @@ end %>
     </dl>
     <p>You can use your API key to access your studies, samples and requests programmatically.</p>
   <% end %>
-</div>
 <% end %>
+</div>
+<div class="card-default">
+<%= panel(:default, title: 'Print Swipecard Barcode') do %>
+  <form onkeypress="return event.keyCode != 13;">
+    <table>
+      <tr>
+        <th><label for="swipecard">Swipecard</label></th>
+        <th><label for="barcode-printer-list">Printer</label></th>
+        <th></th>
+      </tr>
+      <tr>
+        <td><input type="password" id="swipecard" /></td>
+        <td>
+          <select name="printer" id="barcode-printer-list", class="form-control select2">
+            <% @printer_list.each do |printer| %>
+              <option value="<%= printer.name %>"><%= printer.name %></option>
+            <% end %>
+          </select>
+        </td>
+        <td>
+          <input type="button" value="Print Barcode" id="print-btn" class="btn btn-success" <% if @label_template_id.nil? %>disabled<% end %> />
+        </td>
+      </tr>
+    </table>
+    <div id="pmb-data" data-pmb-api="<%= configatron.pmb_api %>" data-pmb-template="<%= @label_template_id || 0 %>"></div>
+    <div id="usr-data" data-usr-login="<%= @user.login.truncate(10, omission: '..') %>"></div>
+  <%= javascript_include_tag 'print_swipecard.js' %>
+  </form>
+<% end %>
+</div>

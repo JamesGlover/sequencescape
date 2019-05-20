@@ -1,5 +1,6 @@
 # Base class for the all tube purposes
 class Tube::Purpose < ::Purpose
+  self.default_prefix = 'NT'
   # TODO: change to purpose_id
   has_many :tubes, foreign_key: :plate_purpose_id
 
@@ -16,12 +17,11 @@ class Tube::Purpose < ::Purpose
     []
   end
 
-  def created_with_request_options(tube)
-    tube.creation_request.try(:request_options_for_creation) || {}
-  end
-
   def create!(*args, &block)
-    target_class.create_with_barcode!(*args, &block).tap { |t| tubes << t }
+    options = args.extract_options!
+    options[:purpose] = self
+    options[:barcode_prefix] ||= barcode_prefix
+    target_class.create_with_barcode!(*args, options, &block).tap { |t| tubes << t }
   end
 
   def sibling_tubes(_tube)
@@ -30,13 +30,43 @@ class Tube::Purpose < ::Purpose
 
   # Define some simple helper methods
   class << self
-    ['Stock', 'Standard'].each do |purpose_type|
-      ['sample', 'library', 'MX'].each do |tube_type|
-        name = "#{purpose_type} #{tube_type}"
-        define_method("#{name.downcase.tr(' ', '_')}_tube") do
-          find_by(name: name) or raise "Cannot find #{name} tube"
-        end
-      end
+    # ['Stock', 'Standard'].each do |purpose_type|
+    #   ['sample', 'library', 'MX'].each do |tube_type|
+    #     name = "#{purpose_type} #{tube_type}"
+    #     puts name
+    #     define_method("#{name.downcase.tr(' ', '_')}_tube") do
+    #       find_by(name: name) or raise "Cannot find #{name} tube"
+    #     end
+    #   end
+    # end
+    def stock_library_tube
+      Tube::Purpose.create_with(
+        target_type: 'StockLibraryTube'
+      ).find_or_create_by!(name: 'Stock library')
+    end
+
+    def stock_mx_tube
+      Tube::StockMx.create_with(
+        target_type: 'StockMultiplexedLibraryTube'
+      ).find_or_create_by!(name: 'Stock MX')
+    end
+
+    def standard_sample_tube
+      Tube::Purpose.create_with(
+        target_type: 'SampleTube'
+      ).find_or_create_by!(name: 'Standard sample')
+    end
+
+    def standard_library_tube
+      Tube::Purpose.create_with(
+        target_type: 'LibraryTube'
+      ).find_or_create_by!(name: 'Standard library')
+    end
+
+    def standard_mx_tube
+      Tube::StandardMx.create_with(
+        target_type: 'MultiplexedLibraryTube'
+      ).find_or_create_by!(name: 'Standard MX')
     end
   end
 

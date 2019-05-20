@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2015 Genome Research Ltd.
-
 class Search::FindPlatesForUser < Search
   def scope(user_criteria)
     # We find all plates that do not have transfers where they are the source.  Once a plate has been transferred (or marked
@@ -15,7 +9,7 @@ class Search::FindPlatesForUser < Search
 
     Plate.with_plate_purpose(criteria['plate_purpose_ids'])
          .for_user(Uuid.lookup_single_uuid(criteria['user_uuid']).resource)
-         .including_used_plates?(criteria['include_used'])
+         .include_plates_with_children(criteria['include_used'])
          .page(criteria['page']).limit(criteria['limit']).order('plate_owners.id DESC')
   end
 end

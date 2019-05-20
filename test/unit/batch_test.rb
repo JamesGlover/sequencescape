@@ -1,17 +1,9 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class BatchTest < ActiveSupport::TestCase
   context 'A batch' do
     context 'on its own' do
-      setup do
-        @batch = build :batch
-      end
+      setup { @batch = build :batch }
 
       should 'have begin in pending then change to started' do
         assert_equal @batch.state, 'pending'
@@ -63,7 +55,7 @@ class BatchTest < ActiveSupport::TestCase
 
     context '#shift_item_positions' do
       setup do
-        @requests.each { |r| r.update_attributes!(asset: nil) }
+        @requests.each { |r| r.update!(asset: nil) }
       end
 
       should 'move the requests that are at, and after, the position by the number and have no asset' do
@@ -114,22 +106,6 @@ class BatchTest < ActiveSupport::TestCase
         end
       end
     end
-
-    context 'create requests' do
-      setup do
-        @asset_count = Receptacle.count
-        @requests    = Array.new(4) { create(:request, request_type: @pipeline.request_types.last) }
-        @batch       = @pipeline.batches.create!(requests: @requests)
-      end
-
-      should 'change Receptacle.count by 8' do
-        assert_equal 8,  Receptacle.count - @asset_count, 'Expected Receptacle.count to change by 8'
-      end
-
-      should 'not have same asset name' do
-        assert_not_equal Asset.first.name, Asset.last.name
-      end
-    end
   end
 
   context 'batch #has_event(event_name)' do
@@ -142,7 +118,7 @@ class BatchTest < ActiveSupport::TestCase
     context 'when a batch is not associated with any events, it' do
       should 'return false.' do
         assert_equal false, @batch.has_event('Tube layout verified'),
-          '#has_event should return false if an event is not found'
+                     '#has_event should return false if an event is not found'
       end
     end
     context 'when a batch has a LabEvent' do
@@ -234,7 +210,7 @@ class BatchTest < ActiveSupport::TestCase
         assert @batch.plate_ids_in_study(@study1).include?(@plate2.id)
       end
       should 'not return a plate id where they are not in the given study' do
-        assert !@batch.plate_ids_in_study(@study2).include?(@plate1.id)
+        assert_not @batch.plate_ids_in_study(@study2).include?(@plate1.id)
       end
     end
   end
@@ -358,7 +334,7 @@ class BatchTest < ActiveSupport::TestCase
         end
 
         should 'not fail the batch' do
-          refute @batch.failed?
+          assert_not @batch.failed?
         end
 
         should 'create failures on failed requests' do
@@ -414,14 +390,14 @@ class BatchTest < ActiveSupport::TestCase
 
       should 'return true if the tubes are scanned in in the correct order' do
         number_of_batch_events = @batch.lab_events.size
-        assert @batch.verify_tube_layout([654321, 123456])
+        assert @batch.verify_tube_layout([@asset2.machine_barcode, @asset1.machine_barcode])
         assert_equal number_of_batch_events + 1, @batch.lab_events.size
       end
 
       should 'return false and add errors to the batch if the tubes are not in the correct order' do
         number_of_batch_events = @batch.lab_events.size
-        refute @batch.verify_tube_layout([123456, 654321])
-        refute @batch.errors.empty?
+        assert_not @batch.verify_tube_layout([@asset1.machine_barcode, @asset2.machine_barcode])
+        assert_not @batch.errors.empty?
         assert_equal number_of_batch_events, @batch.lab_events.size
       end
 
@@ -468,7 +444,7 @@ class BatchTest < ActiveSupport::TestCase
 
       context 'underrun' do
         setup do
-          @pipeline.workflow.update_attributes!(item_limit: 4)
+          @pipeline.workflow.update!(item_limit: 4)
         end
 
         should 'return POSITIVE difference between batch.request_limit and batch.request_count' do
@@ -484,7 +460,7 @@ class BatchTest < ActiveSupport::TestCase
       end
 
       should 'return 0 if batch has no request_limit set' do
-        @pipeline.workflow.update_attributes!(item_limit: nil)
+        @pipeline.workflow.update!(item_limit: nil)
         assert_equal 0, @batch.underrun
       end
     end
@@ -510,16 +486,16 @@ class BatchTest < ActiveSupport::TestCase
           @batch = create :batch, pipeline: @pipeline, state: 'started'
         end
 
-       should 'raise an exception' do
+        should 'raise an exception' do
           assert_raise AASM::InvalidTransition do
             @batch.reset!(@user)
           end
-       end
+        end
       end
 
       {
-         sequencing_pipeline: :sequencing_request_with_assets,
-         pipeline: :request
+        sequencing_pipeline: :sequencing_request_with_assets,
+        pipeline: :request
       }.each do |pipeline_type, request_factory|
         context "of a #{pipeline_type}" do
           setup do
@@ -559,10 +535,10 @@ class BatchTest < ActiveSupport::TestCase
       setup do
         @user = create :user
         @batch = create :batch, pipeline: @pipeline
-        @batch.update_attributes!(qc_state: 'qc_completed')
+        @batch.update!(qc_state: 'qc_completed')
       end
       should 'move batch to previous qc state' do
-        assert_equal'qc_completed', @batch.qc_state
+        assert_equal 'qc_completed', @batch.qc_state
         @batch.qc_previous_state!(@user)
         assert_equal 'qc_manual_in_progress', @batch.qc_state
         @batch.qc_previous_state!(@user)
@@ -596,7 +572,7 @@ class BatchTest < ActiveSupport::TestCase
                 @user,
                 'batch_1' => { 'id' => @left_batch.id.to_s, 'lane' => left_position.to_s },
                 'batch_2' => { 'id' => @right_batch.id.to_s, 'lane' => right_position.to_s }
-             )
+              )
             )
 
             # The two requests should have been swapped
@@ -715,7 +691,7 @@ class BatchTest < ActiveSupport::TestCase
       # to try and model what appears to be the intended behaviour.
       @pipeline = create :sequencing_pipeline
       @batch = create :batch, pipeline: @pipeline
-      @batch.update_attributes!(qc_state: 'qc_manual_in_progress')
+      @batch.update!(qc_state: 'qc_manual_in_progress')
       @requests = create_list :sequencing_request_with_assets, 2, state: 'started', request_type: @pipeline.request_types.first
       @batch.requests = @requests
     end
@@ -748,7 +724,7 @@ class BatchTest < ActiveSupport::TestCase
     context 'when some assets are a resource' do
       setup do
         @batch.requests.first.events.create!(family: 'pass')
-        @batch.requests.last.asset.update_attributes!(resource: true)
+        @batch.requests.last.asset.update!(resource: true)
         @batch.npg_set_state
       end
       should 'should complete the batch' do
@@ -762,6 +738,8 @@ class BatchTest < ActiveSupport::TestCase
       @library_tube = create :library_tube, sample_count: 1
       @library_creation_request = create(:library_creation_request_for_testing_sequencing_requests, target_asset: @library_tube)
       @pipeline = create :sequencing_pipeline
+
+      @library_tube.create_scanned_into_lab_event!(content: '2018-01-01')
 
       @batch = build :batch, pipeline: @pipeline
       @request_type = @batch.pipeline.request_types.first

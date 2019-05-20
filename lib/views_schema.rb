@@ -1,7 +1,3 @@
-# This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014 Genome Research Ltd.
 module ViewsSchema
   def self.each_view
     all_views.each do |name|
@@ -16,7 +12,7 @@ module ViewsSchema
       yield(name, definition)
     end
   rescue ActiveRecord::StatementInvalid => exception
-      puts "\e[1;31m
+    puts "\e[1;31m
 ==============================================================
 *                          WARNING!                          *
 *        The attempt to dump the view schema failed.         *
@@ -33,7 +29,7 @@ module ViewsSchema
 *                        disruption.                         *
 ==============================================================
 \e[0m"
-      raise exception
+    raise exception
   end
 
   def self.all_views
@@ -51,8 +47,13 @@ module ViewsSchema
   end
 
   def self.update_view(name, definition)
-    raise 'Invalid name' unless /^[a-z0-9_]*$/.match?(name)
-    ActiveRecord::Base.connection.execute("DROP VIEW IF EXISTS `#{name}`;")
+    drop_view(name)
     create_view(name, definition)
+  end
+
+  def self.drop_view(name)
+    raise "Invalid name: `#{name}`" unless /^[a-z0-9_]*$/.match?(name)
+
+    ActiveRecord::Base.connection.execute("DROP VIEW IF EXISTS `#{name}`;")
   end
 end

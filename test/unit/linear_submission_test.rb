@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 require 'test_helper'
 
 class LinearSubmissionTest < ActiveSupport::TestCase
@@ -17,8 +11,6 @@ class LinearSubmissionTest < ActiveSupport::TestCase
 
   context 'A LinearSubmission' do
     setup do
-      @workflow = create :submission_workflow
-
       @study = build :study
       @project = build :project
       @user = build :user
@@ -41,7 +33,6 @@ class LinearSubmissionTest < ActiveSupport::TestCase
             @basic_options = {
               study: @study,
               project: @project,
-              workflow: @workflow,
               user: @user,
               request_types: @mpx_request_type_ids,
               request_options: @request_options,
@@ -55,8 +46,8 @@ class LinearSubmissionTest < ActiveSupport::TestCase
             @request_well.reload
             @expected_metric = create :qc_metric, asset: @stock_well, qc_report: @current_report, qc_decision: 'manually_failed', proceed: true
 
-            @mpx_submission = LinearSubmission.build!(@basic_options.merge(assets: [@request_well]))
-            @mpx_submission.save!
+            @mpx_submission = create(:linear_submission, @basic_options.merge(assets: [@request_well])).submission
+            @mpx_submission.built!
           end
 
           should 'set an appropriate criteria and set responsibility' do
@@ -79,15 +70,14 @@ class LinearSubmissionTest < ActiveSupport::TestCase
             @basic_options = {
               study: @study,
               project: @project,
-              workflow: @workflow,
               user: @user,
               assets: @mpx_assets,
               request_types: @mpx_request_type_ids,
               request_options: @request_options
             }
 
-            @mpx_submission = LinearSubmission.build!(@basic_options)
-            @mpx_submission.save!
+            @mpx_submission = create(:linear_submission, @basic_options).submission
+            @mpx_submission.built!
           end
 
           should 'be a multiplexed submission' do
@@ -122,15 +112,14 @@ class LinearSubmissionTest < ActiveSupport::TestCase
                 @sequencing_request_type_2 = create :sequencing_request_type
                 @mpx_request_type_ids = [@mpx_request_type.id, @sequencing_request_type_2.id, @sequencing_request_type.id]
 
-                @multiple_mpx_submission = LinearSubmission.build!(
-                  study: @study,
-                  project: @project,
-                  workflow: @workflow,
-                  user: @user,
-                  assets: @mpx_assets,
-                  request_types: @mpx_request_type_ids,
-                  request_options: @request_options
-                )
+                @multiple_mpx_submission = create(:linear_submission,
+                                                  study: @study,
+                                                  project: @project,
+                                                  user: @user,
+                                                  assets: @mpx_assets,
+                                                  request_types: @mpx_request_type_ids,
+                                                  request_options: @request_options).submission
+                @multiple_mpx_submission.built!
 
                 @comment_count = Comment.count
                 @request_count = Request.count
@@ -161,24 +150,22 @@ class LinearSubmissionTest < ActiveSupport::TestCase
           @library_creation_request_type = create :library_creation_request_type
           @request_type_ids = [@request_type_1.id, @library_creation_request_type.id, @sequencing_request_type.id]
 
-          @submission = LinearSubmission.build!(
-            study: @study,
-            project: @project,
-            workflow: @workflow,
-            user: @user,
-            assets: @assets,
-            request_types: @request_type_ids,
-            request_options: @request_options,
-            comments: 'This is a comment'
-          )
-          @submission.save!
+          @submission = create(:linear_submission,
+                               study: @study,
+                               project: @project,
+                               user: @user,
+                               assets: @assets,
+                               request_types: @request_type_ids,
+                               request_options: @request_options,
+                               comments: 'This is a comment').submission
+          @submission.built!
         end
 
         should 'not be a multiplexed submission' do
-          assert !@submission.multiplexed?
+          assert_not @submission.multiplexed?
         end
 
-        should 'save request_types as array of Fixnums' do
+        should 'save request_types as array of Integers' do
           assert_kind_of Array, @submission.orders.first.request_types
           assert @submission.orders.first.request_types.all? { |sample| sample.kind_of?(Integer) }
         end
@@ -193,9 +180,9 @@ class LinearSubmissionTest < ActiveSupport::TestCase
             @submission.process!
           end
 
-         should "change Request.count by #{SX_ASSET_COUNT * 3}" do
-           assert_equal SX_ASSET_COUNT * 3, Request.count - @request_count, "Expected Request.count to change by #{SX_ASSET_COUNT * 3}"
-         end
+          should "change Request.count by #{SX_ASSET_COUNT * 3}" do
+            assert_equal SX_ASSET_COUNT * 3, Request.count - @request_count, "Expected Request.count to change by #{SX_ASSET_COUNT * 3}"
+          end
 
           context '#create_requests_for_items' do
             setup do
@@ -204,13 +191,13 @@ class LinearSubmissionTest < ActiveSupport::TestCase
               @submission.create_requests
             end
 
-           should "change Request.count by #{SX_ASSET_COUNT * 3}" do
-             assert_equal SX_ASSET_COUNT * 3,  Request.count  - @request_count, "Expected Request.count to change by #{SX_ASSET_COUNT * 3}"
-           end
+            should "change Request.count by #{SX_ASSET_COUNT * 3}" do
+              assert_equal SX_ASSET_COUNT * 3,  Request.count  - @request_count, "Expected Request.count to change by #{SX_ASSET_COUNT * 3}"
+            end
 
-           should "change Comment.count by #{SX_ASSET_COUNT * 3}" do
-             assert_equal SX_ASSET_COUNT * 3,  Comment.count  - @comment_count, "Expected Comment.count to change by #{SX_ASSET_COUNT * 3}"
-           end
+            should "change Comment.count by #{SX_ASSET_COUNT * 3}" do
+              assert_equal SX_ASSET_COUNT * 3,  Comment.count  - @comment_count, "Expected Comment.count to change by #{SX_ASSET_COUNT * 3}"
+            end
 
             should 'assign submission ids to the requests' do
               assert_equal @submission, @submission.items.first.requests.first.submission
@@ -222,7 +209,10 @@ class LinearSubmissionTest < ActiveSupport::TestCase
               end
 
               subject { @request_to_check.request_metadata }
-              should_default_everything(Request::Metadata)
+
+              should 'not set customer_accepts_responsibility' do
+                assert_nil subject.customer_accepts_responsibility
+              end
             end
 
             context 'library creation request type' do
@@ -231,11 +221,12 @@ class LinearSubmissionTest < ActiveSupport::TestCase
               end
 
               subject { @request_to_check.request_metadata }
-              should_default_everything_but(Request::Metadata, :fragment_size_required_to, :fragment_size_required_from)
 
               should 'assign fragment_size_required_to and assign fragment_size_required_from' do
                 assert_equal '200', subject.fragment_size_required_to
                 assert_equal '150', subject.fragment_size_required_from
+                assert_equal @library_creation_request_type.default_library_type.name, subject.library_type
+                assert_nil subject.customer_accepts_responsibility
               end
             end
 
@@ -245,10 +236,13 @@ class LinearSubmissionTest < ActiveSupport::TestCase
               end
 
               subject { @request_to_check.request_metadata }
-              should_default_everything_but(Request::Metadata, :read_length)
 
               should 'assign read_length' do
+                assert_equal '200', subject.fragment_size_required_to
+                assert_equal '150', subject.fragment_size_required_from
                 assert_equal 108, subject.read_length
+                assert_nil subject.customer_accepts_responsibility
+                assert_nil subject.gigabases_expected
               end
             end
           end
@@ -260,7 +254,6 @@ class LinearSubmissionTest < ActiveSupport::TestCase
       setup do
         @study = create :study
         @project = create :project
-        @workflow = create :submission_workflow
 
         @user = create :user
 
@@ -275,26 +268,24 @@ class LinearSubmissionTest < ActiveSupport::TestCase
         @pe_request_type = create :request_type, asset_type: 'LibraryTube', initial_state: 'pending', name: 'PE sequencing', order: 2, key: 'pe_sequencing'
         @se_request_type = create :request_type, asset_type: 'LibraryTube', initial_state: 'pending', name: 'SE sequencing', order: 2, key: 'se_sequencing'
 
-        @submission_with_multiplication_factor = LinearSubmission.build!(
-          study: @study,
-          project: @project,
-          workflow: @workflow,
-          user: @user,
-          assets: [@asset_1, @asset_2],
-          request_types: [@lib_request_type.id, @pe_request_type.id],
-          request_options: { :multiplier => { @pe_request_type.id.to_s.to_sym => '5', @lib_request_type.id.to_s.to_sym => '1' }, 'read_length' => '108', 'fragment_size_required_from' => '150', 'fragment_size_required_to' => '200' },
-          comments: ''
-        )
-        @mx_submission_with_multiplication_factor = LinearSubmission.build!(
-          study: @study,
-          project: @project,
-          workflow: @workflow,
-          user: @user,
-          assets: [@asset_1, @asset_2],
-          request_types: [@mx_request_type.id, @pe_request_type.id],
-          request_options: { :multiplier => { @pe_request_type.id.to_s.to_sym => '5', @mx_request_type.id.to_s.to_sym => '1' }, 'read_length' => '108', 'fragment_size_required_from' => '150', 'fragment_size_required_to' => '200' },
-          comments: ''
-        )
+        @submission_with_multiplication_factor = create(:linear_submission,
+                                                        study: @study,
+                                                        project: @project,
+                                                        user: @user,
+                                                        assets: [@asset_1, @asset_2],
+                                                        request_types: [@lib_request_type.id, @pe_request_type.id],
+                                                        request_options: { :multiplier => { @pe_request_type.id.to_s.to_sym => '5', @lib_request_type.id.to_s.to_sym => '1' }, 'read_length' => '108', 'fragment_size_required_from' => '150', 'fragment_size_required_to' => '200' },
+                                                        comments: '').submission
+        @submission_with_multiplication_factor.built!
+        @mx_submission_with_multiplication_factor = create(:linear_submission,
+                                                           study: @study,
+                                                           project: @project,
+                                                           user: @user,
+                                                           assets: [@asset_1, @asset_2],
+                                                           request_types: [@mx_request_type.id, @pe_request_type.id],
+                                                           request_options: { :multiplier => { @pe_request_type.id.to_s.to_sym => '5', @mx_request_type.id.to_s.to_sym => '1' }, 'read_length' => '108', 'fragment_size_required_from' => '150', 'fragment_size_required_to' => '200' },
+                                                           comments: '').submission
+        @mx_submission_with_multiplication_factor.built!
       end
 
       context 'when a multiplication factor of 5 is provided' do
@@ -304,9 +295,9 @@ class LinearSubmissionTest < ActiveSupport::TestCase
             @submission_with_multiplication_factor.process!
           end
 
-           should 'change Request.count by 12' do
-             assert_equal 12, Request.count - @request_count, 'Expected Request.count to change by 12'
-           end
+          should 'change Request.count by 12' do
+            assert_equal 12, Request.count - @request_count, 'Expected Request.count to change by 12'
+          end
 
           should 'create 2 library requests' do
             lib_requests = Request.where(submission_id: @submission_with_multiplication_factor, request_type_id: @lib_request_type.id)

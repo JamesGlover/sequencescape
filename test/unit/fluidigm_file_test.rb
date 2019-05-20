@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2015,2016 Genome Research Ltd.
-
 require 'test_helper'
 require 'csv'
 
@@ -11,7 +5,7 @@ class FluidigmFileTest < ActiveSupport::TestCase
   XY = 'M'
   XX = 'F'
   YY = 'F'
-  NC = 'Unknown'
+  NC = 'U'
 
   context 'A fluidigm file' do
     setup do
@@ -36,8 +30,8 @@ class FluidigmFileTest < ActiveSupport::TestCase
     end
 
     should 'validate plate' do
-      assert  @fluidigm.for_plate?('1381832088')
-      assert !@fluidigm.for_plate?('1381832089')
+      assert @fluidigm.for_plate?('1381832088')
+      assert_not @fluidigm.for_plate?('1381832089')
     end
 
     should 'find 95 wells' do
@@ -53,6 +47,7 @@ class FluidigmFileTest < ActiveSupport::TestCase
       @fluidigm.each_well do |well|
         assert well.description != 'S96'
         next if @well_maps[well.description].nil?
+
         assert_equal @well_maps[well.description][:markers].sort, well.gender_markers.sort
         assert_equal @well_maps[well.description][:count], well.count
         checked += 1

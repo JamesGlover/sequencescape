@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015,2016 Genome Research Ltd.
-
 class SequenomQcPlate < Plate
   DEFAULT_SIZE = 384
   self.per_page = 50
@@ -18,11 +12,12 @@ class SequenomQcPlate < Plate
 
   def source_plates
     return [] if parents.empty?
+
     source_barcodes.map do |plate_barcode|
       if plate_barcode.blank?
         nil
       else
-        parents.detect { |plate| plate.barcode == plate_barcode }
+        parents.detect { |plate| plate.barcode_number == plate_barcode }
       end
     end
   end
@@ -34,6 +29,7 @@ class SequenomQcPlate < Plate
   def populate_wells_from_source_plates
     source_plates.each_with_index do |plate, index|
       next if plate.nil?
+
       copy_source_wells!(plate, index)
     end
   end
@@ -43,14 +39,21 @@ class SequenomQcPlate < Plate
   end
 
   def add_event_to_stock_plates(user_barcode)
-    return false unless user_barcode_exist?(user_barcode)
-    source_plates.each_with_index do |plate, _index|
-      next if plate.nil?
-      stock_plate = plate.stock_plate
-      next if stock_plate.nil?
-      stock_plate.events.create_sequenom_stamp!(User.lookup_by_barcode(user_barcode))
+    user = User.find_with_barcode_or_swipecard_code(user_barcode)
+    if user.nil?
+      errors.add(:base, 'Please scan your user barcode')
+      return false
+    else
+      source_plates.each_with_index do |plate, _index|
+        next if plate.nil?
+
+        stock_plate = plate.stock_plate
+        next if stock_plate.nil?
+
+        stock_plate.events.create_sequenom_stamp!(user)
+      end
+      events.create_sequenom_plate!(user)
     end
-    events.create_sequenom_plate!(User.lookup_by_barcode(user_barcode))
   end
 
   def compute_and_set_name(input_plate_names)
@@ -68,7 +71,7 @@ class SequenomQcPlate < Plate
 
       # Plate name e.g. QC1234_1235_1236_1237_20100801
       self.name = "#{plate_prefix}#{plate_number(input_plate_names)}#{plate_date}"
-      self.barcode = PlateBarcode.create.barcode
+      self.sanger_barcode = { number: PlateBarcode.create.barcode, prefix: default_prefix }
     end
     true
   end
@@ -82,7 +85,7 @@ class SequenomQcPlate < Plate
   end
 
   def connect_input_plates(input_plate_barcodes)
-    self.parents = Plate.with_machine_barcode(input_plate_barcodes)
+    self.parents = Plate.with_barcode(input_plate_barcodes)
   end
 
   protected
@@ -152,7 +155,7 @@ class SequenomQcPlate < Plate
     input_plate_names.each do |_source_plate_number, source_plate_barcode|
       next if source_plate_barcode.blank?
 
-      source_plate = Plate.find_from_machine_barcode(source_plate_barcode)
+      source_plate = Plate.find_from_barcode(source_plate_barcode)
 
       if source_plate.nil?
         errors.add(:base, "Source Plate: #{source_plate_barcode} cannot be found")
@@ -170,15 +173,6 @@ class SequenomQcPlate < Plate
     end
   end
 
-def user_barcode_exist?(user_barcode)
-  if User.lookup_by_barcode(user_barcode).nil?
-    errors.add(:base, 'Please scan your user barcode') if User.lookup_by_barcode(user_barcode).nil?
-    false
-  else
-    true
-  end
-end
-
   def do_gender_checks?
     true unless gender_check_bypass
   end
@@ -188,7 +182,7 @@ end
     input_plate_names.each do |_source_plate_number, source_plate_barcode|
       next if source_plate_barcode.blank?
 
-      source_plate = Plate.find_from_machine_barcode(source_plate_barcode)
+      source_plate = Plate.find_from_barcode(source_plate_barcode)
 
       if source_plate.nil?
         errors.add(:base, "Source Plate: #{source_plate_barcode} cannot be found")

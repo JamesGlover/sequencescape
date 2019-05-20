@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2015 Genome Research Ltd.
-
 module ::Core::Io::Json::Grammar
   module Intermediate
     attr_reader :children
@@ -101,6 +95,7 @@ module ::Core::Io::Json::Grammar
 
     def rooted_json(stream, nested, &block)
       return yield(stream) if nested
+
       stream.block(json_root, &block)
     end
     private :rooted_json
@@ -149,6 +144,7 @@ module ::Core::Io::Json::Grammar
 
     def call(object, options, stream)
       value = @attribute_path.inject(object) { |o, k| return if o.nil?; o.send(k) } or return
+
       stream.attribute(@name, value.send(@attribute), options)
     end
 
@@ -164,6 +160,7 @@ module ::Core::Io::Json::Grammar
     def merge_children_with(node)
       key = "_#{name}"
       raise "Cannot merge as existing leaf node '#{key}'" if node.children.key?(key)
+
       node.children.merge(key => self)
     end
 

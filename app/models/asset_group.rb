@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 class AssetGroup < ApplicationRecord
   include Uuid::Uuidable
   include ModelExtensions::AssetGroup
@@ -20,7 +14,7 @@ class AssetGroup < ApplicationRecord
   validates :name, presence: true, uniqueness: true
   validates :study, presence: true
 
- scope :for_search_query, ->(query, _with_includes) { where(['name LIKE ?', "%#{query}%"]) }
+  scope :for_search_query, ->(query) { where(['name LIKE ?', "%#{query}%"]) }
 
   def all_samples_have_accession_numbers?
     unaccessioned_samples.empty?

@@ -1,12 +1,12 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014,2015 Genome Research Ltd.
-# encoding: utf-8
+# frozen_string_literal: true
 
 class Parsers::BioanalysisCsvParser
   class InvalidFile < StandardError; end
+
+  class_attribute :assay_type, :assay_version
+
+  self.assay_type = 'bioanalyser'
+  self.assay_version = 'v0.1'
 
   attr_reader :content
 
@@ -139,19 +139,20 @@ class Parsers::BioanalysisCsvParser
 
   def get_parsed_attribute(plate_position, field)
     return nil if parsed_content.nil? || parsed_content[plate_position].nil?
+
     parsed_content[plate_position][:peak_table][field]
   end
 
   def each_well_and_parameters
     parsed_content.each do |well, values|
       yield(well, {
-        set_concentration: values[:peak_table][field_name_for(:concentration)],
-        set_molarity: values[:peak_table][field_name_for(:molarity)]
-        })
+        'concentration' => Unit.new(values[:peak_table][field_name_for(:concentration)], 'ng/ul'),
+        'molarity' => Unit.new(values[:peak_table][field_name_for(:molarity)], 'nmol/l')
+      })
     end
   end
 
-  def self.is_bioanalyzer?(content)
+  def self.parses?(content)
     # We don't go through the whole file
     content[0..10].detect do |line|
       /Version Created/ === line[0] && /^B.*/ === line[1]

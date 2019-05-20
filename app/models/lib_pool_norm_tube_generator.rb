@@ -1,4 +1,3 @@
-
 class LibPoolNormTubeGenerator
   include ActiveModel::Validations
 
@@ -17,7 +16,7 @@ class LibPoolNormTubeGenerator
   end
 
   def transfer_template
-    @transfer_template ||= TransferTemplate.find_by(name: 'Transfer from tube to tube by submission')
+    @transfer_template ||= TransferTemplate.find_by!(transfer_class_name: 'Transfer::BetweenTubesBySubmission')
   end
 
   def plate=(barcode)
@@ -25,15 +24,11 @@ class LibPoolNormTubeGenerator
   end
 
   def set_plate(barcode)
-    Plate.with_machine_barcode(barcode).includes(wells: { requests: [:request_type, :target_asset] }).first
+    Plate.with_barcode(barcode).includes(wells: { requests: [:request_type, :target_asset] }).first
   end
 
   def lib_pool_tubes
-    @lib_pool_tubes ||= plate.wells.map(&:requests).flatten.select do |r|
-      r.request_type.key == 'Illumina_Lib_PCR_XP_Lib_Pool'
-    end
-                             .map(&:target_asset)
-                             .uniq
+    @lib_pool_tubes ||= plate.children.select { |c| c.is_a?(StockMultiplexedLibraryTube) }
                              .reject { |tube| tube.state == 'failed' || tube.state == 'qc_complete' || tube.state == 'cancelled' }
   end
 
@@ -44,14 +39,13 @@ class LibPoolNormTubeGenerator
   def create!
     if valid?
       begin
-        ActiveRecord::Base.transaction do |_t|
+        ActiveRecord::Base.transaction do
           lib_pool_tubes.each do |tube|
             pass_and_complete(tube)
             pass_and_complete(create_lib_pool_norm_tube(tube))
           end
 
-          @asset_group = AssetGroup.create(assets: destination_tubes, study: study, name: "#{plate.sanger_human_barcode}_qc_completed_tubes")
-          Location.find_by(name: 'Cluster formation freezer').set_locations(destination_tubes)
+          @asset_group = AssetGroup.create(assets: destination_tubes, study: study, name: "#{plate.human_barcode}_qc_completed_tubes")
         end
         true
       rescue => e

@@ -2,7 +2,12 @@
 // select dropdowns, including typing.
 $(function() {
   $(".select2").select2({
-    theme: "bootstrap",
+    theme: "bootstrap4",
     minimumResultsForSearch: 10
   });
-})
+
+  $("#tag_substitution_comment").select2({
+    theme: "bootstrap4",
+    tags: true
+  });
+});

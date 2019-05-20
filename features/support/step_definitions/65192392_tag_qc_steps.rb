@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014,2015 Genome Research Ltd.
-
 Given /^I have a lot type for testing called "(.*?)"$/ do |name|
   LotType.create!(
     name: name,
@@ -32,7 +26,7 @@ Given /^the lot exists with the attributes:$/ do |table|
     received_at: settings['received_at'],
     template: TagLayoutTemplate.find_by(name: settings['template']) || PlateTemplate.find_by(name: settings['template']),
     user: User.last
-    )
+  )
 end
 
 Given /^the UUID for the lot with lot number "(.*?)" is "(.*?)"$/ do |lot_number, uuid|
@@ -52,7 +46,7 @@ end
 
 Given /^all qcables in lot "(.*?)" are "(.*?)"$/ do |lot_number, state|
   Lot.find_by(lot_number: lot_number).qcables.each do |qcable|
-    qcable.update_attributes!(state: state)
+    qcable.update!(state: state)
   end
 end
 
@@ -115,22 +109,22 @@ Given /^I have a qc library created$/ do
   tag_plate = qca.qcables.first.asset
   reporter_plate = qcb.qcables.first.asset
 
-  tag_plate.update_attributes!(plate_purpose: PlatePurpose.find_by(name: 'Tag PCR'))
+  tag_plate.update!(plate_purpose: PlatePurpose.find_by(name: 'Tag PCR'))
   Transfer::BetweenPlates.create!(user: user, source: reporter_plate, destination: tag_plate, transfers: { 'A1' => 'A1' })
   stc = SpecificTubeCreation.create!(parent: tag_plate, child_purposes: [Tube::Purpose.find_by(name: 'Tag MX')], user: user)
   batch = Batch.new(pipeline: Pipeline.find_by(name: 'MiSeq sequencing')).tap do |batch|
     batch.id = 12345
     batch.save!
   end
-  FactoryGirl.create :request_without_submission, asset: stc.children.first, batch: batch
+  FactoryBot.create :request_without_submission, asset: stc.children.first, batch: batch
   # Batch.find(12345).batch_requests.create!(:request=>Request.create!(:asset=>stc.children.first),:position=>1)
 end
 
 Given /^the library is testing a reporter$/ do
   lot = Lot.find_by(lot_number: '1234567890')
   lot_b = Lot.find_by(lot_number: '1234567891')
-  lot.qcables.first.update_attributes!(state: 'exhausted')
-  lot_b.qcables.first.update_attributes!(state: 'pending')
+  lot.qcables.first.update!(state: 'exhausted')
+  lot_b.qcables.first.update!(state: 'pending')
 end
 
 Given /^the user with UUID "(.*?)" is a 'qa_manager'$/ do |uuid|

@@ -1,8 +1,3 @@
-<%# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.%>
 
 <table class="table table-striped sortable table-dense-information" id="pipeline_inbox">
   <thead>
@@ -35,12 +30,12 @@
             <% if request.ready? %>
               <input type="checkbox" name="selectAll" onclick="select_requests_by_group(<%=  request.submission_id %>,<%= requests.size %>, this.checked);" id="select_all_group_<%= index %>"></a>
             <% else %>
-              <%= image_tag "error.png", 'title' => I18n.t("requests.status.not_ready"), size: '16x16' %>
+              <%= icon('fas', 'exclamation-circle', class: 'text-danger', title: I18n.t("requests.status.not_ready")) %>
             <% end %>
           </td>
-          <td><a href="javascript:void(0)" onclick="showElement(<%=  request.submission_id %>,<%= requests.size %>); return false;"><%= image_tag "information.png", size: "13x13" %></a></td>
+          <td><a href="javascript:void(0)" onclick="showElement(<%=  request.submission_id %>,<%= requests.size %>); return false;"><%= icon('fas', 'info-circle', class: 'text-info') %></a></td>
           <td>
-            <%= image_tag "icon_#{request.priority}_flag.png", 'alt' => request.priority, size: '16x16', class: "flag_image #{current_user.is_lab_manager? ? 'as_manager' : ''}", "data-priority" => request.priority, 'data-request-id' => request.id, 'data-submission-id' => request.submission_id %>
+            <%= image_tag "icon_#{request.priority}_flag.png", 'alt' => request.priority, size: '16x16', class: "flag_image #{current_user.lab_manager? ? 'as_manager' : ''}", "data-priority" => request.priority, 'data-request-id' => request.id, 'data-submission-id' => request.submission_id %>
           </td>
           <td><%= link_to request.submission_id,submission_path(request.submission) %></td>
           <td>&nbsp;</td>
@@ -76,7 +71,7 @@
             <% if request.ready? %>
               <%= check_box :request, request.id, value: request.id %>
             <% else %>
-              <%= image_tag "error.png", 'title' => "The library creation request hasn't been completed still, so this request is not ready.", size: '16x16' %>
+              <%= icon('fas', 'exclamation-circle', class: 'text-danger', title: I18n.t("requests.status.not_ready")) %>
             <% end %>
           </td>
           <td style='text-align: center' width='5%'>
@@ -86,7 +81,7 @@
           <td><%= link_to request.id, request_path(request) %></td>
           <td><%= link_to(h(request_asset.display_name), asset_path(request.asset)) %></td>
           <%= render partial: "request_comments", locals: { request: request, comments_count: request_comments_count } %>
-          <td><%=  link_to "#{request_asset.sti_type} #{request_asset.barcode}", asset_path(request.asset) %></td>
+          <td><%=  link_to "#{request_asset.sti_type} #{request_asset.try(:human_barcode)}", asset_path(request.asset) %></td>
           <% unless asset_comments_count.zero? -%>
             <%= render partial: "asset_comments", locals: { request: request, comments_count: asset_comments_count } %>
           <% else -%>

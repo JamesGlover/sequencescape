@@ -1,15 +1,11 @@
-# This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012 Genome Research Ltd.
 class MetadataMigration < ActiveRecord::Migration
-  class Property < ActiveRecord::Base
-    class Definition < ActiveRecord::Base
+  class Property < ApplicationRecord
+    class Definition < ApplicationRecord
       self.table_name = ('property_definitions')
       has_many :properties, class_name: 'MetadataMigration::Property', foreign_key: :property_definition_id, dependent: :destroy
 
-     scope :for_class, ->(c) { where(relates_to: c) }
-     scope :for_keys, ->(keys) { where(key: keys) }
+      scope :for_class, ->(c) { where(relates_to: c) }
+      scope :for_keys, ->(keys) { where(key: keys) }
 
       # It's more efficient to delete all of the properties and then delete the definition.
       def self.delete_for(relates_to, keys)

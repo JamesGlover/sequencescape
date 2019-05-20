@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2013,2015 Genome Research Ltd.
-
 class ManifestGenerator
   QUOTE_CHAR = '!'
   DEFAULT_VOLUME = 13
@@ -23,7 +17,8 @@ class ManifestGenerator
         plate = Plate.find(plate_id)
         plate_label = institute_plate_label(plate)
         plate.wells.order(:id).each do |well|
-          csv << generate_manifest_row(well, plate.barcode, plate_label).unshift(row)
+          barcode = plate.barcodes.sanger_ean13.first&.number.to_s
+          csv << generate_manifest_row(well, barcode, plate_label).unshift(row)
           row = row + 1
         end
       end
@@ -56,8 +51,7 @@ class ManifestGenerator
      well_sample_parent(well, 'mother'),
      well_sample_parent(well, 'father'),
      replicates.to_s,
-     tissue_source.to_s
-    ]
+     tissue_source.to_s]
   end
 
   private

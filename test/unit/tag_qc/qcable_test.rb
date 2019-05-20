@@ -1,16 +1,10 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014,2015 Genome Research Ltd.
-
 require 'test_helper'
 require 'unit/tag_qc/qcable_statemachine_checks'
 
 class QcableTest < ActiveSupport::TestCase
   context 'A Qcable' do
     setup do
-      PlateBarcode.stubs(:create).returns(OpenStruct.new(barcode: (FactoryGirl.generate :sanger_barcode)))
+      PlateBarcode.stubs(:create).returns(create(:plate_barcode))
     end
 
     should belong_to :lot
@@ -46,13 +40,13 @@ class QcableTest < ActiveSupport::TestCase
     context '#qcable pre-pending' do
       setup do
         @mock_purpose = build :tube_purpose, default_state: 'pending'
-        @template     = FactoryGirl.build(:tag2_layout_template)
+        @template     = FactoryBot.build(:tag2_layout_template)
         @lot_type     = create :tag2_lot_type, target_purpose: @mock_purpose
         @mock_lot     = create :tag2_lot, lot_type: @lot_type
       end
 
       should 'create an asset of the given purpose' do
-        # We can't use factory girl directly here, as it results in the initial state being
+        # We can't use factory bot directly here, as it results in the initial state being
         # set BEFORE the lot is assigned.
         factory_attributes = attributes_for :qcable, lot: @mock_lot
         @qcable = Qcable.create!(factory_attributes)

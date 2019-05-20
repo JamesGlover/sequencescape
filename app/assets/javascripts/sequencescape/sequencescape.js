@@ -1,9 +1,3 @@
-//This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
-//Please refer to the LICENSE and README files for information on licensing and authorship of this file.
-//Copyright (C) 2015,2016 Genome Research Ltd.
-//This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-//Please refer to the LICENSE and README files for information on licensing and authorship of this file.
-//Copyright (C) 2007-2011 Genome Research Ltd.
 (function($, undefined) {
 
 // TODO: REMOVE THIS FILE WHEN CONFIRMED THERE ARE NO MORE DEPENDENCIES WITH IT
@@ -52,19 +46,13 @@ window.reload_batch = function(){
 }
 
 window.select_all = function(){
-  var checkboxes = $('input[type="checkbox"]');
-  checkboxes.each(function(pos, r){
-    if (!r.disabled) {
-      $(r).prop('checked', true);
-    };
-  });
+  var scope = this.dataset.scope || 'body';
+  $(scope).find('input[type="checkbox"]:enabled').prop('checked', true);
 }
 
 window.deselect_all = function(){
-  var checkboxes = $('input[type="checkbox"]');
-  checkboxes.each(function(pos, r){
-    $(r).prop('checked', false);
-  });
+  var scope = this.dataset.scope || 'body';
+  $(scope).find('input[type="checkbox"]:enabled').prop('checked', false);
 }
 
 window.disable_cr_and_change_focus = function(event, current_field, next_field) {

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class TaskTest < ActiveSupport::TestCase
@@ -49,7 +43,7 @@ class TaskTest < ActiveSupport::TestCase
       end
 
       should 'get descriptor with a default value' do
-        assert_equal'my_default_value', @task.get_descriptor_value('new_name', 'my_default_value')
+        assert_equal 'my_default_value', @task.get_descriptor_value('new_name', 'my_default_value')
       end
     end
   end

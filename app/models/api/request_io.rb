@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 class Api::RequestIO < Api::Base
   module Extensions
     module ClassMethods
@@ -16,31 +10,31 @@ class Api::RequestIO < Api::Base
       base.class_eval do
         extend ClassMethods
 
-        scope :including_associations_for_json, -> { includes([
-          :uuid_object,
-          :request_type,
-          :request_metadata,
-          :user, {
+        scope :including_associations_for_json, -> {
+          includes([
+            :uuid_object,
+            :request_type,
+            :request_metadata,
+            :user, {
               asset: [
                 :uuid_object,
-                :barcode_prefix,
+                :barcodes,
                 { primary_aliquot: { sample: :uuid_object } }
               ],
               target_asset: [
                 :uuid_object,
-                :barcode_prefix,
+                :barcodes,
                 { primary_aliquot: { sample: :uuid_object } }
               ],
               initial_study: :uuid_object,
               initial_project: :uuid_object
             }
-        ])}
-
-        alias_method(:json_root, :url_name)
+          ])
+        }
       end
     end
 
-    def url_name
+    def json_root
       'request' # frozen for subclass of the API
     end
   end
@@ -66,30 +60,27 @@ class Api::RequestIO < Api::Base
   end
 
   with_association(:submission) do
-        map_attribute_to_json_attribute(:uuid, 'submission_uuid')
-        map_attribute_to_json_attribute(:id, 'submission_internal_id')
-        map_attribute_to_json_attribute(:url, 'submission_url')
+    map_attribute_to_json_attribute(:uuid, 'submission_uuid')
+    map_attribute_to_json_attribute(:id, 'submission_internal_id')
   end
 
   with_association(:initial_study) do
-        map_attribute_to_json_attribute(:url, 'study_url')
-        map_attribute_to_json_attribute(:uuid, 'study_uuid')
-        map_attribute_to_json_attribute(:id, 'study_internal_id')
-        map_attribute_to_json_attribute(:name, 'study_name')
+    map_attribute_to_json_attribute(:uuid, 'study_uuid')
+    map_attribute_to_json_attribute(:id, 'study_internal_id')
+    map_attribute_to_json_attribute(:name, 'study_name')
   end
 
   with_association(:initial_project) do
-        map_attribute_to_json_attribute(:url, 'project_url')
-        map_attribute_to_json_attribute(:uuid, 'project_uuid')
-        map_attribute_to_json_attribute(:id, 'project_internal_id')
-        map_attribute_to_json_attribute(:name, 'project_name')
+    map_attribute_to_json_attribute(:uuid, 'project_uuid')
+    map_attribute_to_json_attribute(:id, 'project_internal_id')
+    map_attribute_to_json_attribute(:name, 'project_name')
   end
 
   with_association(:asset) do
     map_attribute_to_json_attribute(:uuid, 'source_asset_uuid')
     map_attribute_to_json_attribute(:id, 'source_asset_internal_id')
     map_attribute_to_json_attribute(:name, 'source_asset_name')
-    map_attribute_to_json_attribute(:barcode, 'source_asset_barcode')
+    map_attribute_to_json_attribute(:barcode_number, 'source_asset_barcode')
     map_attribute_to_json_attribute(:qc_state, 'source_asset_state')
     map_attribute_to_json_attribute(:closed, 'source_asset_closed')
     map_attribute_to_json_attribute(:two_dimensional_barcode, 'source_asset_two_dimensional_barcode')
@@ -105,16 +96,14 @@ class Api::RequestIO < Api::Base
       end
     end
 
-    with_association(:barcode_prefix) do
-      map_attribute_to_json_attribute(:prefix, 'source_asset_barcode_prefix')
-    end
+    map_attribute_to_json_attribute(:prefix, 'source_asset_barcode_prefix')
   end
 
   with_association(:target_asset) do
     map_attribute_to_json_attribute(:uuid, 'target_asset_uuid')
     map_attribute_to_json_attribute(:id, 'target_asset_internal_id')
     map_attribute_to_json_attribute(:name, 'target_asset_name')
-    map_attribute_to_json_attribute(:barcode, 'target_asset_barcode')
+    map_attribute_to_json_attribute(:barcode_number, 'target_asset_barcode')
     map_attribute_to_json_attribute(:qc_state, 'target_asset_state')
     map_attribute_to_json_attribute(:closed, 'target_asset_closed')
     map_attribute_to_json_attribute(:two_dimensional_barcode, 'target_asset_two_dimensional_barcode')
@@ -130,9 +119,7 @@ class Api::RequestIO < Api::Base
       end
     end
 
-    with_association(:barcode_prefix) do
-      map_attribute_to_json_attribute(:prefix, 'target_asset_barcode_prefix')
-    end
+    map_attribute_to_json_attribute(:prefix, 'target_asset_barcode_prefix')
   end
 
   with_association(:request_type) do

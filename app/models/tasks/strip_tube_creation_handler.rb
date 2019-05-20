@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014,2015 Genome Research Ltd.
-
 module Tasks::StripTubeCreationHandler
   def render_strip_tube_creation_task(task, _params)
     @tubes_requested = @batch.requests.first.asset.requests.for_pipeline(task.workflow.pipeline).count
@@ -39,21 +33,21 @@ module Tasks::StripTubeCreationHandler
       return false
     end
 
-    base_name = source_plate.sanger_human_barcode
+    base_name = source_plate.human_barcode
 
     strip_purpose = Purpose.find_by(name: task.descriptors.find_by!(key: 'strip_tube_purpose').value)
 
     (0...tubes_to_create).each do |tube_number|
-      tube = strip_purpose.create!(name: "#{base_name}:#{tube_number + 1}", location: @batch.pipeline.location)
+      tube = strip_purpose.create!(name: "#{base_name}:#{tube_number + 1}")
       AssetLink::Job.create(source_plate, [tube])
 
       tube.size.times do |index|
         request = locations_requests[index].pop
         well    = tube.wells.in_column_major_order.all[index].id
-        request.submission.next_requests(request).each do |dsr|
-          dsr.update_attributes!(asset_id: well)
+        request.next_requests.each do |dsr|
+          dsr.update!(asset_id: well)
         end
-        request.update_attributes!(target_asset_id: well)
+        request.update!(target_asset_id: well)
       end
     end
 

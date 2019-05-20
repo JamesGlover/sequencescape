@@ -1,6 +1,22 @@
 development:
   type: log
-  exchange: psd.sequencescape
+  config:
+    server:
+      host: localhost
+      port: 5672
+      username: guest
+      password: guest
+      vhost: /
+      frame_max: 0
+      heartbeat: 30
+    exchange: psd.sequencescape
+  subscriptions:
+    queue_broadcast_consumer:
+      exchange: psd.sequencescape
+      queue: psd.queue_broadcast
+      routing_keys:
+        - development.queue_broadcast.#
+      deadletter_exchange: psd.deadletters
 profile:
   type: log
 test:

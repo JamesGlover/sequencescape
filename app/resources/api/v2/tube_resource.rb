@@ -10,6 +10,7 @@ module Api
       immutable # uncomment to make the resource immutable
 
       # Associations:
+      has_one :purpose, readonly: true, foreign_key: :plate_purpose_id, class_name: 'Purpose'
       has_many :samples, readonly: true
       has_many :studies, readonly: true
       has_many :projects, readonly: true
@@ -19,6 +20,7 @@ module Api
       attribute :name, delegate: :display_name, readonly: true
       # attribute :position
       attribute :labware_barcode, readonly: true
+      attribute :state, readonly: true
 
       # Filters
 
@@ -28,7 +30,7 @@ module Api
       def labware_barcode
         {
           'ean13_barcode' => _model.ean13_barcode,
-          'sanger_human_barcode' => _model.sanger_human_barcode
+          'human_barcode' => _model.human_barcode
         }
       end
 

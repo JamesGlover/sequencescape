@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2014,2015 Genome Research Ltd.
-
 TRANSFER_TYPES = [
   'between plates',
   'from plate to tube'
@@ -20,7 +14,7 @@ Given /^the UUID for the transfer (#{TRANSFER_TYPES_REGEXP}) with ID (\d+) is "(
 end
 
 Given /^the transfer (between plates|from plate to tube) exists with ID (\d+)$/ do |name, id|
-  FactoryGirl.create(:"transfer_#{name.gsub(/\s+/, '_')}", id: id)
+  FactoryBot.create(:"transfer_#{name.gsub(/\s+/, '_')}", id: id)
 end
 
 Given /^the UUID for the (source|destination) of the transfer (#{TRANSFER_TYPES_REGEXP}) with ID (\d+) is "([^\"]+)"$/ do |target, model, id, uuid_value|
@@ -28,7 +22,7 @@ Given /^the UUID for the (source|destination) of the transfer (#{TRANSFER_TYPES_
 end
 
 Given /^the ((?:pooling ||multiplex )?transfer template) called "([^\"]+)" exists$/ do |type, name|
-  FactoryGirl.create(type.gsub(/\s/, '_').to_sym, name: name)
+  FactoryBot.create(type.gsub(/\s/, '_').to_sym, name: name)
 end
 
 Then /^the transfers from (the plate .+) to (the plate .+) should be:$/ do |source, destination, table|
@@ -37,44 +31,49 @@ Then /^the transfers from (the plate .+) to (the plate .+) should be:$/ do |sour
 
     source_well      = source.wells.located_at(source_well_location).first           or raise StandardError, "Plate #{source.id} does not have well #{source_well_location.inspect}"
     destination_well = destination.wells.located_at(destination_well_location).first or raise StandardError, "Plate #{destination.id} does not have well #{destination_well_location.inspect}"
-    assert_not_nil(TransferRequest.between(source_well, destination_well).first, "No transfer between #{source_well_location.inspect} and #{destination_well_location.inspect}")
+    assert_not_nil(TransferRequest.find_by(asset_id: source_well, target_asset_id: destination_well), "No transfer between #{source_well_location.inspect} and #{destination_well_location.inspect}")
   end
 end
 
 Given /^a transfer plate exists with ID (\d+)$/ do |id|
-  FactoryGirl.create(:transfer_plate, id: id)
+  FactoryBot.create(:transfer_plate, id: id)
 end
 
-Given /^a (source|destination) transfer plate called "([^\"]+)" exists$/ do |type, name|
-  FactoryGirl.create("#{type}_transfer_plate", name: name)
+Given /^a transfer plate called "([^\"]+)" exists$/ do |name|
+  FactoryBot.create(:transfer_plate, name: name)
 end
 
 Given /^the plate "(.*?)" has additional wells$/ do |name|
   Plate.find_by(name: name).tap do |plate|
-    plate.wells << ['C1', 'D1'].map do |location|
+    plate.wells << %w[C1 D1].map do |location|
       map = Map.where_description(location).where_plate_size(plate.size).where_plate_shape(AssetShape.find_by(name: 'Standard')).first or raise StandardError, "No location #{location} on plate #{plate.inspect}"
-      FactoryGirl.create(:tagged_well, map: map)
+      FactoryBot.create(:tagged_well, map: map)
     end
   end
 end
 
-Given /^a destination transfer plate called "([^\"]+)" exists as a child of "([^\"]+)"$/ do |name, parent|
-  parent_plate = Plate.find_by(name: parent) or raise "Cannot find parent plate #{parent.inspect}"
-  AssetLink.create!(ancestor: parent_plate, descendant: FactoryGirl.create(:destination_transfer_plate, name: name))
+Given /^a transfer plate called "([^\"]+)" exists as a child of "([^\"]+)"$/ do |name, parent|
+  parent_plate = Plate.find_by!(name: parent)
+  AssetLink.create!(ancestor: parent_plate, descendant: FactoryBot.create(:transfer_plate, name: name))
+end
+
+Given(/^a transfer plate called "([^"]*)" exists as a child of plate (\d+)$/) do |name, parent_id|
+  parent_plate = Plate.find(parent_id)
+  AssetLink.create!(ancestor: parent_plate, descendant: FactoryBot.create(:transfer_plate, name: name))
 end
 
 Given /^the "([^\"]+)" transfer template has been used between "([^\"]+)" and "([^\"]+)"$/ do |template_name, source_name, destination_name|
   template    = TransferTemplate.find_by(name: template_name) or raise StandardError, "Could not find transfer template #{template_name.inspect}"
   source      = Plate.find_by(name: source_name)              or raise StandardError, "Could not find source plate #{source_name.inspect}"
   destination = Plate.find_by(name: destination_name)         or raise StandardError, "Could not find destination plate #{destination_plate.inspect}"
-  template.create!(source: source, destination: destination, user: FactoryGirl.create(:user))
+  template.create!(source: source, destination: destination, user: FactoryBot.create(:user))
 end
 
 def assert_request_state(state, targets, direction, request_class)
-  association = (direction == 'to') ? :requests_as_target : :requests_as_source
+  association = (direction == 'to') ? :target_asset_id : :asset_id
   assert_equal(
     [state],
-    Array(targets).map(&association).flatten.select { |r| r.is_a?(request_class) }.map(&:state).uniq,
+    request_class.where(association => targets).pluck(:state).uniq,
     "Some #{request_class.name} requests are in the wrong state"
   )
 end
@@ -85,7 +84,7 @@ def change_request_state(state, targets, direction, request_class)
 end
 
 {
-  'plate'                    => 'target.wells',
+  'plate' => 'target.wells',
   'multiplexed library tube' => 'target'
 }.each do |target, request_holder|
   line = __LINE__
@@ -134,12 +133,5 @@ Then /^the study for the aliquots in the wells of (the plate .+) should match th
 end
 Given /^(the plate .+) is a "([^\"]+)"$/ do |plate, name|
   plate_purpose = PlatePurpose.find_by(name: name) or raise StandardError, "Cannot find the plate purpose #{name.inspect}"
-  plate.update_attributes!(plate_purpose: plate_purpose)
-end
-
-Given /^transfers between "([^\"]+)" and "([^\"]+)" plates are done by "([^\"]+)" requests$/ do |source, destination, typename|
-  source_plate_purpose      = PlatePurpose.find_by(name: source)      or raise StandardError, "Cannot find the plate purpose #{source.inspect}"
-  destination_plate_purpose = PlatePurpose.find_by(name: destination) or raise StandardError, "Cannot find the plate purpose #{destination.inspect}"
-  request_type              = RequestType.find_by(name: typename)     or raise StandardError, "Cannot find request type #{typename.inspect}"
-  source_plate_purpose.child_relationships.create!(child: destination_plate_purpose, transfer_request_type: request_type)
+  plate.update!(plate_purpose: plate_purpose)
 end

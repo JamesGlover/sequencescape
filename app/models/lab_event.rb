@@ -1,28 +1,26 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2013,2015 Genome Research Ltd.
+require_dependency 'broadcast_event/lab_event'
 
 class LabEvent < ApplicationRecord
+  include ActsAsDescriptable
+
+  CHIP_BARCODE_STEPS = ['Cluster generation', 'Add flowcell chip barcode', 'Loading'].freeze
+
   belongs_to :batch
   belongs_to :user
   belongs_to :eventful, polymorphic: true
-  acts_as_descriptable :serialized
 
   before_validation :unescape_for_descriptors
 
   scope :with_descriptor, ->(k, v) { where(['descriptors LIKE ?', "%#{k}: #{v}%"]) }
 
-  scope :barcode_code, ->(barcode) do
-    where(
-      description: ['Cluster generation', 'Add flowcell chip barcode'],
-      eventful_type: 'Request'
-    ).where([
-      'descriptors like ?',
-      "%Chip Barcode: #{barcode}%"
-    ])
+  scope :with_flowcell_barcode, ->(barcode) do
+    where(description: CHIP_BARCODE_STEPS)
+      .with_descriptor('Chip Barcode', barcode)
   end
+
+  delegate :flowcell, :eventful_studies, :samples, to: :eventful
+
+  after_create :generate_broadcast_event
 
   def unescape_for_descriptors
     self[:descriptors] = (self[:descriptors] || {}).to_h.each_with_object({}) do |(key, value), hash|
@@ -31,8 +29,7 @@ class LabEvent < ApplicationRecord
   end
 
   def self.find_batch_id_by_barcode(barcode)
-    events = barcode_code(barcode)
-    batch_ids = events.pluck(:batch_id).uniq
+    batch_ids = with_flowcell_barcode(barcode).distinct.pluck(:batch_id)
     batch_ids.first if batch_ids.one?
   end
 
@@ -47,5 +44,9 @@ class LabEvent < ApplicationRecord
 
   def add_new_descriptor(name, value)
     add_descriptor Descriptor.new(name: name, value: value)
+  end
+
+  def generate_broadcast_event
+    BroadcastEvent::LabEvent.create!(seed: self, user: user)
   end
 end

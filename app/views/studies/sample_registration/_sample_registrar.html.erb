@@ -1,8 +1,3 @@
-<%# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2013,2015 Genome Research Ltd.%>
 
 <%= form_for(:sample_registrars, url: study_sample_registration_index_path, method: :post, html:{autocomplete:"off"}) do |registrars_fields| %>
   <%= error_messages_for(:sample_registrars, object: @sample_registrars, object_name: "set of sample(s)") %>
@@ -46,8 +41,6 @@
         <%# NOTE[xxx]: Kind of a hack because we're not actually building a form %>
         <%= fields_for(Sample.new) do |form| %>
           <%= form.fields_for(:sample_metadata, builder: Metadata::FormBuilder) do |metadata_fields| %>
-            <% metadata_fields.filter { |field| current_user.workflow.visible_attribute?(field) } %>
-
             <%# Fields for 'Microarray genotyping' %>
             <%= metadata_fields.header(:cohort) %>
             <%= metadata_fields.header(:gender) %>
@@ -151,7 +144,6 @@
             <%= sample_fields.fields_for(:sample_metadata, builder: Metadata::FormBuilder) do |metadata_fields| %>
               <% metadata_fields.view_for(:field, 'shared/metadata/edit_value') %>
               <% metadata_fields.locals = { index: index } %>
-              <% metadata_fields.filter { |field| current_user.workflow.visible_attribute?(field) } %>
 
               <%# Fields for 'Microarray genotyping' %>
               <%= metadata_fields.text_field(:cohort) %>
@@ -230,7 +222,7 @@
   <br />
 
   <div class="add_row_button">
-    <a title='Add one more sample (will insert an extra row into the table)', class='add_row'><%= image_tag('add.png') %> Add row</a>
+    <a title='Add one more sample (will insert an extra row into the table)', class='add_row'><%= icon('fas', 'plus-circle', 'Add row') %></a>
   </div>
 
    <p>Data in this form can be amended later.</p>

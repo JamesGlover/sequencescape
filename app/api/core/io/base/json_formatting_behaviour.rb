@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 module Core::Io::Base::JsonFormattingBehaviour
   def self.extended(base)
     base.class_eval do
@@ -36,6 +30,7 @@ module Core::Io::Base::JsonFormattingBehaviour
     # need to determine the I/O class that deals with it and hand off the error handling to it.
     association, *association_parts = attribute.to_s.split('.')
     return attribute.to_s if association_parts.empty?
+
     reflection = model_for_input.reflections[association]
     return attribute.to_s if reflection.nil?
 
@@ -70,6 +65,7 @@ module Core::Io::Base::JsonFormattingBehaviour
     attribute_to_json, json_to_attribute = [], []
     StringIO.new(mapping).each_line do |line|
       next if line.blank? or line =~ /^\s*#/
+
       match = VALID_LINE_REGEXP.match(line) or raise StandardError, "Invalid line: #{line.inspect}"
       attribute_to_json.push([match[1], match[3]]) if (match[2] =~ /<?=>/)
       json_to_attribute.push([match[3], (match[2] =~ /<=>?/) ? match[1] : nil])

@@ -1,17 +1,5 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2013,2015 Genome Research Ltd.
-
-module TagLayout::WalkWellsByPools
-  def self.walking_by
-    'wells in pools'
-  end
-
-  def walking_by
-    TagLayout::WalkWellsByPools.walking_by
-  end
+class TagLayout::WalkWellsByPools < TagLayout::Walker
+  self.walking_by = 'wells in pools'
 
   def walk_wells
     # Adjust each of the groups so that any wells that are in the same pool as those at the same position
@@ -23,6 +11,7 @@ module TagLayout::WalkWellsByPools
     end
     wells_in_groups.each_with_index do |current_group, group|
       next if group == 0
+
       prior_group = wells_in_groups[group - 1]
 
       current_group.each_with_index do |well_and_pool, index|
@@ -43,5 +32,4 @@ module TagLayout::WalkWellsByPools
       group.each_with_index { |(well, _), index| yield(well, index) unless well.nil? }
     end
   end
-  private :walk_wells
 end

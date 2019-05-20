@@ -1,17 +1,12 @@
-<%# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015 Genome Research Ltd.%>
 
 <% plate.source_plates.each_with_index do |source_plate, index| %>
   <% next if source_plate.nil? %>
 <tr <%= plate_index.even? ? 'class="roweven"' : '' %> >
-  <td><%= link_to plate.sanger_human_barcode, show_plate_asset_path(source_plate) %></td>
+  <td><%= link_to plate.human_barcode, show_plate_asset_path(source_plate) %></td>
   <td><%= plate.name %></td>
   <td class="strong faint"><%= plate.created_at.to_s(:sortable) %></td>
   <td><%= index + 1 %></td>
-  <td><%= link_to source_plate.barcode, show_plate_asset_path(source_plate) %></td>
+  <td><%= link_to source_plate.human_barcode, show_plate_asset_path(source_plate) %></td>
   <td><%= source_plate.number_of_blank_samples %></td>
   <td>
     <% source_plate.studies.each do |study| %>

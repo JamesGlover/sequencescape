@@ -2,20 +2,59 @@
 
 require 'rails_helper'
 require 'shared_contexts/limber_shared_context'
+require 'support/lab_where_client_helper'
+
+RSpec.configure do |c|
+  c.include LabWhereClientHelper
+end
 
 describe Plate do
+  context 'labwhere' do
+    let(:plate) { create :plate, barcode: 1 }
+    let(:parentage) { 'Sanger / Ogilvie / AA316' }
+    let(:location) { 'Shelf 1' }
+
+    setup do
+      stub_lwclient_labware_find_by_bc(lw_barcode: plate.human_barcode,
+                                       lw_locn_name: location,
+                                       lw_locn_parentage: parentage)
+      stub_lwclient_labware_find_by_bc(lw_barcode: plate.machine_barcode,
+                                       lw_locn_name: location,
+                                       lw_locn_parentage: parentage)
+    end
+
+    subject { plate.labwhere_location }
+
+    it { is_expected.to eq "#{parentage} - #{location}" }
+  end
+
+  context 'barcodes' do
+    # Maintaining existing barcode behaviour
+    context 'sanger barcodes' do
+      let(:prefix) { 'DN' }
+      let(:barcode_prefix) { create :barcode_prefix, prefix: prefix }
+      let(:plate) { create :plate, prefix: prefix, barcode: '12345' }
+
+      describe '#human_barcode' do
+        subject { plate.human_barcode }
+        it { is_expected.to eq 'DN12345U' }
+      end
+
+      describe '#human_barcode' do
+        subject { plate.human_barcode }
+        it { is_expected.to eq 'DN12345U' }
+      end
+
+      describe '#ean13_barcode' do
+        subject { plate.ean13_barcode }
+        it { is_expected.to eq '1220012345855' }
+      end
+    end
+  end
   # Pools are horrendously complicated
 
   describe '#pools' do
     include_context 'a limber target plate with submissions'
-
-    before do
-      target_plate.wells.each do |well|
-        source_well = input_plate.wells.located_at(well.map_description).first
-        well.stock_wells << source_well
-        create :transfer_request, asset: source_well, target_asset: well, submission_id: source_well.requests.first.submission_id
-      end
-    end
 
     subject { target_plate.pools }
 
@@ -23,7 +62,7 @@ describe Plate do
       let(:expected_pools_hash) do
         {
           target_submission.uuid => {
-            wells: ['A1', 'B1', 'C1'],
+            wells: %w[A1 B1 C1],
             insert_size: { from: 1, to: 20 },
             library_type: { name: 'Standard' },
             request_type: library_request_type.key, pcr_cycles: nil,
@@ -49,7 +88,7 @@ describe Plate do
         let(:expected_pools_hash) do
           {
             target_submission.uuid => {
-              wells: ['A1', 'B1', 'C1'],
+              wells: %w[A1 B1 C1],
               request_type: multiplex_request_type.key,
               pool_complete: false,
               for_multiplexing: true
@@ -65,7 +104,7 @@ describe Plate do
         let(:expected_pools_hash) do
           {
             target_submission.uuid => {
-              wells: ['A1', 'B1', 'C1'],
+              wells: %w[A1 B1 C1],
               insert_size: { from: 1, to: 20 },
               library_type: { name: 'Standard' },
               request_type: library_request_type.key, pcr_cycles: nil,
@@ -73,7 +112,7 @@ describe Plate do
               for_multiplexing: false
             },
             decoy_submission.uuid => {
-              wells: ['A1', 'B1', 'C1'],
+              wells: %w[A1 B1 C1],
               insert_size: { from: 1, to: 20 },
               library_type: { name: 'Standard' },
               request_type: library_request_type.key, pcr_cycles: nil,

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class EventFactoryTest < ActiveSupport::TestCase
@@ -31,9 +25,9 @@ class EventFactoryTest < ActiveSupport::TestCase
         EventFactory.new_project(@project, @user)
       end
 
-     should 'change Event.count by 1' do
-       assert_equal 1, Event.count - @event_count, 'Expected Event.count to change by 1'
-     end
+      should 'change Event.count by 1' do
+        assert_equal 1, Event.count - @event_count, 'Expected Event.count to change by 1'
+      end
 
       context 'send 1 email to 1 recipient' do
         should 'send email' do
@@ -77,7 +71,7 @@ class EventFactoryTest < ActiveSupport::TestCase
           last_mail = ActionMailer::Base.deliveries.last
           assert_match(/Project approved/, last_mail.subject)
           assert last_mail.bcc.include?('south@example.com')
-          assert !last_mail.bcc.include?('')
+          assert_not last_mail.bcc.include?('')
           assert_match(/Project approved/, last_mail.text_part.body.to_s)
         end
       end
@@ -108,7 +102,7 @@ class EventFactoryTest < ActiveSupport::TestCase
           assert last_mail.bcc.include?('north@example.com')
           assert last_mail.bcc.include?('south@example.com')
           assert last_mail.bcc.include?('west@example.com')
-          assert !last_mail.bcc.include?('')
+          assert_not last_mail.bcc.include?('')
           assert_match(/Project approved/, last_mail.text_part.body.to_s)
         end
       end
@@ -129,25 +123,25 @@ class EventFactoryTest < ActiveSupport::TestCase
         EventFactory.project_approved(@project, @user2)
       end
 
-       should 'change Event.count by 1' do
-         assert_equal 1,  Event.count  - @event_count, 'Expected Event.count to change by 1'
-       end
+      should 'change Event.count by 1' do
+        assert_equal 1, Event.count - @event_count, 'Expected Event.count to change by 1'
+      end
 
       context ': send email to project manager' do
         should 'Have sent an email' do
           last_mail = ActionMailer::Base.deliveries.last
           assert_match(/Project approved/, last_mail.subject)
           assert last_mail.bcc.include?('south@example.com')
-          assert !last_mail.bcc.include?('')
+          assert_not last_mail.bcc.include?('')
           assert_match(/Project approved/, last_mail.text_part.body.to_s)
         end
       end
 
       context 'send no email to adminstrator nor to approver' do
         ActionMailer::Base.deliveries.each do |d|
-          assert !d.bcc.include?('west@example.com')
-          assert !d.bcc.include?('north@example.com')
-          assert !d.bcc.include?('')
+          assert_not d.bcc.include?('west@example.com')
+          assert_not d.bcc.include?('north@example.com')
+          assert_not d.bcc.include?('')
         end
       end
     end
@@ -171,9 +165,9 @@ class EventFactoryTest < ActiveSupport::TestCase
         EventFactory.study_has_samples_registered(@study, @samples, @user1)
       end
 
-       should 'change Event.count by 1' do
-         assert_equal 1,  Event.count  - @event_count, 'Expected Event.count to change by 1'
-       end
+      should 'change Event.count by 1' do
+        assert_equal 1, Event.count - @event_count, 'Expected Event.count to change by 1'
+      end
 
       context 'send email to project manager' do
         should 'Have sent an email' do
@@ -204,9 +198,9 @@ class EventFactoryTest < ActiveSupport::TestCase
         EventFactory.request_update_note_to_manager(@request, @user3, message)
       end
 
-       should 'change Event.count by 1' do
-         assert_equal 1,  Event.count  - @event_count, 'Expected Event.count to change by 1'
-       end
+      should 'change Event.count by 1' do
+        assert_equal 1, Event.count - @event_count, 'Expected Event.count to change by 1'
+      end
 
       context 'send email to project manager' do
         should 'Have sent an email' do

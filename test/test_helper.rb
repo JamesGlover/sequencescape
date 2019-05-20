@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2014,2015,2016 Genome Research Ltd.
-
 require 'simplecov'
 
 ENV['RAILS_ENV'] = 'test'
@@ -13,7 +7,7 @@ require 'minitest/autorun'
 require 'shoulda/context'
 require 'shoulda/matchers'
 require 'rails/test_help'
-require 'factory_girl'
+require 'factory_bot'
 require 'webmock/minitest'
 
 begin
@@ -22,12 +16,8 @@ rescue LoadError
   # No pry? That's okay, we're probably on the CI server
 end
 
-require File.expand_path(File.join(Rails.root, %w{test factories.rb}))
-Dir.glob(File.expand_path(File.join(Rails.root, %w{test factories ** *.rb}))) do |factory_filename|
- require factory_filename
-end
-Dir.glob(File.expand_path(File.join(Rails.root, %w{test lib sample_manifest_excel factories ** *.rb}))) do |factory_filename|
- require factory_filename
+Dir.glob(File.expand_path(File.join(Rails.root, %w{spec factories ** *.rb}))) do |factory_filename|
+  require factory_filename
 end
 
 Dir.glob(File.expand_path(File.join(Rails.root, %w{test shoulda_macros *.rb}))) do |macro_filename|
@@ -38,11 +28,11 @@ require "#{Rails.root}/test/unit/task_test_base"
 
 # Rails.application.load_seed
 
+PlateMapGeneration.generate!
+
 class ActiveSupport::TestCase
   extend Sanger::Testing::Controller::Macros
-  extend Sanger::Testing::View::Macros
-  extend Sanger::Testing::Model::Macros
-  include FactoryGirl::Syntax::Methods
+  include FactoryBot::Syntax::Methods
 
   # Transactional fixtures accelerate your tests by wrapping each test method
   # in a transaction that's rolled back on completion.  This ensures that the
@@ -85,26 +75,16 @@ class ActiveSupport::TestCase
 end
 
 class ActionController::TestCase
-  include FactoryGirl::Syntax::Methods
+  include FactoryBot::Syntax::Methods
 end
 
 require 'mocha'
 require 'minitest/unit'
-require 'mocha/mini_test'
+require 'mocha/minitest'
 
 Shoulda::Matchers.configure do |config|
   config.integrate do |with|
-    # Choose a test framework:
-    # with.test_framework :rspec
     with.test_framework :minitest
-    # with.test_framework :minitest_4
-    # with.test_framework :test_unit
-
-    # Choose one or more libraries:
-    # with.library :active_record
-    # with.library :active_model
-    # with.library :action_controller
-    # Or, choose the following (which implies all of the above):
     with.library :rails
   end
 end

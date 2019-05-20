@@ -1,13 +1,8 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
 # require 'pmb_client'
 
 module LabelPrinter
   class PrintJob
-  include ActiveModel::Validations
+    include ActiveModel::Validations
 
     attr_reader :printer_name, :label_class, :options, :labels
 
@@ -40,7 +35,9 @@ module LabelPrinter
     end
 
     def labels_attribute
-      @labels = label_class.new(options).to_h
+      printer = find_printer
+      printer_type_class = { printer_type_class: printer.barcode_printer_type.class }
+      @labels = label_class.new(options.merge(printer_type_class)).to_h
     end
 
     def printer_name_attribute

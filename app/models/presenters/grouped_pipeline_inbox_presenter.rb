@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2016 Genome Research Ltd.
-
 module Presenters
   class GroupedPipelineInboxPresenter
     class << self
@@ -23,7 +17,6 @@ module Presenters
     add_field 'Wells',          :wells,          if: :purpose_important?
     add_field 'Plate Purpose',  :plate_purpose,  if: :purpose_important?
     add_field 'Pick To',        :pick_to,        if: :purpose_important?
-    add_field 'Next Pipeline',  :next_pipeline,  if: :display_next_pipeline?
     add_field 'Submission',     :submission_id,  if: :group_by_submission?
     add_field 'Study',          :study,          if: :group_by_submission?
     add_field 'Stock Barcode',  :stock_barcode,  if: :show_stock?
@@ -74,10 +67,6 @@ module Presenters
 
     def purpose_important?
       pipeline.purpose_information?
-    end
-
-    def display_next_pipeline?
-      pipeline.display_next_pipeline?
     end
 
     def select_partial_requests?
@@ -144,7 +133,7 @@ module Presenters
     end
 
     def barcode
-      parent.sanger_human_barcode
+      parent.human_barcode
     end
 
     def wells
@@ -152,15 +141,11 @@ module Presenters
     end
 
     def plate_purpose
-      parent.purpose.name
+      parent.purpose&.name
     end
 
     def pick_to
       target_purpose_for(request)
-    end
-
-    def next_pipeline
-      next_pipeline_name_for(request)
     end
 
     def study
@@ -168,7 +153,7 @@ module Presenters
     end
 
     def stock_barcode
-      parent.source_plate.try(:sanger_human_barcode) || 'Unknown'
+      parent.source_plate.try(:human_barcode) || 'Unknown'
     end
 
     def still_required

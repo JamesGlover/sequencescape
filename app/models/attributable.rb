@@ -1,8 +1,4 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
+# frozen_string_literal: true
 
 # This module can be included into ActiveRecord::Base classes to get the ability to specify the attributes
 # that are present.  You can think of this as metadata being stored about the column in the table: it's
@@ -43,30 +39,35 @@ module Attributable
     end
   end
 
-  def attribute_value_pairs
-    attribute_details.each_with_object({}) do |attribute, hash|
+  # If we've eager loaded metadata, then we may be using the base class, rather than
+  # subclass specific forms. We can override the details used here
+  def attribute_value_pairs(details = attribute_details)
+    details.each_with_object({}) do |attribute, hash|
       hash[attribute] = attribute.from(self)
     end
   end
 
-  def association_value_pairs
-    association_details.each_with_object({}) do |attribute, hash|
+  # If we've eager loaded metadata, then we may be using the base class, rather than
+  # subclass specific forms. We can override the details used here
+  def association_value_pairs(details = association_details)
+    details.each_with_object({}) do |attribute, hash|
       hash[attribute] = attribute.from(self)
     end
   end
 
   def field_infos
     attribute_details.map do |detail|
-      detail.to_field_info(nil, self)
+      detail.to_field_info(self)
     end
   end
 
   def required?(field)
-    attribute   = attribute_details.detect { |attribute| attribute.name == field }
-    attribute ||= association_details.detect { |association| :"#{association.name}_id" == field }
-    attribute.try(:required?)
+    field_details = attribute_details.detect { |attribute| attribute.name == field } ||
+                    association_details.detect { |association| field == :"#{association.name}_id" }
+    field_details.try(:required?)
   end
 
+  # Class methods for attribute configuration
   module ClassMethods
     def custom_attribute(name, options = {}, override_previous = false)
       attribute = Attribute.new(self, name, options)
@@ -97,7 +98,7 @@ module Attributable
     end
 
     def attribute_details_for(attribute_name)
-      attribute_details.detect { |d| d.name.to_sym == attribute_name.to_sym } or raise StandardError, "Unknown attribute #{attribute_name}"
+      attribute_details.detect { |d| d.name.to_sym == attribute_name.to_sym } || raise(StandardError, "Unknown attribute #{attribute_name}")
     end
   end
 end

@@ -1,14 +1,151 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 require 'shared_contexts/limber_shared_context'
 
 RSpec.describe TransferRequest, type: :model do
-  let!(:source) { LibraryTube.create!.tap { |tube| tube.aliquots.create!(sample: create(:sample)) } }
-  let!(:tag) { create(:tag).tag!(source) }
-  let!(:destination) { LibraryTube.create! }
+  let(:source) { create :well_with_sample_and_without_plate }
+  let(:tag) { create(:tag).tag!(source) }
+  let(:destination) { create :well }
+  let(:example_study) { create :study }
+  let(:example_project) { create :project }
+
+  context 'with a library request' do
+    subject do
+      create :transfer_request,
+             asset: source,
+             target_asset: destination,
+             submission: library_request.submission
+    end
+
+    let(:library_request) do
+      create :library_request,
+             asset: source,
+             initial_study: example_study,
+             initial_project: example_project,
+             state: library_state
+    end
+
+    context 'with a pending library request' do
+      let(:library_state) { 'pending' }
+
+      it 'sets the target aliquots to the library request study and project' do
+        subject
+        expect(destination.aliquots.first.study).to eq(example_study)
+        expect(destination.aliquots.first.project).to eq(example_project)
+      end
+
+      it 'sets appropriate metadata on the aliquots' do
+        subject
+        expect(destination.aliquots.first.library_type).to eq(library_request.library_type)
+        expect(destination.aliquots.first.insert_size).to eq(library_request.insert_size)
+      end
+
+      it 'starts the library request when started' do
+        subject.start!
+        expect(library_request.reload.state).to eq('started')
+      end
+
+      # Users can jump straight to passed from pending. So we need to handle that as well.
+      it 'starts the library request when passed' do
+        subject.pass!
+        expect(library_request.reload.state).to eq('started')
+      end
+    end
+
+    context 'with a primer panel' do
+      let(:library_request) do
+        create :gbs_request,
+               state: 'pending',
+               asset: source,
+               initial_study: example_study,
+               initial_project: example_project
+      end
+
+      it 'sets appropriate metadata on the aliquots' do
+        subject
+        expect(destination.aliquots.first.library_type).to eq(library_request.library_type)
+        expect(destination.aliquots.first.insert_size).to eq(library_request.insert_size)
+        expect(destination.aliquots.first.primer_panel).to eq(library_request.primer_panel)
+      end
+    end
+
+    context 'with a started outer request' do
+      let(:library_state) { 'started' }
+
+      it 'transitions without changing the library request' do
+        subject.pass!
+        expect(library_request.reload.state).to eq('started')
+      end
+    end
+  end
+
+  context 'with multiple library requests' do
+    before do
+      library_request
+      dummy_library_request
+    end
+
+    subject do
+      create :transfer_request,
+             asset: source,
+             target_asset: destination,
+             outer_request: library_request
+    end
+
+    let(:library_request) do
+      create :library_request,
+             asset: source,
+             initial_study: example_study,
+             initial_project: example_project,
+             state: library_state
+    end
+
+    let(:dummy_library_request) do
+      create :library_request,
+             asset: source,
+             initial_study: example_study,
+             initial_project: example_project,
+             state: library_state,
+             submission: library_request.submission
+    end
+
+    context 'with a pending library request' do
+      let(:library_state) { 'pending' }
+
+      it 'sets the target aliquots to the library request study and project' do
+        subject
+        expect(destination.aliquots.first.study).to eq(example_study)
+        expect(destination.aliquots.first.project).to eq(example_project)
+      end
+
+      it 'sets appropriate metadata on the aliquots' do
+        subject
+        expect(destination.aliquots.first.library_type).to eq(library_request.library_type)
+        expect(destination.aliquots.first.insert_size).to eq(library_request.insert_size)
+      end
+
+      it 'starts the library request when started' do
+        subject.start!
+        expect(library_request.reload.state).to eq('started')
+      end
+
+      it 'does not starts the dummy library request when started' do
+        subject.start!
+        expect(dummy_library_request.reload.state).to eq('pending')
+      end
+
+      # Users can jump straight to passed from pending. So we need to handle that as well.
+      it 'starts the library request when passed' do
+        subject.pass!
+        expect(library_request.reload.state).to eq('started')
+      end
+    end
+  end
 
   context 'TransferRequest' do
     context 'when using the constuctor' do
-      let!(:transfer_request) { RequestType.transfer.create!(asset: source, target_asset: destination) }
+      let!(:transfer_request) { TransferRequest.create!(asset: source, target_asset: destination) }
 
       it 'should duplicate the aliquots' do
         expected_aliquots = source.aliquots.map { |a| [a.sample_id, a.tag_id] }
@@ -17,32 +154,29 @@ RSpec.describe TransferRequest, type: :model do
       end
 
       it 'should have the correct attributes' do
-        expect(transfer_request.request_type).to eq RequestType.find_by(key: 'transfer')
-        expect(transfer_request.sti_type).to eq 'TransferRequest'
         expect(transfer_request.state).to eq 'pending'
         expect(transfer_request.asset_id).to eq source.id
         expect(transfer_request.target_asset_id).to eq destination.id
       end
-    end
 
-    it 'should assign correct attributes if attributes were not passed' do
-      transfer_request = TransferRequest.create(asset: source, target_asset: destination)
-      transfer_request_type = RequestType.find_by(key: 'transfer')
-      expect(transfer_request.request_type).to eq transfer_request_type
-      expect(transfer_request.request_purpose).to eq transfer_request_type.request_purpose
-    end
+      context 'when the source has stock wells' do
+        let(:source) { create :well_with_sample_and_without_plate, stock_wells: create_list(:well, 2) }
+        it 'should set the stock wells' do
+          expect(destination.stock_wells).to eq(source.stock_wells)
+        end
+      end
 
-    it 'should assign correct attributes if attributes were passed' do
-      request_type = RequestType.find_by(key: 'initial_transfer')
-      request_purpose = RequestPurpose.find_by(key: 'control')
-      transfer_request = TransferRequest.create(asset: source, target_asset: destination, request_type: request_type, request_purpose: request_purpose)
-      expect(transfer_request.request_type).to eq request_type
-      expect(transfer_request.request_purpose).to eq request_purpose
+      context 'when the source is a stock well' do
+        let(:source) { create :well_with_sample_and_without_plate, plate: create(:stock_plate) }
+        it 'should set the stock wells' do
+          expect(destination.stock_wells).to eq([source])
+        end
+      end
     end
 
     it 'should not permit transfers to the same asset' do
       asset = create(:sample_tube)
-      expect { RequestType.transfer.create!(asset: asset, target_asset: asset) }.to raise_error(ActiveRecord::RecordInvalid)
+      expect { TransferRequest.create!(asset: asset, target_asset: asset) }.to raise_error(ActiveRecord::RecordInvalid)
     end
 
     context 'with a tag clash' do
@@ -54,8 +188,33 @@ RSpec.describe TransferRequest, type: :model do
 
       it 'should raise an exception' do
         expect do
-          RequestType.transfer.create!(asset: aliquot_2.receptacle.reload, target_asset: target_asset)
+          TransferRequest.create!(asset: aliquot_2.receptacle.reload, target_asset: target_asset)
         end.to raise_error(Aliquot::TagClash)
+      end
+    end
+  end
+
+  describe 'state_machine' do
+    subject { build :transfer_request }
+
+    {
+      start: { pending: :started },
+      pass: { pending: :passed, started: :passed, failed: :passed, processed_2: :passed },
+      process_1: { pending: :processed_1 },
+      process_2: { processed_1: :processed_2 },
+      qc: { passed: :qc_complete },
+      fail: { pending: :failed, started: :failed, processed_1: :failed, processed_2: :failed, passed: :failed },
+      cancel: { started: :cancelled, processed_1: :cancelled, processed_2: :cancelled, passed: :cancelled, qc_complete: :cancelled },
+      cancel_before_started: { pending: :cancelled }
+    }.each do |event, transitions|
+      transitions.each do |from_state, to_state|
+        it { is_expected.to transition_from(from_state).to(to_state).on_event(event) }
+      end
+      (%i[pending started passed failed qc_complete cancelled] - transitions.keys).each do |state|
+        it "does not allow #{state} requests to #{event}" do
+          tf = build :transfer_request, state: state
+          expect(tf).to_not allow_event(event)
+        end
       end
     end
   end
@@ -67,13 +226,14 @@ RSpec.describe TransferRequest, type: :model do
 
     let(:library_request) do
       create :library_request,
-             asset: stock_asset
+             asset: stock_asset,
+             submission: create(:submission)
     end
 
     before do
       # A decoy library request, this is part of a different submission and
       # should be ignored
-      create :library_request, asset: stock_asset
+      create :library_request, asset: stock_asset, submission: create(:submission)
       last_well.stock_wells << stock_asset
     end
 
@@ -99,9 +259,42 @@ RSpec.describe TransferRequest, type: :model do
       context 'from a tube made from the last well' do
         let(:stock_asset) { create :well_with_sample_and_without_plate }
         let(:source_asset) { create :tube }
-        before { create :transfer_request, asset: last_well, target_asset: source_asset }
+        before { create :transfer_request, asset: last_well, target_asset: source_asset, submission: library_request.submission }
         it { is_expected.to eq library_request }
       end
+    end
+  end
+
+  context 'transfer downstream of pooling (such as in ISC)' do
+    let(:library_request_type) { create :library_request_type }
+    let(:multiplex_request_type) { create :multiplex_request_type }
+    # In some cases (such as chromium) we have multiple aliquots pre library request
+    let(:source_well_a) { create :tagged_well, aliquot_count: 2 }
+    let(:source_well_b) { create :tagged_well }
+    let(:target_well) { create :empty_well }
+    let(:submission) { create :submission }
+    let(:order) { create :library_order, submission: submission, request_types: [library_request_type.id, multiplex_request_type.id], assets: [source_well_a, source_well_b] }
+    let(:multiplexed_library_tube) { create :multiplexed_library_tube, aliquots: [] }
+    let(:library_request_a) { create :library_request, asset: source_well_a, target_asset: target_well, submission: submission, order: order, state: 'passed', request_type: library_request_type }
+    let(:library_request_b) { create :library_request, asset: source_well_b, target_asset: target_well, submission: submission, order: order, state: 'passed', request_type: library_request_type }
+    # While source and target assets are the same, we actually have two requests
+    let(:multiplex_request_a) { create :multiplex_request, asset: target_well, target_asset: multiplexed_library_tube, submission: submission,  order: order, request_type: multiplex_request_type }
+    let(:multiplex_request_b) { create :multiplex_request, asset: target_well, target_asset: multiplexed_library_tube, submission: submission,  order: order, request_type: multiplex_request_type }
+
+    # Order here matters
+    before do
+      order
+      library_request_a
+      library_request_b
+      multiplex_request_a
+      multiplex_request_b
+      create :transfer_request, asset: source_well_a, target_asset: target_well, submission: submission
+      create :transfer_request, asset: source_well_b, target_asset: target_well, submission: submission
+    end
+
+    it 'associated each aliquot with a different library request' do
+      create :transfer_request, asset: target_well, target_asset: multiplexed_library_tube, submission: submission
+      expect(multiplexed_library_tube.reload.aliquots.map(&:request_id)).to eq([multiplex_request_a.id, multiplex_request_a.id, multiplex_request_b.id])
     end
   end
 end

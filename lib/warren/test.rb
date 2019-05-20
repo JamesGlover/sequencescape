@@ -16,10 +16,11 @@ class Warren::Test
   # Creates a test warren with no messages.
   # Test warrens are shared across all threads.
   #
-  # @param [_] *_args Configuration arguments are ignored.
+  # @param [_] _args Configuration arguments are ignored.
   #
   def initialize(*_args)
     @messages = []
+    @enabled = false
   end
 
   #

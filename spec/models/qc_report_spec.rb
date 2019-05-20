@@ -21,9 +21,9 @@ RSpec.describe QcReport, type: :model do
         2.times do |i|
           attribute = create :well_attribute, current_volume: 500, concentration: 200
           sample = create(:study_sample, study: study).sample
-          sample.update_attributes!(sanger_sample_id: 'TEST1')
+          sample.update!(sanger_sample_id: 'TEST1')
           well = create :well, samples: [sample], plate: stock_plate, map: create(:map, location_id: i), well_attribute: attribute
-          well.aliquots.each { |a| a.update_attributes!(study: study) }
+          well.aliquots.each { |a| a.update!(study: study) }
         end
       end
 
@@ -68,21 +68,21 @@ RSpec.describe QcReport, type: :model do
 
       sample = create(:study_sample, study: study).sample
       @unreported_sample = well = create :well, samples: [sample], plate: stock_plate, map: create(:map, location_id: 1), well_attribute: attribute
-      well.aliquots.each { |a| a.update_attributes!(study: study) }
+      well.aliquots.each { |a| a.update!(study: study) }
 
       sample = create(:study_sample, study: study).sample
       well = create :well, samples: [sample], plate: stock_plate, map: create(:map, location_id: 2), well_attribute: attribute
-      well.aliquots.each { |a| a.update_attributes!(study: study) }
+      well.aliquots.each { |a| a.update!(study: study) }
       create :qc_metric, asset: well, qc_report: matching_report
 
       sample = create(:study_sample, study: study).sample
       @other_reported_sample = well = create :well, samples: [sample], plate: stock_plate, map: create(:map, location_id: 3), well_attribute: attribute
-      well.aliquots.each { |a| a.update_attributes!(study: study) }
+      well.aliquots.each { |a| a.update!(study: study) }
       create :qc_metric, asset: well, qc_report: other_report
 
       sample = create(:study_sample, study: study).sample
       well = create :well, samples: [sample], plate: stock_plate, map: create(:map, location_id: 4), well_attribute: attribute
-      well.aliquots.each { |a| a.update_attributes!(study: study) }
+      well.aliquots.each { |a| a.update!(study: study) }
       create :qc_metric, asset: well, qc_report: matching_report
       create :qc_metric, asset: well, qc_report: other_report
 
@@ -124,9 +124,9 @@ RSpec.describe QcReport, type: :model do
     let(:plate_purposes)  { ['ISC lib PCR-XP', 'Lib PCR-XP', 'PF Post Shear'] }
 
     before(:each) do
-      plate_purposes.each do |plate_purpose|
-        create(:well_for_qc_report, study: study, plate: create(:plate, plate_purpose: PlatePurpose.find_by(name: plate_purpose)))
-      end
+      create(:well_for_qc_report, study: study, plate: create(:plate, plate_purpose: PlatePurpose.find_by(name: 'ISC lib PCR-XP')))
+      create(:well_for_qc_report, study: study, plate: create(:plate, plate_purpose: create(:plate_purpose, name: 'Lib PCR-XP')))
+      create(:well_for_qc_report, study: study, plate: create(:plate, plate_purpose: create(:plate_purpose, name: 'PF Post Shear')))
 
       @qc_report = create :qc_report, study: study, exclude_existing: false, product_criteria: create(:product_criteria), plate_purposes: plate_purposes
       qc_report.generate!

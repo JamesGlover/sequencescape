@@ -10,7 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170830153401) do
+
+ActiveRecord::Schema.define(version: 20181119105427) do
+
+  create_table "aker_containers", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.string "barcode"
+    t.string "address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "asset_id"
+  end
+
+  create_table "aker_jobs", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.integer "aker_job_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "aker_job_url", default: "", null: false
+    t.string "job_uuid"
+    t.index ["job_uuid"], name: "index_aker_jobs_on_job_uuid", unique: true
+  end
 
   create_table "aliquot_indices", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "aliquot_id", null: false
@@ -37,9 +55,14 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "bait_library_id"
     t.integer "tag2_id", default: -1
     t.boolean "suboptimal", default: false, null: false
+    t.bigint "primer_panel_id"
+    t.integer "request_id"
     t.index ["library_id"], name: "index_aliquots_on_library_id"
+    t.index ["primer_panel_id"], name: "index_aliquots_on_primer_panel_id"
     t.index ["receptacle_id", "tag_id", "tag2_id"], name: "aliquot_tags_and_tag2s_are_unique_within_receptacle", unique: true
+    t.index ["request_id"], name: "fk_rails_37734e1810"
     t.index ["sample_id"], name: "index_aliquots_on_sample_id"
+    t.index ["study_id", "receptacle_id"], name: "index_aliquots_on_study_id_and_receptacle_id"
     t.index ["study_id"], name: "index_aliquots_on_study_id"
     t.index ["tag_id"], name: "tag_id_idx"
   end
@@ -135,7 +158,7 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.text "descriptors"
     t.text "descriptor_fields"
     t.string "sti_type", limit: 50
-    t.string "barcode"
+    t.string "barcode_bkp"
     t.string "qc_state", limit: 20
     t.boolean "resource"
     t.datetime "created_at"
@@ -149,14 +172,12 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "two_dimensional_barcode"
     t.integer "plate_purpose_id"
     t.decimal "volume", precision: 10, scale: 2
-    t.integer "barcode_prefix_id"
+    t.integer "barcode_prefix_id_bkp"
     t.decimal "concentration", precision: 18, scale: 8
     t.integer "legacy_sample_id"
     t.integer "legacy_tag_id"
-    t.index ["barcode"], name: "index_assets_deprecated_on_barcode"
-    t.index ["barcode_prefix_id"], name: "index_assets_deprecated_on_barcode_prefix_id"
-    t.index ["legacy_sample_id"], name: "index_assets_on_sample_id"
-    t.index ["map_id"], name: "index_assets_deprecated_on_map_id"
+    t.index ["barcode_bkp"], name: "index_assets_on_barcode_bkp"
+    t.index ["barcode_prefix_id_bkp"], name: "index_assets_on_barcode_prefix_id_bkp"
     t.index ["sti_type", "plate_purpose_id"], name: "index_assets_on_plate_purpose_id_sti_type"
     t.index ["sti_type", "updated_at"], name: "index_assets_deprecated_on_sti_type_and_updated_at"
     t.index ["sti_type"], name: "index_assets_deprecated_on_sti_type"
@@ -180,9 +201,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.text "changes"
     t.integer "version", default: 0
     t.datetime "created_at"
-    t.index ["auditable_id", "auditable_type"], name: "auditable_index"
-    t.index ["created_at"], name: "index_audits_on_created_at"
-    t.index ["user_id", "user_type"], name: "user_index"
   end
 
   create_table "bait_libraries", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -211,7 +229,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.boolean "visible", default: true, null: false
-    t.index ["name"], name: "index_bait_library_suppliers_on_name", unique: true
   end
 
   create_table "bait_library_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -219,6 +236,7 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.boolean "visible", default: true, null: false
+    t.integer "category"
     t.index ["name"], name: "index_bait_library_types_on_name", unique: true
   end
 
@@ -235,7 +253,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "updated_at"
     t.string "label_template_name"
     t.index ["name"], name: "index_barcode_printer_types_on_name"
-    t.index ["printer_type_id"], name: "index_barcode_printer_types_on_printer_type_id"
     t.index ["type"], name: "index_barcode_printer_types_on_type"
   end
 
@@ -247,6 +264,16 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "barcode_printer_type_id"
   end
 
+  create_table "barcodes", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.integer "asset_id", null: false
+    t.string "barcode", null: false
+    t.integer "format", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_barcodes_on_asset_id"
+    t.index ["barcode"], name: "index_barcodes_on_barcode"
+  end
+
   create_table "batch_requests", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "batch_id", null: false
     t.integer "request_id", null: false
@@ -254,9 +281,7 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["batch_id"], name: "index_batch_requests_on_batch_id"
-    t.index ["request_id"], name: "index_batch_requests_on_request_id"
     t.index ["request_id"], name: "request_id", unique: true
-    t.index ["updated_at"], name: "index_batch_requests_on_updated_at"
   end
 
   create_table "batches", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -286,8 +311,36 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer "request_id", null: false
-    t.index ["kind"], name: "index_billing_events_on_kind"
-    t.index ["reference"], name: "index_billing_events_on_reference"
+  end
+
+  create_table "billing_items", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.integer "request_id"
+    t.string "project_cost_code"
+    t.string "units"
+    t.string "billing_product_code"
+    t.string "billing_product_name"
+    t.string "billing_product_description"
+    t.string "request_passed_date"
+    t.timestamp "reported_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["request_id"], name: "index_billing_items_on_request_id"
+  end
+
+  create_table "billing_product_catalogues", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "billing_products", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.string "name"
+    t.string "identifier"
+    t.integer "category"
+    t.integer "billing_product_catalogue_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["billing_product_catalogue_id"], name: "fk_rails_01eabb683d"
   end
 
   create_table "broadcast_events", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -353,7 +406,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["asset_id"], name: "index_custom_metadatum_collections_on_asset_id"
-    t.index ["user_id"], name: "index_custom_metadatum_collections_on_user_id"
   end
 
   create_table "custom_texts", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -402,7 +454,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer "workflow_id"
-    t.index ["request_id"], name: "index_attempts_on_request_id"
   end
 
   create_table "descriptors", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -445,7 +496,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "thumbnail"
     t.integer "db_file_id"
     t.string "documentable_type", limit: 50
-    t.index ["documentable_id", "documentable_type"], name: "index_documents_on_documentable_id_and_documentable_type"
   end
 
   create_table "equipment", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -472,7 +522,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "type", default: "Event"
     t.index ["eventful_id"], name: "index_events_on_eventful_id"
     t.index ["eventful_type"], name: "index_events_on_eventful_type"
-    t.index ["family"], name: "index_events_on_family"
   end
 
   create_table "extended_validators", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -490,9 +539,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["propertied_id", "propertied_type", "key"], name: "ep_pi_pt_key"
-    t.index ["propertied_id", "propertied_type"], name: "ep_pi_pt"
-    t.index ["propertied_type", "key"], name: "index_external_properties_on_propertied_type_and_key"
-    t.index ["value"], name: "index_external_properties_on_value"
   end
 
   create_table "extraction_attributes", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -545,7 +591,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "name"
     t.string "barcode"
     t.string "equipment_type"
-    t.index ["barcode"], name: "index_implements_on_barcode"
   end
 
   create_table "items", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -558,15 +603,10 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "workflow_sample_id"
     t.boolean "closed", default: false
     t.integer "pool_id"
-    t.integer "workflow_id"
     t.integer "version"
     t.integer "submission_id"
     t.index ["name"], name: "index_items_on_name"
-    t.index ["study_id"], name: "index_items_on_study_id"
-    t.index ["submission_id"], name: "index_items_on_submission_id"
     t.index ["version"], name: "index_items_on_version"
-    t.index ["workflow_id"], name: "index_items_on_workflow_id"
-    t.index ["workflow_sample_id"], name: "index_items_on_sample_id"
   end
 
   create_table "lab_events", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -583,18 +623,9 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "user_id"
     t.integer "batch_id"
     t.index ["batch_id"], name: "index_lab_events_on_batch_id"
-    t.index ["created_at"], name: "index_lab_events_on_created_at"
     t.index ["description", "eventful_type"], name: "index_lab_events_find_flowcell", length: { description: 20 }
     t.index ["eventful_id"], name: "index_lab_events_on_eventful_id"
     t.index ["eventful_type"], name: "index_lab_events_on_eventful_type"
-  end
-
-  create_table "lab_interface_workflows", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
-    t.string "name"
-    t.integer "item_limit"
-    t.text "locale"
-    t.integer "pipeline_id"
-    t.index ["pipeline_id"], name: "index_lab_interface_workflows_on_pipeline_id"
   end
 
   create_table "labware", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -641,15 +672,22 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.index ["request_type_id"], name: "fk_library_types_request_types_to_request_types"
   end
 
-  create_table "location_associations", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
-    t.integer "locatable_id", null: false
-    t.integer "location_id", null: false
-    t.index ["locatable_id"], name: "single_location_per_locatable_idx", unique: true
-    t.index ["location_id"], name: "index_location_associations_on_location_id"
-  end
-
-  create_table "locations", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
-    t.string "name"
+  create_table "location_reports", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.integer "report_type", null: false
+    t.string "location_barcode"
+    t.text "barcodes"
+    t.string "faculty_sponsor_ids"
+    t.bigint "study_id"
+    t.string "plate_purpose_ids"
+    t.datetime "start_date"
+    t.datetime "end_date"
+    t.string "report_filename"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["study_id"], name: "index_location_reports_on_study_id"
+    t.index ["user_id"], name: "index_location_reports_on_user_id"
   end
 
   create_table "lot_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -702,6 +740,7 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "template", null: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.index ["target_id", "target_type"], name: "index_messengers_on_target_id_and_target_type"
   end
 
   create_table "order_roles", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -712,7 +751,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
 
   create_table "orders", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "study_id"
-    t.integer "workflow_id"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string "state_to_delete", limit: 20
@@ -731,8 +769,8 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "pre_cap_group"
     t.integer "order_role_id"
     t.integer "product_id"
-    t.index ["state_to_delete"], name: "index_submissions_on_state"
     t.index ["study_id"], name: "index_submissions_on_project_id"
+    t.index ["submission_id"], name: "index_orders_on_submission_id"
   end
 
   create_table "pac_bio_library_tube_metadata", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -754,7 +792,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "permissable_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.index ["permissable_id"], name: "index_permissions_on_permissable_id"
   end
 
   create_table "pipeline_request_information_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -772,7 +809,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "updated_at"
     t.integer "next_pipeline_id"
     t.integer "previous_pipeline_id"
-    t.integer "location_id"
     t.boolean "group_by_parent"
     t.string "asset_type", limit: 50
     t.boolean "group_by_submission_to_delete"
@@ -787,7 +823,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "group_name"
     t.integer "control_request_type_id", null: false
     t.integer "min_size"
-    t.index ["sorter"], name: "index_pipelines_on_sorter"
   end
 
   create_table "pipelines_request_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -830,12 +865,12 @@ ActiveRecord::Schema.define(version: 20170830153401) do
 
   create_table "plate_metadata", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "plate_id"
-    t.string "infinium_barcode"
+    t.string "infinium_barcode_bkp"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string "fluidigm_barcode", limit: 10
+    t.string "fluidigm_barcode_bkp", limit: 10
     t.decimal "dilution_factor", precision: 5, scale: 2, default: "1.0"
-    t.index ["fluidigm_barcode"], name: "index_on_fluidigm_barcode", unique: true
+    t.index ["fluidigm_barcode_bkp"], name: "index_on_fluidigm_barcode", unique: true
     t.index ["plate_id"], name: "index_plate_metadata_on_plate_id"
   end
 
@@ -851,7 +886,8 @@ ActiveRecord::Schema.define(version: 20170830153401) do
   create_table "plate_purpose_relationships", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "parent_id"
     t.integer "child_id"
-    t.integer "transfer_request_type_id", null: false
+    t.integer "transfer_request_type_id"
+    t.integer "transfer_request_class_name", default: 0, null: false
   end
 
   create_table "plate_purposes", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -865,16 +901,15 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "barcode_printer_type_id"
     t.boolean "cherrypickable_target", default: true, null: false
     t.string "cherrypick_direction", default: "column", null: false
-    t.integer "default_location_id"
-    t.string "cherrypick_filters"
     t.integer "size", default: 96
     t.integer "asset_shape_id", default: 1, null: false
     t.string "barcode_for_tecan", default: "ean13_barcode", null: false
     t.integer "source_purpose_id"
     t.integer "lifespan"
+    t.integer "barcode_prefix_id"
+    t.index ["barcode_prefix_id"], name: "fk_rails_763bed2756"
     t.index ["target_type"], name: "index_plate_purposes_on_target_type"
     t.index ["type"], name: "index_plate_purposes_on_type"
-    t.index ["updated_at"], name: "index_plate_purposes_on_updated_at"
   end
 
   create_table "plate_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -907,6 +942,14 @@ ActiveRecord::Schema.define(version: 20170830153401) do
   create_table "pre_capture_pools", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.datetime "created_at"
     t.datetime "updated_at"
+  end
+
+  create_table "primer_panels", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.string "name", null: false
+    t.integer "snp_count", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "programs"
   end
 
   create_table "product_catalogues", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -987,7 +1030,12 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.index ["approved"], name: "index_projects_on_approved"
     t.index ["enforce_quotas"], name: "index_projects_on_enforce_quotas"
     t.index ["state"], name: "index_projects_on_state"
-    t.index ["updated_at"], name: "index_projects_on_updated_at"
+  end
+
+  create_table "qc_assays", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "lot_number"
   end
 
   create_table "qc_decision_qcables", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1050,6 +1098,21 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.index ["study_id"], name: "fk_qc_reports_to_studies"
   end
 
+  create_table "qc_results", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.bigint "asset_id"
+    t.string "key"
+    t.string "value"
+    t.string "units"
+    t.float "cv", limit: 24
+    t.string "assay_type"
+    t.string "assay_version"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "qc_assay_id"
+    t.index ["asset_id"], name: "index_qc_results_on_asset_id"
+    t.index ["qc_assay_id"], name: "index_qc_results_on_qc_assay_id"
+  end
+
   create_table "qcable_creators", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "lot_id", null: false
     t.integer "user_id", null: false
@@ -1075,8 +1138,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "updated_at"
     t.integer "request_type_id"
     t.integer "preordered_count", default: 0
-    t.index ["request_type_id", "project_id"], name: "index_quotas_on_request_type_id_and_project_id"
-    t.index ["updated_at"], name: "index_quotas_on_updated_at"
   end
 
   create_table "receptacles", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1131,7 +1192,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "value"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.index ["request_id"], name: "index_request_informations_on_request_id"
   end
 
   create_table "request_metadata", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1158,19 +1218,13 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.boolean "customer_accepts_responsibility"
     t.integer "pcr_cycles"
     t.string "data_type"
+    t.integer "primer_panel_id"
     t.index ["request_id"], name: "index_request_metadata_on_request_id"
-  end
-
-  create_table "request_purposes", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
-    t.string "key", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
   end
 
   create_table "request_quotas_bkp", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer "request_id", null: false
     t.integer "quota_id", null: false
-    t.index ["quota_id", "request_id"], name: "index_request_quotas_on_quota_id_and_request_id"
     t.index ["request_id"], name: "fk_request_quotas_to_requests"
   end
 
@@ -1191,7 +1245,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
   create_table "request_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.string "key", limit: 100
     t.string "name"
-    t.integer "workflow_id"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string "asset_type"
@@ -1209,7 +1262,9 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.boolean "no_target_asset", default: false, null: false
     t.integer "target_purpose_id"
     t.integer "pooling_method_id"
-    t.integer "request_purpose_id"
+    t.integer "request_purpose"
+    t.integer "billing_product_catalogue_id"
+    t.index ["billing_product_catalogue_id"], name: "index_request_types_on_billing_product_catalogue_id"
   end
 
   create_table "request_types_extended_validators", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1228,7 +1283,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "user_id"
     t.string "state", limit: 20, default: "pending"
     t.integer "sample_pool_id"
-    t.integer "workflow_id"
     t.integer "request_type_id"
     t.integer "item_id"
     t.integer "asset_id"
@@ -1240,18 +1294,17 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "priority", default: 0
     t.string "sti_type"
     t.integer "order_id"
-    t.integer "request_purpose_id"
-    t.integer "work_order_id"
+    t.integer "request_purpose"
+    t.bigint "work_order_id"
+    t.integer "billing_product_id"
     t.index ["asset_id"], name: "index_requests_on_asset_id"
-    t.index ["initial_project_id"], name: "index_requests_on_project_id"
+    t.index ["billing_product_id"], name: "index_requests_on_billing_product_id"
     t.index ["initial_study_id", "request_type_id", "state"], name: "index_requests_on_project_id_and_request_type_id_and_state"
     t.index ["initial_study_id"], name: "index_request_on_project_id"
-    t.index ["item_id"], name: "index_request_on_item_id"
     t.index ["request_type_id", "state"], name: "request_type_id_state_index"
     t.index ["state", "request_type_id", "initial_study_id"], name: "request_project_index"
     t.index ["submission_id"], name: "index_requests_on_submission_id"
     t.index ["target_asset_id"], name: "index_requests_on_target_asset_id"
-    t.index ["updated_at"], name: "index_requests_on_updated_at"
     t.index ["work_order_id"], name: "index_requests_on_work_order_id"
   end
 
@@ -1293,6 +1346,15 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.index ["user_id"], name: "index_roles_users_on_user_id"
   end
 
+  create_table "sample_jobs", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.bigint "sample_id"
+    t.bigint "job_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["job_id"], name: "index_sample_jobs_on_job_id"
+    t.index ["sample_id"], name: "index_sample_jobs_on_sample_id"
+  end
+
   create_table "sample_manifests", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -1307,13 +1369,9 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "user_id"
     t.string "password"
     t.integer "purpose_id"
-    t.index ["asset_type"], name: "index_sample_manifests_on_asset_type"
-    t.index ["created_at"], name: "index_sample_manifests_on_created_at"
     t.index ["purpose_id"], name: "fk_rails_5627ab4aaa"
     t.index ["study_id"], name: "index_sample_manifests_on_study_id"
     t.index ["supplier_id"], name: "index_sample_manifests_on_supplier_id"
-    t.index ["updated_at"], name: "index_sample_manifests_on_updated_at"
-    t.index ["user_id"], name: "index_sample_manifests_on_user_id"
   end
 
   create_table "sample_metadata", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1395,6 +1453,8 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.boolean "empty_supplier_sample_name", default: false
     t.boolean "updated_by_manifest", default: false
     t.boolean "consent_withdrawn", default: false, null: false
+    t.integer "work_order_id"
+    t.integer "container_id"
     t.index ["created_at"], name: "index_samples_on_created_at"
     t.index ["name"], name: "index_samples_on_name"
     t.index ["sample_manifest_id"], name: "index_samples_on_sample_manifest_id"
@@ -1469,7 +1529,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.index ["ethically_approved"], name: "index_studies_on_ethically_approved"
     t.index ["state"], name: "index_studies_on_state"
     t.index ["updated_at"], name: "index_studies_on_updated_at"
-    t.index ["user_id"], name: "index_projects_on_user_id"
   end
 
   create_table "study_metadata", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1521,7 +1580,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "s3_email_list"
     t.string "data_deletion_period"
     t.index ["faculty_sponsor_id"], name: "index_study_metadata_on_faculty_sponsor_id"
-    t.index ["prelim_id"], name: "index_study_metadata_on_prelim_id"
     t.index ["study_id"], name: "index_study_metadata_on_study_id"
   end
 
@@ -1534,8 +1592,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "study_id"
     t.integer "related_study_id"
     t.integer "study_relation_type_id"
-    t.index ["related_study_id"], name: "index_study_relations_on_related_study_id"
-    t.index ["study_id"], name: "index_study_relations_on_study_id"
   end
 
   create_table "study_reports", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1545,9 +1601,7 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "user_id"
     t.string "report_filename"
     t.string "content_type", default: "text/csv"
-    t.index ["created_at"], name: "index_study_reports_on_created_at"
     t.index ["study_id"], name: "index_study_reports_on_study_id"
-    t.index ["updated_at"], name: "index_study_reports_on_updated_at"
     t.index ["user_id"], name: "index_study_reports_on_user_id"
   end
 
@@ -1599,14 +1653,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.index ["product_catalogue_id"], name: "fk_submission_templates_to_product_catalogues"
   end
 
-  create_table "submission_workflows", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
-    t.string "key", limit: 50
-    t.string "name"
-    t.string "item_label"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
   create_table "submissions", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -1641,10 +1687,7 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "fax"
     t.string "supplier_url"
     t.string "abbreviation"
-    t.index ["abbreviation"], name: "index_suppliers_on_abbreviation"
-    t.index ["created_at"], name: "index_suppliers_on_created_at"
     t.index ["name"], name: "index_suppliers_on_name"
-    t.index ["updated_at"], name: "index_suppliers_on_updated_at"
   end
 
   create_table "tag2_layout_template_submissions", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1681,6 +1724,17 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.index ["name"], name: "tag_groups_unique_name", unique: true
   end
 
+  create_table "tag_layout_template_submissions", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.integer "submission_id", null: false
+    t.integer "tag_layout_template_id", null: false
+    t.boolean "enforce_uniqueness"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["submission_id", "tag_layout_template_id", "enforce_uniqueness"], name: "tag_layout_uniqueness", unique: true
+    t.index ["submission_id"], name: "index_tag_layout_template_submissions_on_submission_id"
+    t.index ["tag_layout_template_id"], name: "index_tag_layout_template_submissions_on_tag_layout_template_id"
+  end
+
   create_table "tag_layout_templates", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.string "direction_algorithm"
     t.integer "tag_group_id"
@@ -1714,7 +1768,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "updated_at"
     t.index ["map_id"], name: "index_tags_on_map_id"
     t.index ["tag_group_id"], name: "index_tags_on_tag_group_id"
-    t.index ["updated_at"], name: "index_tags_on_updated_at"
   end
 
   create_table "task_request_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1723,8 +1776,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer "order"
-    t.index ["request_type_id"], name: "index_task_request_types_on_request_type_id"
-    t.index ["task_id"], name: "index_task_request_types_on_task_id"
   end
 
   create_table "tasks", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1758,6 +1809,19 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "fk_rails_e542f48171"
+  end
+
+  create_table "transfer_requests", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string "state", limit: 20, default: "pending"
+    t.integer "asset_id"
+    t.integer "target_asset_id"
+    t.integer "submission_id"
+    t.integer "order_id"
+    t.index ["asset_id"], name: "index_requests_on_asset_id"
+    t.index ["submission_id"], name: "index_requests_on_submission_id"
+    t.index ["target_asset_id"], name: "index_requests_on_target_asset_id"
   end
 
   create_table "transfer_templates", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -1800,7 +1864,6 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.string "api_key"
     t.string "first_name"
     t.string "last_name"
-    t.integer "workflow_id"
     t.boolean "pipeline_administrator"
     t.string "barcode"
     t.string "cookie"
@@ -1880,17 +1943,19 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.index ["work_completion_id"], name: "fk_rails_5ea64f1af2"
   end
 
-  create_table "work_order_types", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
+  create_table "work_order_types", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_work_order_types_on_name", unique: true
   end
 
-  create_table "work_orders", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
-    t.integer "work_order_type_id", null: false
+  create_table "work_orders", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.bigint "work_order_type_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "state", null: false
+    t.index ["work_order_type_id", "state"], name: "index_work_orders_on_work_order_type_id_and_state"
     t.index ["work_order_type_id"], name: "fk_rails_80841fcb4c"
   end
 
@@ -1907,14 +1972,33 @@ ActiveRecord::Schema.define(version: 20170830153401) do
     t.integer "version"
   end
 
+  create_table "workflows", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
+    t.string "name"
+    t.integer "item_limit"
+    t.text "locale"
+    t.integer "pipeline_id"
+    t.index ["pipeline_id"], name: "index_workflows_on_pipeline_id"
+  end
+
+  add_foreign_key "aliquots", "primer_panels"
+  add_foreign_key "aliquots", "requests"
+  add_foreign_key "barcodes", "assets"
+  add_foreign_key "billing_items", "requests"
+  add_foreign_key "billing_products", "billing_product_catalogues"
+  add_foreign_key "plate_purposes", "barcode_prefixes"
   add_foreign_key "qc_files", "labware", column: "asset_id"
   add_foreign_key "receptacles", "labware"
+  add_foreign_key "qc_results", "qc_assays"
+  add_foreign_key "request_types", "billing_product_catalogues"
+  add_foreign_key "requests", "billing_products"
   add_foreign_key "requests", "work_orders"
   add_foreign_key "sample_manifests", "plate_purposes", column: "purpose_id"
+  add_foreign_key "tag_layout_template_submissions", "submissions"
+  add_foreign_key "tag_layout_template_submissions", "tag_layout_templates"
   add_foreign_key "tag_layout_templates", "tag_groups", column: "tag2_group_id"
   add_foreign_key "tag_layouts", "tag_groups", column: "tag2_group_id"
-  add_foreign_key "transfer_request_collection_transfer_requests", "requests", column: "transfer_request_id"
   add_foreign_key "transfer_request_collection_transfer_requests", "transfer_request_collections"
+  add_foreign_key "transfer_request_collection_transfer_requests", "transfer_requests"
   add_foreign_key "transfer_request_collections", "users"
   add_foreign_key "work_completions", "assets_deprecated", column: "target_id"
   add_foreign_key "work_completions", "users"

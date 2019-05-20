@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 module ::Core::Io::Collection
   def as_json(options = {})
     results, base_stream = options[:object], options[:stream]
@@ -13,10 +7,10 @@ module ::Core::Io::Collection
       stream.open do
         ::Core::Io::Registry.instance.lookup_for_object(object).object_json(
           object, options.merge(
-            stream: stream,
-            target: object,
-            nested: true
-          )
+                    stream: stream,
+                    target: object,
+                    nested: true
+                  )
         )
       end
     end

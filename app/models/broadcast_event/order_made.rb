@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 class BroadcastEvent::OrderMade < BroadcastEvent
   set_event_type 'order_made'
 
@@ -29,8 +23,10 @@ class BroadcastEvent::OrderMade < BroadcastEvent
 
   def plates
     return @plates if @plates
+
     wells = seed.assets.select { |a| a.is_a?(Well) }
     return [] if wells.empty?
+
     @plates = Plate.with_wells(wells)
   end
 

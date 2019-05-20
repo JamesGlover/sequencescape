@@ -1,7 +1,3 @@
-# This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012 Genome Research Ltd.
 # This module may be used to benchmark the API processes
 
 class ResponseTimer
@@ -40,11 +36,11 @@ class ResponseTimer
 
   def header
     engine = defined?(RUBY_ENGINE) ? RUBY_ENGINE : 'mri'
-    @output.syswrite <<-HEADER
-Rails response log
-Started at: #{Time.now}
-Environment: #{Rails.env}:R#{RUBY_VERSION}:#{File.split(Rails.root).last.capitalize}:#{engine}
-------------
+    @output.syswrite <<~HEADER
+      Rails response log
+      Started at: #{Time.now}
+      Environment: #{Rails.env}:R#{RUBY_VERSION}:#{File.split(Rails.root).last.capitalize}:#{engine}
+      ------------
     HEADER
   end
 end

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015 Genome Research Ltd.
-
 module User::Authentication
   def self.included(base)
     base.class_eval do
@@ -30,7 +24,6 @@ module User::Authentication
       self[attr] = ldap_profile[ldap_attr][0] if self[attr].blank?
     end
     save if changed?
-
   rescue StandardError => e
     logger.error "Profile failed for user #{login}: result code #{ldap.get_operation_result.code} message #{ldap.get_operation_result.message} - #{e}"
   end
@@ -44,6 +37,7 @@ module User::Authentication
         authenticated ? register_or_update_via_ldap(login) : nil
       elsif configatron.authentication == 'none'
         raise StandardError, 'Can only disable authentication in development' unless Rails.env.development?
+
         User.find_by(login: login)
       else
         authenticated = authenticate_by_local(login, password)
@@ -56,14 +50,14 @@ module User::Authentication
       # TODO: - Extract LDAP specifics to configuration
       username = 'uid=' << login << ',ou=people,dc=sanger,dc=ac,dc=uk'
       ldap = Net::LDAP.new(
-          host: configatron.ldap_server,
-          port: configatron.ldap_secure_port,
-          encryption: :simple_tls,
-          auth: {
-            method: :simple,
-            username: username,
-            password: password
-          }
+        host: configatron.ldap_server,
+        port: configatron.ldap_secure_port,
+        encryption: :simple_tls,
+        auth: {
+          method: :simple,
+          username: username,
+          password: password
+        }
       )
       begin
         ldap.bind

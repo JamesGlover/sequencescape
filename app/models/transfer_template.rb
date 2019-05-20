@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2015 Genome Research Ltd.
-
 # A template is effectively a partially constructed Transfer instance, containing only the
 # transfers that should be made and the final Transfer class that should be constructed.
 #
@@ -27,16 +21,18 @@ class TransferTemplate < ApplicationRecord
     @transfer_class ||= transfer_class_name.constantize
   end
 
-  def self.transfer_constructor(name)
-    line = __LINE__ + 1
-    class_eval("
-      def #{name}(attributes)
-        attributes.merge!(:transfers => self.transfers) unless self.transfers.blank?
-        transfer_class.#{name}(attributes)
-      end
-    ", __FILE__, line)
+  def create!(attributes)
+    transfer_class.create!(transfer_attributes(attributes))
   end
 
-  transfer_constructor(:create!)
-  transfer_constructor(:preview!)
+  def preview!(attributes)
+    transfer_class.preview!(transfer_attributes(attributes))
+  end
+
+  private
+
+  def transfer_attributes(attributes)
+    attributes[:transfers] = transfers if transfers.present?
+    attributes
+  end
 end

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2015 Genome Research Ltd.
-
 class FluidigmFile
   module Finder
     class Directory
@@ -35,6 +29,7 @@ class FluidigmFile
 
       def content(index = nil)
         raise StandardError, 'Multiple files found' if data.size > 1 && index.nil?
+
         @data[index || 0].retrive
       end
     end
@@ -56,7 +51,7 @@ class FluidigmFile
   class Assay
     attr_reader :name, :result
 
-    @@valid_markers = ['XX', 'XY', 'YY']
+    @@valid_markers = %w[XX XY YY]
     @@gender_map    = { 'XX' => 'F', 'YY' => 'F', 'XY' => 'M' }
 
     def initialize(name, result)
@@ -69,7 +64,7 @@ class FluidigmFile
     end
 
     def gender
-      @@gender_map[result] || 'Unknown'
+      @@gender_map[result] || 'U'
     end
 
     def pass?
@@ -106,7 +101,6 @@ class FluidigmFile
   def initialize(file_contents)
     @csv = CSV.parse(file_contents)
     build_wells
-    self
   end
 
   def each_well
@@ -152,6 +146,7 @@ class FluidigmFile
     (data_start_index...@csv.size).each do |row_index|
       row = @csv[row_index]
       next if row[column('Experiment Information Sample Name')] == 'Water'
+
       well = well_at(row[column('Experiment Information Chamber ID')].split('-').first)
       well.add_assay(row[column('Experiment Information SNP Assay and Allele Names Assay')], row[column('Results Call Information Final')])
     end

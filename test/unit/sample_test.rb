@@ -1,19 +1,15 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and authorship of this file.
-# Copyright (C) 2007-2011,2012,2014,2015,2016 Genome Research Ltd.
-
 require 'test_helper'
 
 class SampleTest < ActiveSupport::TestCase
-    def assert_accession_service(type)
-      service = {
-        ega: EgaAccessionService,
-        ena: EnaAccessionService,
-        none: NoAccessionService,
-        unsuitable: UnsuitableAccessionService
-      }[type]
-      assert @sample.accession_service.is_a?(service), "Sent to #{@sample.accession_service.provider} not #{type}"
-    end
+  def assert_accession_service(type)
+    service = {
+      ega: EgaAccessionService,
+      ena: EnaAccessionService,
+      none: NoAccessionService,
+      unsuitable: UnsuitableAccessionService
+    }[type]
+    assert @sample.accession_service.is_a?(service), "Sent to #{@sample.accession_service.provider} not #{type}"
+  end
 
   context 'A Sample' do
     should have_many :study_samples
@@ -25,7 +21,8 @@ class SampleTest < ActiveSupport::TestCase
         @tube_a = create :empty_library_tube
         @tube_b = create :sample_tube, sample: @sample
 
-       create(:aliquot, sample: @sample, receptacle: @tube_a.receptacle)
+        create(:aliquot, sample: @sample, receptacle: @tube_b.receptacle)
+        create(:aliquot, sample: @sample, receptacle: @tube_a.receptacle)
       end
 
       should 'have the first tube it was added to as a primary asset' do
@@ -43,7 +40,7 @@ class SampleTest < ActiveSupport::TestCase
           @sample.sample_metadata.sample_ebi_accession_number = nil
         end
         should 'return false' do
-          assert !@sample.accession_number?
+          assert_not @sample.accession_number?
         end
       end
       context 'with a blank accession number' do
@@ -51,7 +48,7 @@ class SampleTest < ActiveSupport::TestCase
           @sample.sample_metadata.sample_ebi_accession_number = ''
         end
         should 'return false' do
-          assert !@sample.accession_number?
+          assert_not @sample.accession_number?
         end
       end
       context 'with a valid accession number' do

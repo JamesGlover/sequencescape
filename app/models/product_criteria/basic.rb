@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 class ProductCriteria::Basic
   SUPPORTED_WELL_ATTRIBUTES = [:gel_pass, :concentration, :rin, :current_volume, :pico_pass, :gender_markers, :measured_volume, :initial_volume, :molarity, :sequenom_count]
   SUPPORTED_SAMPLE = [:sanger_sample_id]
@@ -56,6 +50,7 @@ class ProductCriteria::Basic
 
   def total_micrograms
     return nil if current_volume.nil? || concentration.nil?
+
     (current_volume * concentration) / 1000.0
   end
 
@@ -72,14 +67,14 @@ class ProductCriteria::Basic
   end
 
   def plate_barcode
-    @well_or_metric.plate.try(:sanger_human_barcode) || 'Unknown'
+    @well_or_metric.plate.try(:human_barcode) || 'Unknown'
   end
 
   # We sort in Ruby here as we've loaded the wells in bulk. Performing this selection in
   # the database is actually more tricky than it sounds as your trying to load the latest
   # record from multiple different wells simultaneously.
   def most_recent_concentration_from_target_well_by_updating_date
-    @target_wells.sort_by { |w| w.well_attribute.updated_at }.last.get_concentration if @target_wells
+    @target_wells.max_by { |w| w.well_attribute.updated_at }.get_concentration if @target_wells
   end
 
   def concentration_from_normalization
@@ -105,6 +100,7 @@ class ProductCriteria::Basic
   def sample_gender
     markers = @well_or_metric.samples.map { |s| s.sample_metadata.gender && s.sample_metadata.gender.downcase.strip }.uniq
     return nil if markers.count > 1
+
     GENDER_MARKER_MAPS[markers.first]
   end
 
@@ -126,11 +122,12 @@ class ProductCriteria::Basic
     expected = sample_gender
     return false if expected.nil?
     return false unless known_marker?(marker)
+
     marker != expected
   end
 
   def known_marker?(marker)
-    GENDER_MARKER_MAPS.values.include?(marker)
+    GENDER_MARKER_MAPS.value?(marker)
   end
 
   def invalid(attribute, message)

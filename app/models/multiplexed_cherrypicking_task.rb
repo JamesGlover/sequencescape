@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 class MultiplexedCherrypickingTask < Task
   include Tasks::PlatePurposeBehavior
 
@@ -28,7 +22,7 @@ class MultiplexedCherrypickingTask < Task
   end
 
   def included_for_render_task
-    [requests: { asset: [:samples, { plate: :barcode_prefix }, :map] }]
+    [requests: { asset: [:samples, { plate: :barcodes }, :map] }]
   end
 
   def render_task(workflow, params)
@@ -47,7 +41,8 @@ class MultiplexedCherrypickingTask < Task
   end
 
   def target_plate(barcode, plate_purpose_id)
-    return Plate.with_machine_barcode(barcode).first unless barcode.blank?
+    return Plate.with_barcode(barcode).first unless barcode.blank?
+
     PlatePurpose.find(plate_purpose_id).create!
   end
 end

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 class Event::SampleLogisticsQcEvent < Event
   def self.create_gel_qc_for_asset!(asset, result, user)
     if asset.is_a?(Well)
@@ -36,7 +30,7 @@ class Event::SampleLogisticsQcEvent < Event
     if asset.is_a?(Well)
       pico_qc_message(asset, "Pico result for well #{asset.id} with #{result}", 'pico_analysed')
     elsif asset.is_a?(Plate)
-      pico_qc_message(asset, "Pico result for plate #{asset.barcode} with #{result}", 'pico_analysed')
+      pico_qc_message(asset, "Pico result for plate #{asset.barcode_number} with #{result}", 'pico_analysed')
     end
   end
 end

@@ -1,8 +1,8 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
+#
+# Barcode printer loaded with labels in the correct aspect for labelling tubes
+#
 class BarcodePrinterType1DTube < BarcodePrinterType
+  def self.first
+    super || BarcodePrinterType1DTube.create!(name: '1D Tube', label_template_name: 'sqsc_1dtube_label_template')
+  end
 end

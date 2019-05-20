@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015 Genome Research Ltd.
-
 class Admin::UsersController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
@@ -16,7 +10,7 @@ class Admin::UsersController < ApplicationController
   end
 
   def edit
-    @user_roles = @user.roles.where(name: ['administrator', 'manager', 'internal'])
+    @user_roles = @user.roles.where(name: %w[administrator manager internal])
     @all_roles = Role.distinct.pluck(:name)
     @users_roles = @user.study_and_project_roles.order(name: :asc)
     @studies = Study.order(:id)
@@ -47,7 +41,7 @@ class Admin::UsersController < ApplicationController
     end
 
     if @user.id == params[:id].to_i
-      @user.update_attributes(params[:user])
+      @user.update(params[:user])
     end
     if @user.save
       flash[:notice] = 'Profile updated'
@@ -61,9 +55,9 @@ class Admin::UsersController < ApplicationController
     if request.xhr?
       if params[:role]
         authorizable_object = if params[:role][:authorizable_type] == 'Project'
-          Project.find(params[:role][:authorizable_id])
+                                Project.find(params[:role][:authorizable_id])
                               else
-          Study.find(params[:role][:authorizable_id])
+                                Study.find(params[:role][:authorizable_id])
                               end
         @user.has_role(params[:role][:authorizable_name].to_s, authorizable_object)
         @users_roles = @user.study_and_project_roles.order(name: :asc)
@@ -86,9 +80,9 @@ class Admin::UsersController < ApplicationController
     if request.xhr?
       if params[:role]
         authorizable_object = if params[:role][:authorizable_type] == 'project'
-          Project.find(params[:role][:authorizable_id])
+                                Project.find(params[:role][:authorizable_id])
                               else
-          Study.find(params[:role][:authorizable_id])
+                                Study.find(params[:role][:authorizable_id])
                               end
         @user.has_no_role(params[:role][:authorizable_name].to_s, authorizable_object)
         @users_roles = @user.study_and_project_roles.order(name: :asc)

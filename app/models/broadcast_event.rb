@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 class BroadcastEvent < ApplicationRecord
   EVENT_JSON_ROOT = 'event'
   UNKNOWN_USER_IDENTIFIER = 'UNKNOWN'
@@ -25,20 +19,22 @@ class BroadcastEvent < ApplicationRecord
 
   def initialize(*args)
     raise StandardError, 'BroadcastEvents can not be created directly' unless self.class < BroadcastEvent
+
     super
   end
 
   # Prefer email, fall back to login if missing
   def user_identifier
     return UNKNOWN_USER_IDENTIFIER if user.nil? # User has probably been deleted
-    user.email.blank? ? user.login : user.email
+
+    user.email.presence || user.login
   end
 
   # Returns an array of all subjects
   def subjects
-    self.class.subject_associations.map do |sa|
+    self.class.subject_associations.flat_map do |sa|
       sa.for(seed, self)
-    end.flatten
+    end.select(&:broadcastable?)
   end
 
   # Returns a hash of all metadata

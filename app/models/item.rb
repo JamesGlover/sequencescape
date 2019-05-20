@@ -1,13 +1,6 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2014,2015 Genome Research Ltd.
-
 class Item < ApplicationRecord
   include Uuid::Uuidable
   include EventfulRecord
-  include Workflowed
   extend EventfulRecord
   has_many_events
   has_many_lab_events
@@ -22,16 +15,16 @@ class Item < ApplicationRecord
 
   validates_presence_of :version
   validates_presence_of :name
-  validates_uniqueness_of :name, scope: [:workflow_id, :version], on: :create, message: 'already in use (item)'
+  validates_uniqueness_of :name, scope: [:version], on: :create, message: 'already in use (item)'
 
- scope :for_search_query, ->(query, _with_includes) {
-    where(['name LIKE ? OR id=?', "%#{query}%", query])
-                          }
+  scope :for_search_query, ->(query) {
+                             where(['name LIKE ? OR id=?', "%#{query}%", query])
+                           }
 
   before_validation :set_version, on: :create
 
   def set_version
-    things_with_same_name = self.class.where(name: name, workflow_id: workflow_id)
+    things_with_same_name = self.class.where(name: name)
     if things_with_same_name.empty?
       increment(:version)
     else

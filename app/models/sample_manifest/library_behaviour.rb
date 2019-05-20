@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 # This module is very similar to SampleManifest::MultiplexedLibraryBehaviour
 # Differences are:
 #   (1)this module does not have methods needed for 'old' upload
@@ -31,7 +25,7 @@ module SampleManifest::LibraryBehaviour
         {
           sample: sample,
           container: {
-            barcode: sample.primary_receptacle.sanger_human_barcode
+            barcode: sample.primary_receptacle.human_barcode
           },
           library_information: sample.primary_receptacle.library_information
         }
@@ -49,7 +43,7 @@ module SampleManifest::LibraryBehaviour
     def details
       samples.each do |sample|
         yield({
-          barcode: sample.assets.first.sanger_human_barcode,
+          barcode: sample.assets.first.human_barcode,
           sample_id: sample.sanger_sample_id
         })
       end
@@ -59,7 +53,7 @@ module SampleManifest::LibraryBehaviour
       [].tap do |details|
         samples.each do |sample|
           details << {
-            barcode: sample.assets.first.sanger_human_barcode,
+            barcode: sample.assets.first.human_barcode,
             sample_id: sample.sanger_sample_id
           }
         end

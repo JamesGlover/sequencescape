@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 require 'net/ldap'
 require 'openssl'
 require 'digest/sha1'
@@ -11,7 +5,6 @@ require 'digest/sha1'
 
 class User < ApplicationRecord
   include Authentication
-  include Workflowed
   extend EventfulRecord
   include Uuid::Uuidable
   include Swipecardable
@@ -34,7 +27,6 @@ class User < ApplicationRecord
 
   before_save :encrypt_password
   before_create { |record| record.new_api_key if record.api_key.blank? }
-  before_create { |record| record.workflow ||= Submission::Workflow.default_workflow }
 
   validates_presence_of :login
   validates_uniqueness_of :login
@@ -48,21 +40,16 @@ class User < ApplicationRecord
 
   scope :owners, ->() { where.not(last_name: nil).joins(:roles).where(roles: { name: 'owner' }).order(:last_name).distinct }
 
+  scope :with_user_code, ->(*codes) { where(barcode: codes.map { |code| Barcode.barcode_to_human(code) }.compact).or(with_swipecard_code(codes)) }
+
   attr_accessor :password
 
   def self.prefix
     'ID'
   end
 
-  def self.lookup_by_barcode(user_barcode)
-    barcode = Barcode.barcode_to_human(user_barcode)
-    return find_by(barcode: barcode) if barcode
-    nil
-  end
-
   def self.find_with_barcode_or_swipecard_code(user_code)
-    lookup_by_barcode(user_code) ||
-      with_swipecard_code(user_code).first
+    with_user_code(user_code).first
   end
 
   # returns emails of all admins
@@ -75,17 +62,6 @@ class User < ApplicationRecord
     Digest::SHA1.hexdigest("--#{salt}--#{password}--")
   end
 
-  def self.valid_barcode?(code)
-    begin
-      human_code = Barcode.barcode_to_human!(code, prefix)
-    rescue
-      return false
-    end
-    return false unless find_by(barcode: human_code)
-
-    true
-  end
-
   def study_roles
     user_roles('Study')
   end
@@ -95,7 +71,7 @@ class User < ApplicationRecord
   end
 
   def study_and_project_roles
-    roles.where(authorizable_type: ['Study', 'Project'])
+    roles.where(authorizable_type: %w[Study Project])
   end
 
   def user_roles(authorizable_class_name)
@@ -136,8 +112,10 @@ class User < ApplicationRecord
 
   def projects
     return Project.all if is_administrator?
+
     atuhorized = authorized_projects
     return Project.all if ((atuhorized.blank?) && (privileged?))
+
     atuhorized
   end
 
@@ -161,10 +139,6 @@ class User < ApplicationRecord
     interesting_studies.alphabetical.pluck(:name, :id)
   end
 
-  def workflow_name
-    workflow && workflow.name
-  end
-
   def has_preference_for(key)
     setting_for?(key)
   end
@@ -182,7 +156,9 @@ class User < ApplicationRecord
   end
 
   def lab_manager?
-    has_role? 'lab_manager'
+    return @lab_manager if instance_variable_defined?('@lab_manager')
+
+    @lab_manager = has_role? 'lab_manager'
   end
 
   def slf_manager?
@@ -199,6 +175,7 @@ class User < ApplicationRecord
 
   def owner?(item)
     return false if item.nil?
+
     has_role? 'owner', item
   end
 
@@ -253,14 +230,15 @@ class User < ApplicationRecord
 
   protected
 
-    # before filter
-    def encrypt_password
-      return if password.blank?
-      self.salt = Digest::SHA1.hexdigest("--#{Time.now}--#{login}--") if new_record?
-      self.crypted_password = encrypt(password)
-    end
+  # before filter
+  def encrypt_password
+    return if password.blank?
 
-    def password_required?
-      crypted_password.blank? || password.present?
-    end
+    self.salt = Digest::SHA1.hexdigest("--#{Time.now}--#{login}--") if new_record?
+    self.crypted_password = encrypt(password)
+  end
+
+  def password_required?
+    crypted_password.blank? || password.present?
+  end
 end

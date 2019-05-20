@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2014,2015 Genome Research Ltd.
-
 # Delegate validation is all about enabling one class to validate the information within an instance of
 # another class.  The case driving this is the ability for a Submission to validate that the request options
 # provided by the user are valid for the RequestType instances that the submission is going to use.  In that
@@ -99,6 +93,7 @@ module DelegateValidation
     def valid?
       # We have to run over all validators to get all error messages, then we can check they're all valid
       return true if @validators.map(&:valid?).all? { |v| v == true }
+
       @validators.each do |validator|
         errors.messages.merge!(validator.errors.messages)
       end

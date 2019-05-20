@@ -1,9 +1,4 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
+# rubocop:disable Metrics/MethodLength
 module Sanger
   module Testing
     module Controller
@@ -22,7 +17,7 @@ module Sanger
           raise Exception.new, ':actions need to be an Array' unless actions.instance_of?(Array)
 
           other_actions   = params[:other_actions] || []
-          formats         = params[:formats] || ['html', 'xml', 'json']
+          formats         = params[:formats] || %w[html xml json]
 
           context 'should be a resource' do
             setup do
@@ -52,7 +47,7 @@ module Sanger
 
                 @input_params.merge!(
                   "#{grand_parent_resource}_id" => grand_parent.id,
-                  "#{parent_resource}_id"       => parent.id
+                  "#{parent_resource}_id" => parent.id
                 )
               end
             elsif parent_resource
@@ -213,9 +208,9 @@ module Sanger
                         get :show, params: @input_params
                       end
                       should respond_with :success
-                        assert_select resource_name.to_s.pluralize do
-                          assert_select "[api_version='0.6']"
-                        end
+                      assert_select resource_name.to_s.pluralize do
+                        assert_select "[api_version='0.6']"
+                      end
                     end
                   end
                 end
@@ -256,3 +251,4 @@ module Sanger
     end
   end
 end
+# rubocop:enable Metrics/MethodLength

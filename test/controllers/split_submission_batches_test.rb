@@ -1,28 +1,22 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2014,2015 Genome Research Ltd.
-
 require 'test_helper'
 require 'submissions_controller'
 
 class SplitSubmissionBatchesTest < ActionController::TestCase
   context 'when I have a submission' do
     setup do
-      @user = FactoryGirl.create :user
+      @user = FactoryBot.create :user
       @controller = SubmissionsController.new
       @request    = ActionController::TestRequest.create(@controller)
       @plate_purpose = PlatePurpose.find_by(name: 'Stock plate')
       @controller.stubs(:logged_in?).returns(@user)
       session[:user] = @user.id
-      @project = FactoryGirl.create :project
-      @study = FactoryGirl.create :study
-      @asset1 = FactoryGirl.create :sample_tube
-      @asset2 = FactoryGirl.create :sample_tube
-      @asset3 = FactoryGirl.create :sample_tube
-      @asset4 = FactoryGirl.create :sample_tube
-      @asset_group = FactoryGirl.create :asset_group
+      @project = FactoryBot.create :project
+      @study = FactoryBot.create :study
+      @asset1 = FactoryBot.create :sample_tube
+      @asset2 = FactoryBot.create :sample_tube
+      @asset3 = FactoryBot.create :sample_tube
+      @asset4 = FactoryBot.create :sample_tube
+      @asset_group = FactoryBot.create :asset_group
       @asset_group.assets << @asset1 << @asset2 << @asset3 << @asset4
       @sequencing_pipeline = Pipeline.find_by(name: 'Cluster formation SE')
     end
@@ -31,7 +25,14 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
       setup do
         # We're using the submissions controller as things are a bit screwy if we go to the plate creator (PlateCreater) directly
         # However, as this seems to relate to the multiplier, it may be related to out problem.
-        @submission_template = SubmissionTemplate.find_by!(name: 'Illumina-C - Library creation - Single ended sequencing')
+        submission_template_hash = { name: 'Illumina-C - Library creation - Single ended sequencing',
+                                     submission_class_name: 'LinearSubmission',
+                                     product_catalogue: 'Generic',
+                                     submission_parameters: { info_differential: 5,
+                                                              request_types: %w[illumina_c_library_creation
+                                                                                illumina_c_single_ended_sequencing] } }
+
+        @submission_template = SubmissionSerializer.construct!(submission_template_hash)
 
         post(:create, params: {
                submission: {
@@ -56,7 +57,7 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
              })
 
         Submission.last.built!
-        Delayed::Worker.new.work_off
+        Submission.last.build_batch
       end
 
       context 'and I batch up the library creation requests seperately' do
@@ -71,24 +72,8 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
         end
 
         should 'before failing any sequencing requests' do
-          assert_equal LibraryCreationRequest.first.id + 4, LibraryCreationRequest.first.next_requests(@pipeline) { |_r| true }.first.id
-          assert_equal LibraryCreationRequest.all[2].id + 12, LibraryCreationRequest.all[2].next_requests(@pipeline) { |_r| true }.first.id
-        end
-
-        context 'afer failing sequencing requests' do
-          setup do
-            @sequencing_group = SequencingRequest.all[0..1]
-            @seq_batch = Batch.create!(requests: @sequencing_group, pipeline: @sequencing_pipeline)
-
-            @seq_batch.requests.map(&:start!)
-            @seq_batch.fail('just', 'because')
-            @seq_batch.requests.each { |r| @seq_batch.detach_request(r) }
-          end
-
-          should 'correctly identify the next requests' do
-            assert_equal LibraryCreationRequest.first.id + 4, LibraryCreationRequest.first.next_requests(@pipeline) { |_r| true }.first.id
-            assert_equal LibraryCreationRequest.all[2].id + 12, LibraryCreationRequest.all[2].next_requests(@pipeline) { |_r| true }.first.id
-          end
+          assert_equal LibraryCreationRequest.first.id + 4, LibraryCreationRequest.first.next_requests.first.id
+          assert_equal LibraryCreationRequest.all[2].id + 12, LibraryCreationRequest.all[2].next_requests.first.id
         end
       end
     end
@@ -97,8 +82,15 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
       setup do
         # We're using the submissions controller as things are a bit screwy if we go to the plate creator (PlateCreater) directly
         # However, as this seems to relate to the multiplier, it may be related to out problem.
-        # @asset_group.assets.each_with_index {|a,i| tag=FactoryGirl.create :tag; a.aliquots.first.update_attributes!(:tag=>tag)}
-        @submission_template = SubmissionTemplate.find_by!(name: 'Illumina-C - Multiplexed Library Creation - Single ended sequencing')
+        # @asset_group.assets.each_with_index {|a,i| tag=FactoryBot.create :tag; a.aliquots.first.update!(:tag=>tag)}
+        submission_template_hash = { name: 'Illumina-C - Multiplexed Library Creation - Single ended sequencing',
+                                     submission_class_name: 'LinearSubmission',
+                                     product_catalogue: 'Generic',
+                                     submission_parameters: { info_differential: 5,
+                                                              request_types: %w[illumina_c_multiplexed_library_creation
+                                                                                illumina_c_single_ended_sequencing] } }
+
+        @submission_template = SubmissionSerializer.construct!(submission_template_hash)
         @library_pipeline = Pipeline.find_by!(name: 'Illumina-B MX Library Preparation')
 
         post(:create, params: { submission: {
@@ -123,10 +115,10 @@ class SplitSubmissionBatchesTest < ActionController::TestCase
       end
 
       should 'report correct groupings from the start' do
-        assert_equal MultiplexedLibraryCreationRequest.first.id + 4, MultiplexedLibraryCreationRequest.first.next_requests(@library_pipeline) { |_r| true }.first.id
-        assert_equal MultiplexedLibraryCreationRequest.first.id + 4, MultiplexedLibraryCreationRequest.all[2].next_requests(@library_pipeline) { |_r| true }.first.id
-        assert_equal 5, MultiplexedLibraryCreationRequest.first.next_requests(@library_pipeline) { |_r| true }.size
-        assert_equal MultiplexedLibraryCreationRequest.first.id + 8, MultiplexedLibraryCreationRequest.first.next_requests(@library_pipeline) { |_r| true }.last.id
+        assert_equal MultiplexedLibraryCreationRequest.first.id + 4, MultiplexedLibraryCreationRequest.first.next_requests.first.id
+        assert_equal MultiplexedLibraryCreationRequest.first.id + 4, MultiplexedLibraryCreationRequest.all[2].next_requests.first.id
+        assert_equal 5, MultiplexedLibraryCreationRequest.first.next_requests.size
+        assert_equal MultiplexedLibraryCreationRequest.first.id + 8, MultiplexedLibraryCreationRequest.first.next_requests.last.id
       end
     end
   end

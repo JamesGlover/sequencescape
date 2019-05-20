@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class EventTest < ActiveSupport::TestCase
@@ -81,8 +75,7 @@ class EventTest < ActiveSupport::TestCase
                       eventful_type: 'Request',
                       identifier: 'ID',
                       location: 'Loc',
-                      message: 'updating request'
-                    }
+                      message: 'updating request' }
 
         assert @request.started?
       end
@@ -97,16 +90,6 @@ class EventTest < ActiveSupport::TestCase
 
         should 'pass request' do
           assert @request.passed?
-        end
-
-        context 'when passed twice' do
-          should 'should raise an exception' do
-            # This behaviour has changed.
-            assert_raise(AASM::InvalidTransition) do
-              event = Event.create(@settings)
-              event = Event.create(@settings)
-            end
-          end
         end
       end
 
@@ -142,16 +125,14 @@ class EventTest < ActiveSupport::TestCase
         @library_creation_request_type = create :request_type, name: 'Library creation', key: 'library_creation'
         @mx_library_creation_request_type = create :request_type, name: 'Multiplexed library creation', key: 'multiplexed_library_creation'
         @pe_sequencing_request_type = create :request_type, name: 'Paired end sequencing', key: 'paired_end_sequencing'
-        @dna_qc_request_type = create :request_type, name: 'DNA QC', key: 'dna_qc'
 
         @control = create(:sample_tube, resource: true)
 
         @library_creation_request = create :request, request_type: @library_creation_request_type
         @multiplexed_library_creation_request = create :request, request_type: @mx_library_creation_request_type
         @pe_sequencing_request = create :request, request_type: @pe_sequencing_request_type
-        @dna_qc_request = create :request, request_type: @dna_qc_request_type
         @request_for_control = create :request, request_type: @pe_sequencing_request_type, asset: @control, state: 'started'
-        @requests = [@library_creation_request, @multiplexed_library_creation_request, @pe_sequencing_request, @dna_qc_request]
+        @requests = [@library_creation_request, @multiplexed_library_creation_request, @pe_sequencing_request]
       end
 
       # pass message
@@ -167,7 +148,6 @@ class EventTest < ActiveSupport::TestCase
           @lib_prep_event = Event.create(eventful_id: @library_creation_request.id, eventful_type: 'Request', family: 'pass', content: '', message: 'test comment', identifier: 1234, descriptor_key: 'pass')
           @mx_lib_prep_event = Event.create(eventful_id: @multiplexed_library_creation_request.id, eventful_type: 'Request', family: 'pass', content: '', message: 'test comment', identifier: 1234, descriptor_key: 'pass')
           @pe_sequencing_event = Event.create(eventful_id: @pe_sequencing_request.id, eventful_type: 'Request', family: 'pass', content: '', message: 'test comment', identifier: 1234, descriptor_key: 'pass')
-          @dna_qc_event = Event.create(eventful_id: @dna_qc_request.id, eventful_type: 'Request', family: 'pass', content: '', message: 'test comment', identifier: 1234, descriptor_key: 'pass')
           @control_event = Event.create(eventful_id: @request_for_control.id, eventful_type: 'Request', family: 'pass', content: '', message: 'test comment', identifier: 1234, descriptor_key: 'pass')
         end
 
@@ -176,7 +156,6 @@ class EventTest < ActiveSupport::TestCase
           assert @lib_prep_event.valid?
           assert @mx_lib_prep_event.valid?
           assert @pe_sequencing_event.valid?
-          assert @dna_qc_event.valid?
         end
 
         # must update the request correctly
@@ -184,12 +163,10 @@ class EventTest < ActiveSupport::TestCase
           @library_creation_request.reload
           @multiplexed_library_creation_request.reload
           @pe_sequencing_request.reload
-          @dna_qc_request.reload
           @request_for_control.reload
           assert @library_creation_request.passed?
           assert @multiplexed_library_creation_request.passed?
           assert @pe_sequencing_request.passed?
-          assert @dna_qc_request.passed?
           assert @request_for_control.passed?
         end
       end
@@ -212,7 +189,6 @@ class EventTest < ActiveSupport::TestCase
           @lib_prep_event = Event.create(eventful_id: @library_creation_request.id, eventful_type: 'Request', family: 'fail', content: 'Test reason', message: 'test comment', identifier: 1234, descriptor_key: 'failure')
           @mx_lib_prep_event = Event.create(eventful_id: @multiplexed_library_creation_request.id, eventful_type: 'Request', family: 'fail', content: 'Test reason', message: 'test comment', identifier: 1234, descriptor_key: 'failure')
           @pe_sequencing_event = Event.create(eventful_id: @pe_sequencing_request.id, eventful_type: 'Request', family: 'fail', content: 'Test reason', message: 'test comment', identifier: 1234, descriptor_key: 'failure')
-          @dna_qc_event = Event.create(eventful_id: @dna_qc_request.id, eventful_type: 'Request', family: 'fail', content: 'Test reason', message: 'test comment', identifier: 1234, descriptor_key: 'failure')
           @control_event = Event.create(eventful_id: @request_for_control.id, eventful_type: 'Request', family: 'fail', content: 'Test reason', message: 'test comment', identifier: 1234, descriptor_key: 'failure')
         end
 
@@ -222,13 +198,11 @@ class EventTest < ActiveSupport::TestCase
           @library_creation_request.reload
           @multiplexed_library_creation_request.reload
           @pe_sequencing_request.reload
-          @dna_qc_request.reload
           @request_for_control.reload
 
           assert @library_creation_request.failed?
           assert @multiplexed_library_creation_request.failed?
           assert @pe_sequencing_request.failed?
-          assert @dna_qc_request.failed?
           assert @request_for_control.failed?
         end
       end
@@ -248,20 +222,16 @@ class EventTest < ActiveSupport::TestCase
           @lib_prep_event = Event.create(eventful_id: @library_creation_request.id, eventful_type: 'Request', family: 'complete', message: 'Completed pipeline')
           @mx_lib_prep_event = Event.create(eventful_id: @multiplexed_library_creation_request.id, eventful_type: 'Request', family: 'complete', message: 'Completed pipeline')
           @pe_sequencing_event = Event.create(eventful_id: @pe_sequencing_request.id, eventful_type: 'Request', family: 'complete', message: 'Completed pipeline')
-          @dna_qc_event = Event.create(eventful_id: @dna_qc_request.id, eventful_type: 'Request', family: 'complete', message: 'Completed pipeline')
-          @control = Event.create(eventful_id: @dna_qc_request.id, eventful_type: 'Request', family: 'complete', message: 'Completed pipeline')
         end
 
         should 'correctly update the requests' do
           @library_creation_request.reload
           @multiplexed_library_creation_request.reload
           @pe_sequencing_request.reload
-          @dna_qc_request.reload
 
           assert @library_creation_request.started?
           assert @multiplexed_library_creation_request.started?
           assert @pe_sequencing_request.started?
-          assert @dna_qc_request.started?
         end
       end
     end

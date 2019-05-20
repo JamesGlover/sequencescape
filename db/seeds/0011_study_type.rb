@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 study_types = [
   ['Not specified', 0, 0],
   ['Synthetic Genomics', 1, 1],
@@ -27,4 +21,4 @@ study_types.each do |type|
 end
 
 # Other study related configuration
-Program.create!(name: 'General').save
+Program.create!(name: 'General')

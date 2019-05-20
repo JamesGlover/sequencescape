@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014,2015 Genome Research Ltd.
-
 ##
 # A Qcable is an element of a lot which must be approved
 # before it may be used.
@@ -34,35 +28,23 @@ class Qcable < ApplicationRecord
 
   scope :stamped, -> { includes([:stamp_qcable, :stamp]).where('stamp_qcables.id IS NOT NULL').order('stamps.created_at ASC, stamp_qcables.order ASC') }
 
- # We accept not only an individual barcode but also an array of them.  This builds an appropriate
- # set of conditions that can find any one of these barcodes.  We map each of the individual barcodes
- # to their appropriate query conditions (as though they operated on their own) and then we join
- # them together with 'OR' to get the overall conditions.
- scope :with_machine_barcode, ->(*barcodes) {
-    query_details = barcodes.flatten.map do |source_barcode|
-      barcode_number = Barcode.number_to_human(source_barcode)
-      prefix_string  = Barcode.prefix_from_barcode(source_barcode)
-      barcode_prefix = BarcodePrefix.find_by(prefix: prefix_string)
+  has_many :barcodes, through: :asset
+  # We accept not only an individual barcode but also an array of them.  This builds an appropriate
+  # set of conditions that can find any one of these barcodes.  We map each of the individual barcodes
+  # to their appropriate query conditions (as though they operated on their own) and then we join
+  # them together with 'OR' to get the overall conditions.
+  scope :with_barcode, ->(*barcodes) {
+    db_barcodes = barcodes.flatten.each_with_object([]) do |source_bc, store|
+      next if source_bc.blank?
 
-      if barcode_number.nil? or prefix_string.nil? or barcode_prefix.nil?
-        { query: 'FALSE' }
-      else
-        { query: '(wam_asset.barcode=? AND wam_asset.barcode_prefix_id=?)', parameters: [barcode_number, barcode_prefix.id] }
-      end
-    end.inject(query: ['FALSE'], parameters: [nil], joins: ['LEFT JOIN assets AS wam_asset ON qcables.asset_id = wam_asset.id']) do |building, current|
-      building.tap do
-        building[:joins]      << current[:joins]
-        building[:query]      << current[:query]
-        building[:parameters] << current[:parameters]
-      end
+      store.concat(Barcode.extract_barcode(source_bc))
     end
-
-    where([query_details[:query].join(' OR '), *query_details[:parameters].flatten.compact])
-      .joins(query_details[:joins].compact.uniq)
-                              }
+    joins(:barcodes).where(barcodes: { barcode: db_barcodes }).distinct
+  }
 
   def stamp_index
     return nil if stamp_qcable.nil?
+
     lot.qcables.stamped.index(self)
   end
 
@@ -74,6 +56,7 @@ class Qcable < ApplicationRecord
 
   def create_asset!
     return true if lot.nil?
+
     self.asset ||= asset_purpose.create!
   end
 end

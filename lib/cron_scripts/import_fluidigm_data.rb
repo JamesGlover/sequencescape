@@ -1,8 +1,11 @@
-# This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014,2015 Genome Research Ltd.
+require 'exception_notification'
 
-Plate.requiring_fluidigm_data.find_each do |plate|
-  plate.retrieve_fluidigm_data
+begin
+  Plate.requiring_fluidigm_data.find_each do |plate|
+    plate.retrieve_fluidigm_data
+  end
+rescue StandardError => exception
+  ExceptionNotifier.notify_exception(exception,
+                                     :data => { :message => 'Import Fluidigm Data Cron Failed' })
+  $stderr.puts exception.to_s
 end

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015,2016 Genome Research Ltd.
-
 class Admin::StudiesController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
@@ -20,17 +14,17 @@ class Admin::StudiesController < ApplicationController
   end
 
   def update
-   @study = Study.find(params[:id])
-   flash.now[:warning] = @study.warnings if @study.warnings.present?
-   flash[:notice] = 'Your study has been updated'
-   render partial: 'manage_single_study'
+    @study = Study.find(params[:id])
+    flash.now[:warning] = @study.warnings if @study.warnings.present?
+    flash[:notice] = 'Your study has been updated'
+    render partial: 'manage_single_study'
   end
 
   def edit
     @request_types = RequestType.order(name: :asc)
     if params[:id] != '0'
       @study = Study.find(params[:id])
-    flash.now[:warning] = @study.warnings if @study.warnings.present?
+      flash.now[:warning] = @study.warnings if @study.warnings.present?
       render partial: 'edit', locals: { study: @study }
     else
       render nothing: true
@@ -74,7 +68,7 @@ class Admin::StudiesController < ApplicationController
 
     ActiveRecord::Base.transaction do
       params[:study].delete(:ethically_approved) unless current_user.data_access_coordinator?
-      @study.update_attributes!(params[:study])
+      @study.update!(params[:study])
       flash[:notice] = 'Your study has been updated'
       redirect_to controller: 'admin/studies', action: 'update', id: @study.id
     end

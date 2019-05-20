@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 require 'aasm'
 
 class Project < ApplicationRecord
@@ -63,7 +57,7 @@ class Project < ApplicationRecord
   validates_presence_of :name, :state
   validates_uniqueness_of :name, on: :create, message: "already in use (#{name})"
 
-  scope :for_search_query, ->(query, _with_includes) {
+  scope :for_search_query, ->(query) {
     where(['name LIKE ? OR id=?', "%#{query}%", query])
   }
 
@@ -82,50 +76,6 @@ class Project < ApplicationRecord
     roles = Role.arel_table
     joins(:roles).on(roles[:name].eq('manager')).where(roles[:id].eq(nil))
   }
-
-  def ended_billable_lanes(ended)
-    events = []
-    samples.each do |sample|
-      if sample.ended.casecmp(ended).zero?
-        events << sample.billable_events
-      end
-    end
-    events = events.flatten
-  end
-
-  def billable_events
-    e = []
-    samples.each do |sample|
-     e << sample.billable_events
-    end
-    e.flatten
-  end
-
-  def billable_events_between(from, to)
-    a = []
-    billable_events.each do |event|
-      if event.created_at.to_date >= from and event.created_at.to_date <= to
-        a << event
-      end
-    end
-    a
-  end
-
-  def ended_billable_lanes_between(from, to, ended)
-    events = ended_billable_lanes(ended)
-
-    a = []
-    events.each do |event|
-      if event.created_at.to_date >= from and event.created_at.to_date <= to
-        a << event
-      end
-    end
-    a.size
-  end
-
-  def billable_lanes_between(from, to)
-    billable_events_between(from, to).size
-  end
 
   def owners
     role = roles.detect { |r| r.name == 'owner' }
@@ -156,6 +106,7 @@ class Project < ApplicationRecord
 
   def submittable?
     return true if project_metadata.project_funding_model.present?
+
     errors.add(:base, 'No funding model specified')
     false
   end

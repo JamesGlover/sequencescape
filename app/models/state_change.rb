@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2015 Genome Research Ltd.
-
 # Performs a change of state on an asset.
 #
 #--
@@ -15,6 +9,7 @@
 #++
 class StateChange < ApplicationRecord
   include Uuid::Uuidable
+  include Asset::Ownership::ChangesOwner
 
   belongs_to :user
   validates_presence_of :user
@@ -27,11 +22,10 @@ class StateChange < ApplicationRecord
   validates :reason, presence: true, if: :targetted_for_failure?
 
   def targetted_for_failure?
-    ['failed', 'cancelled'].include?(target_state)
+    %w[failed cancelled].include?(target_state)
   end
   private :targetted_for_failure?
 
-  include Asset::Ownership::ChangesOwner
   set_target_for_owner(:target)
 
   # Some targets can have "contents" updated (notably plates).  The meaning of this is is dealt with by the

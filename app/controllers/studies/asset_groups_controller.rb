@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015,2016 Genome Research Ltd.
-
 class Studies::AssetGroupsController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
@@ -68,7 +62,7 @@ class Studies::AssetGroupsController < ApplicationController
     @study = Study.find(params[:study_id])
 
     respond_to do |format|
-      if @asset_group.update_attributes(params[:asset_group])
+      if @asset_group.update(params[:asset_group])
         flash[:notice] = 'AssetGroup was successfully updated.'
         format.html { redirect_to study_asset_group_path(@study, @asset_group) }
         format.xml  { head :ok }
@@ -104,8 +98,8 @@ class Studies::AssetGroupsController < ApplicationController
     end
     @asset_group = AssetGroup.find(params[:id])
     respond_to do |format|
-       format.html # index.html.erb
-       format.xml  { render xml: @assets }
+      format.html # index.html.erb
+      format.xml  { render xml: @assets }
     end
   end
 
@@ -119,9 +113,9 @@ class Studies::AssetGroupsController < ApplicationController
     end
 
     respond_to do |format|
-       format.html { redirect_to(study_asset_group_url(@study, @asset_group)) }
-       format.xml  { render xml: @assets }
-       format.json { render json: @assets }
+      format.html { redirect_to(study_asset_group_url(@study, @asset_group)) }
+      format.xml  { render xml: @assets }
+      format.json { render json: @assets }
     end
   end
 
@@ -147,8 +141,8 @@ class Studies::AssetGroupsController < ApplicationController
     @study = Study.find(params[:study_id])
 
     print_job = LabelPrinter::PrintJob.new(params[:printer],
-                                          LabelPrinter::Label::AssetRedirect,
-                                          printables: params[:printables])
+                                           LabelPrinter::Label::AssetRedirect,
+                                           printables: params[:printables])
     if print_job.execute
       flash[:notice] = print_job.success
       redirect_to study_asset_groups_path(@study)

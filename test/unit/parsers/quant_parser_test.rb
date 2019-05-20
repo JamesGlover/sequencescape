@@ -34,11 +34,16 @@ class QuantParserTest < ActiveSupport::TestCase
           @wells = @plate.reload.wells.index_by(&:map_description)
         end
 
+        should 'return basic metadata' do
+          assert_equal 'QuantEssential', @parser.assay_type
+          assert_equal 'v0.1', @parser.assay_version
+        end
+
         should 'update well attributes with the file contents' do
           [['A1', 35, 7.5],
            ['A2', 56, 8.1],
            ['A3', 89, 4.3]].each do |location, concentration, _rin|
-              assert_equal concentration, @wells[location].get_concentration
+            assert_equal concentration, @wells[location].get_concentration
           end
         end
         should 'not update attributes for lines without content' do
@@ -66,7 +71,7 @@ class QuantParserTest < ActiveSupport::TestCase
           [['A1', 35, 7.5],
            ['A2', 56, 8.1],
            ['A3', 89, 4.3]].each do |location, concentration, _rin|
-              assert_equal concentration, @wells[location].get_concentration
+            assert_equal concentration, @wells[location].get_concentration
           end
         end
         should 'not update attributes for lines without content' do
@@ -78,8 +83,8 @@ class QuantParserTest < ActiveSupport::TestCase
           [['A1', 350, 7.5],
            ['A2', 560, 8.1],
            ['A3', 890, 4.3]].each do |location, concentration, rin|
-              assert_equal concentration, @parent_wells[location].get_concentration
-              assert_equal rin, @parent_wells[location].get_rin
+            assert_equal concentration, @parent_wells[location].get_concentration
+            assert_equal rin, @parent_wells[location].get_rin
           end
         end
         should 'not update patent attributes for lines without content' do
@@ -117,7 +122,7 @@ class QuantParserTest < ActiveSupport::TestCase
           [['A1', 134.47, 7.5],
            ['A2', 81.96, 8.1],
            ['A3', 36.76, 4.3]].each do |location, concentration, _rin|
-              assert_equal concentration, @wells[location].get_concentration
+            assert_equal concentration, @wells[location].get_concentration
           end
         end
       end
@@ -131,7 +136,7 @@ class QuantParserTest < ActiveSupport::TestCase
       end
 
       should 'detect that the format is not correct' do
-        refute Parsers::QuantParser.is_quant_file?(@csv)
+        assert_not Parsers::QuantParser.parses?(@csv)
       end
     end
   end

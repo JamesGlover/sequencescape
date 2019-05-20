@@ -1,34 +1,9 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 class PlatePurpose < Purpose
-  module Associations
-    def self.included(base)
-      base.class_eval do
-        # TODO: change to purpose_id
-        belongs_to :plate_purpose, foreign_key: :plate_purpose_id
-        belongs_to :purpose, foreign_key: :plate_purpose_id
-        scope :with_plate_purpose, ->(*purposes) {
-          where(plate_purpose_id: purposes.flatten)
-        }
-      end
-    end
+  self.default_prefix = 'DN'
 
-    # Delegate the change of state to our plate purpose.
-    def transition_to(state, user, contents = nil, customer_accepts_responsibility = false)
-      purpose.transition_to(self, state, user, contents, customer_accepts_responsibility)
-    end
-
-    # Delegate the transfer request type determination to our plate purpose
-    def transfer_request_type_from(source)
-      purpose.transfer_request_type_from(source.plate_purpose)
-    end
-  end
-
-  include Relationship::Associations
+  # includes / extends
+  include SharedBehaviour::Named
+  include Purpose::Relationship::Associations
 
   broadcast_via_warren
 
@@ -47,12 +22,6 @@ class PlatePurpose < Purpose
   end
   scope :considered_stock_plate, -> { where(stock_plate: true) }
 
-  serialize :cherrypick_filters
-  validates_presence_of(:cherrypick_filters, if: :cherrypickable_target?)
-  before_validation(if: :cherrypickable_target?) do |r|
-    r[:cherrypick_filters] ||= ['Cherrypick::Strategy::Filter::ShortenPlexesToFit']
-  end
-
   before_validation :set_default_target_type
   before_validation :set_default_printer_type
 
@@ -68,14 +37,6 @@ class PlatePurpose < Purpose
   end
   alias_method :library_source_plates, :source_plates
 
-  def cherrypick_strategy
-    Cherrypick::Strategy.new(self)
-  end
-
-  def cherrypick_dimension
-    cherrypick_direction == 'column' ? plate_height : plate_width
-  end
-
   def cherrypick_completed(plate)
     messenger_creators.each { |creator| creator.create!(plate) }
   end
@@ -86,10 +47,6 @@ class PlatePurpose < Purpose
 
   def plate_width
     asset_shape.plate_width(size)
-  end
-
-  def cherrypick_filters
-    self[:cherrypick_filters].map(&:constantize)
   end
 
   # The state of a plate is based on the transfer requests.
@@ -118,16 +75,20 @@ class PlatePurpose < Purpose
   end
 
   module Overrideable
+    private
+
     def transition_state_requests(wells, state)
-      wells = wells.includes(requests_as_target: { asset: :aliquots, target_asset: :aliquots })
-      wells.each { |w| w.requests_as_target.each { |r| r.transition_to(state) } }
+      wells = wells.includes(:requests_as_target, transfer_requests_as_target: :associated_requests)
+      wells.each do |w|
+        w.requests_as_target.each { |r| r.transition_to(state) }
+        w.transfer_requests_as_target.each { |r| r.transition_to(state) }
+      end
     end
-    private :transition_state_requests
 
     # Override this method to control the requests that should be failed for the given wells.
     def fail_request_details_for(wells)
       wells.each do |well|
-        submission_ids = well.requests_as_target.map(&:submission_id)
+        submission_ids = well.transfer_requests_as_target.map(&:submission_id)
         next if submission_ids.empty?
 
         stock_wells = well.stock_wells.map(&:id)
@@ -136,31 +97,9 @@ class PlatePurpose < Purpose
         yield(submission_ids, stock_wells)
       end
     end
-    private :fail_request_details_for
   end
 
   include Overrideable
-
-  def fail_stock_well_requests(wells, customer_accepts_responsibility)
-    # Load all of the requests that come from the stock wells that should be failed.  Note that we can't simply change
-    # their state, we have to actually use the statemachine method to do this to get the correct behaviour.
-    conditions, parameters = [], []
-    fail_request_details_for(wells) do |submission_ids, stock_wells|
-      # Efficiency gain to be had using '=' over 'IN' when there is only one value to consider.
-      condition, args = [], []
-      condition[0], args[0] = (submission_ids.size == 1) ? ['submission_id=?', submission_ids.first] : ['submission_id IN (?)', submission_ids]
-      condition[1], args[1] = (stock_wells.size == 1)    ? ['asset_id=?', stock_wells.first] : ['asset_id IN (?)', stock_wells]
-      conditions << "(#{condition[0]} AND #{condition[1]})"
-      parameters.concat(args)
-    end
-    raise 'Apparently there are not requests on these wells?' if conditions.empty?
-    Request.where_is_not_a?(TransferRequest).where(["(#{conditions.join(' OR ')})", *parameters]).map do |request|
-      # This can probably be switched for an each, as I don't think the array is actually used for anything.
-      request.request_metadata.update_attributes!(customer_accepts_responsibility: true) if customer_accepts_responsibility
-      request.passed? ? request.retrospective_fail! : request.fail!
-    end
-  end
-  private :fail_stock_well_requests
 
   def pool_wells(wells)
     _pool_wells(wells)
@@ -172,11 +111,6 @@ class PlatePurpose < Purpose
       end
   end
 
-  def _pool_wells(wells)
-    wells.pooled_as_target_by(TransferRequest)
-  end
-  private :_pool_wells
-
   include Api::PlatePurposeIO::Extensions
 
   self.per_page = 500
@@ -185,29 +119,22 @@ class PlatePurpose < Purpose
   has_many :plates, foreign_key: :plate_purpose_id
 
   def self.stock_plate_purpose
-    # IDs copied from SNP
-    PlatePurpose.find(2)
+    PlatePurpose.create_with(stock_plate: true, cherrypickable_target: true).find_or_create_by!(name: 'Stock Plate')
   end
 
   def size
-    attributes['size'] || 96
-  end
-
-  def well_locations
-    in_preferred_order(Map.where_plate_size(size).where_plate_shape(asset_shape))
-  end
-
-  def in_preferred_order(relationship)
-    relationship.send("in_#{cherrypick_direction}_major_order")
+    super || 96
   end
 
   def create!(*args, &block)
     attributes          = args.extract_options!
     do_not_create_wells = args.first.present?
-    attributes[:size]     ||= size
-    attributes[:location] ||= default_location
+    attributes[:size] ||= size
     attributes[:purpose] = self
-    pla = target_class.create_with_barcode!(attributes, &block).tap do |plate|
+    number = attributes.delete(:barcode)
+    prefix = (attributes.delete(:barcode_prefix) || barcode_prefix).prefix
+    attributes[:sanger_barcode] ||= { prefix: prefix, number: number }
+    target_class.create_with_barcode!(attributes, &block).tap do |plate|
       plate.wells.construct! unless do_not_create_wells
     end
   end
@@ -233,6 +160,29 @@ class PlatePurpose < Purpose
   end
 
   private
+
+  def fail_stock_well_requests(wells, customer_accepts_responsibility)
+    # Load all of the requests that come from the stock wells that should be failed.  Note that we can't simply change
+    # their state, we have to actually use the statemachine method to do this to get the correct behaviour.
+    queries = []
+
+    # Build a query per well
+    fail_request_details_for(wells) do |submission_ids, stock_wells|
+      queries << Request.where(asset_id: stock_wells, submission_id: submission_ids)
+    end
+    raise 'Apparently there are not requests on these wells?' if queries.empty?
+
+    # Here we chain together our various request scope using or, allowing us to retrieve them in a single query.
+    request_scope = queries.reduce(queries.pop) { |scope, query| scope.or(query) }
+    request_scope.each do |request|
+      request.customer_accepts_responsibility! if customer_accepts_responsibility
+      request.passed? ? request.retrospective_fail! : request.fail!
+    end
+  end
+
+  def _pool_wells(wells)
+    wells.pooled_as_target_by_transfer
+  end
 
   def set_default_target_type
     self.target_type ||= 'Plate'

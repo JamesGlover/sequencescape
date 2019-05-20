@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 def set_uuid_for(object, uuid_value)
   uuid   = object.uuid_object
   uuid ||= object.build_uuid_object
@@ -63,15 +57,15 @@ Given /^the UUID for the (#{SINGULAR_MODELS_BASED_ON_NAME_REGEXP}) "([^\"]+)" is
 end
 
 Given /^an? (#{SINGULAR_MODELS_BASED_ON_NAME_REGEXP}) called "([^\"]+)" with UUID "([^\"]+)"$/ do |model, name, uuid_value|
-  set_uuid_for(FactoryGirl.create(model.gsub(/\s+/, '_').to_sym, name: name), uuid_value)
+  set_uuid_for(FactoryBot.create(model.gsub(/\s+/, '_').to_sym, name: name), uuid_value)
 end
 
 Given /^a tube purpose called "([^\"]+)" with UUID "([^\"]+)"$/ do |name, uuid_value|
-  set_uuid_for(FactoryGirl.create(:tube_purpose, name: name), uuid_value)
+  set_uuid_for(FactoryBot.create(:tube_purpose, name: name), uuid_value)
 end
 
 Given /^an? (#{SINGULAR_MODELS_BASED_ON_NAME_REGEXP}) called "([^\"]+)" with ID (\d+)$/ do |model, name, id|
-  FactoryGirl.create(model.gsub(/\s+/, '_').to_sym, name: name, id: id)
+  FactoryBot.create(model.gsub(/\s+/, '_').to_sym, name: name, id: id)
 end
 
 Given /^(\d+) (#{PLURAL_MODELS_BASED_ON_NAME_REGEXP}) exist with names based on "([^\"]+)" and IDs starting at (\d+)$/ do |count, model, name, id|
@@ -147,7 +141,7 @@ SINGULAR_MODELS_BASED_ON_ID_REGEXP = ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_ID.
 PLURAL_MODELS_BASED_ON_ID_REGEXP   = ALL_MODELS_THAT_CAN_HAVE_UUIDS_BASED_ON_ID.map(&:pluralize).join('|')
 
 Given /^a (#{SINGULAR_MODELS_BASED_ON_NAME_REGEXP}|#{SINGULAR_MODELS_BASED_ON_ID_REGEXP}) with UUID "([^"]*)" exists$/ do |model, uuid_value|
-  set_uuid_for(FactoryGirl.create(model.gsub(/\s+/, '_').to_sym), uuid_value)
+  set_uuid_for(FactoryBot.create(model.gsub(/\s+/, '_').to_sym), uuid_value)
 end
 
 Given /^the UUID for the last (#{SINGULAR_MODELS_BASED_ON_NAME_REGEXP}|#{SINGULAR_MODELS_BASED_ON_ID_REGEXP}) is "([^\"]+)"$/ do |model, uuid_value|
@@ -186,13 +180,7 @@ end
 
 Given /^the UUID of the last (#{SINGULAR_MODELS_BASED_ON_ID_REGEXP}) created is "([^\"]+)"$/ do |model, uuid_value|
   target = model.gsub(/\s+/, '_').classify.constantize.last or raise StandardError, "There appear to be no #{model.pluralize}"
-  target.uuid_object.update_attributes!(external_id: uuid_value)
-end
-
-Given /^(\d+) (#{PLURAL_MODELS_BASED_ON_ID_REGEXP}) exist with IDs starting at (\d+)$/ do |count, model, id|
-  (0...count.to_i).each do |index|
-    step("the #{model.singularize} exists with ID #{id.to_i + index}")
-  end
+  target.uuid_object.update!(external_id: uuid_value)
 end
 
 # TODO: It's 'UUID' not xxxing 'uuid'.
@@ -201,17 +189,17 @@ Given /^I have an (event|external release event) with uuid "([^"]*)"$/ do |model
 end
 
 Given /^a (plate|well) with uuid "([^"]*)" exists$/ do |model, uuid_value|
-  set_uuid_for(FactoryGirl.create(model.to_sym), uuid_value)
+  set_uuid_for(FactoryBot.create(model.to_sym), uuid_value)
 end
 
 Given /^the (#{SINGULAR_MODELS_BASED_ON_ID_REGEXP}) exists with ID (\d+)$/ do |model, id|
-  FactoryGirl.create(model.gsub(/\s+/, '_').to_sym, id: id)
+  FactoryBot.create(model.gsub(/\s+/, '_').to_sym, id: id)
 end
 
 Given /^the (#{SINGULAR_MODELS_BASED_ON_ID_REGEXP}) exists with ID (\d+) and the following attributes:$/ do |model, id, table|
   attributes = table.hashes.inject({}) { |h, att| h.update(att['name'] => att['value']) }
   attributes[:id] ||= id
-  FactoryGirl.create(model.gsub(/\s+/, '_').to_sym, attributes)
+  FactoryBot.create(model.gsub(/\s+/, '_').to_sym, attributes)
 end
 
 Given /^a asset_link with uuid "([^"]*)" exists and connects "([^"]*)" and "([^"]*)"$/ do |uuid_value, uuid_plate, uuid_well|
@@ -234,7 +222,7 @@ end
 
 Given /^all of the requests have appropriate assets with samples$/ do
   Request.find_each do |request|
-    request.update_attributes!(asset: FactoryGirl.create(request.request_type.asset_type.underscore.to_sym))
+    request.update!(asset: FactoryBot.create(request.request_type.asset_type.underscore.to_sym))
   end
 end
 
@@ -245,6 +233,6 @@ Given /^plate "([^"]*)" is a source plate of "([^"]*)"$/ do |source_plate_uuid, 
 end
 
 Given /^the UUID for well (\d+) on plate "(.*?)" is "(.*?)"$/ do |well_id, plate_name, uuid|
-  plate = Plate.find_by(name: plate_name) || Plate.find_by(barcode: plate_name)
+  plate = Plate.find_by(name: plate_name) || Plate.find_from_barcode(plate_name)
   set_uuid_for(plate.wells[well_id.to_i - 1], uuid)
 end

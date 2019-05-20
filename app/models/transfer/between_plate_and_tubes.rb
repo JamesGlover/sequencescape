@@ -1,14 +1,8 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2013,2014,2015 Genome Research Ltd.
-
 class Transfer::BetweenPlateAndTubes < Transfer
   DESTINATION_INCLUDES = {
     destination: [
       :uuid_object,
-      :barcode_prefix
+      :barcodes
     ]
   }
 
@@ -61,8 +55,8 @@ class Transfer::BetweenPlateAndTubes < Transfer
 
   def barcode_to_hash(barcoded)
     yield({
-      number: barcoded.barcode,
-      prefix: barcoded.barcode_prefix.prefix,
+      number: barcoded.barcode_number,
+      prefix: barcoded.prefix,
       two_dimensional: barcoded.two_dimensional_barcode,
       ean13: barcoded.ean13_barcode,
       type: barcoded.barcode_type
@@ -77,12 +71,12 @@ class Transfer::BetweenPlateAndTubes < Transfer
   # well as a source and the target is an MX library tube.
   #++
   def well_to_destination
-    Hash[
-      source.stock_wells.map do |well, stock_wells|
-        tube = locate_mx_library_tube_for(well, stock_wells)
-        (tube.nil? or should_well_not_be_transferred?(well)) ? nil : [well, [tube, stock_wells]]
-      end.compact
-    ]
+    source.stock_wells.each_with_object({}) do |(well, stock_wells), store|
+      tube = locate_mx_library_tube_for(well, stock_wells)
+      next if tube.nil? or should_well_not_be_transferred?(well)
+
+      store[well] = [tube, stock_wells]
+    end
   end
 
   def record_transfer(source, destination, stock_well)
@@ -99,7 +93,8 @@ class Transfer::BetweenPlateAndTubes < Transfer
 
     tube_to_stock_wells.each do |tube, stock_wells|
       next unless apply_name?(tube)
-      tube.update_attributes!(name: tube_name_for(stock_wells))
+
+      tube.update!(name: tube_name_for(stock_wells))
     end
   end
 
@@ -113,18 +108,14 @@ class Transfer::BetweenPlateAndTubes < Transfer
     source_wells = source.plate_purpose.source_wells_for(stock_wells).sort { |w1, w2| w1.map.column_order <=> w2.map.column_order }
     stock_plates = source_wells.map(&:plate).uniq
     raise StandardError, 'There appears to be no stock plate!' if stock_plates.empty?
+
     plate_name = if stock_plates.size > 1
-                   "#{stock_plates.first.sanger_human_barcode}+"
+                   "#{stock_plates.first.human_barcode}+"
                  else
-                   stock_plates.first.sanger_human_barcode
+                   stock_plates.first.human_barcode
                  end
     first, last = source_wells.first.map_description, source_wells.last.map_description
     "#{plate_name} #{first}:#{last}"
-  end
-
-  # Request type is based on the destination tube from the source plate
-  def request_type_between(_, destination)
-    destination.transfer_request_type_from(source)
   end
 
   def build_asset_links

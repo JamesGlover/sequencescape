@@ -1,20 +1,15 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class PlatesControllerTest < ActionController::TestCase
   context 'Plate' do
     setup do
+      @prefix = 'DN'
       @controller = PlatesController.new
       @request    = ActionController::TestRequest.create(@controller)
 
-      @pico_assay_plate_creator = FactoryGirl.create :plate_creator, plate_purposes: PlatePurpose.where(name: ['Pico Assay A', 'Pico Assay B'])
-      @dilution_plates_creator = FactoryGirl.create :plate_creator, plate_purposes: PlatePurpose.where(name: 'Working dilution')
-      @gel_dilution_plates_creator = FactoryGirl.create :plate_creator, plate_purposes: PlatePurpose.where(name: 'Gel Dilution Plates')
+      @pico_assay_plate_creator = FactoryBot.create :plate_creator, plate_purposes: PlatePurpose.where(name: ['Pico Assay A', 'Pico Assay B'])
+      @dilution_plates_creator = FactoryBot.create :plate_creator, plate_purposes: PlatePurpose.where(name: 'Working dilution')
+      @gel_dilution_plates_creator = FactoryBot.create :plate_creator, plate_purposes: PlatePurpose.where(name: 'Gel Dilution Plates')
 
       @barcode_printer = create :barcode_printer
       @plate_barcode = mock('plate barcode')
@@ -26,13 +21,13 @@ class PlatesControllerTest < ActionController::TestCase
 
     context 'with a logged in user' do
       setup do
-        @user = FactoryGirl.create :user, barcode: 'ID100I'
+        @user = FactoryBot.create :user, barcode: 'ID100I', swipecard_code: '1234567'
         @user.is_administrator
         session[:user] = @user.id
 
-        @parent_plate = FactoryGirl.create :plate, barcode: '5678'
-        @parent_plate2 = FactoryGirl.create :plate, barcode: '1234'
-        @parent_plate3 = FactoryGirl.create :plate, barcode: '987'
+        @parent_plate = FactoryBot.create :plate, barcode: '5678'
+        @parent_plate2 = FactoryBot.create :plate, barcode: '1234'
+        @parent_plate3 = FactoryBot.create :plate, barcode: '987'
       end
 
       context '#new' do
@@ -47,7 +42,7 @@ class PlatesControllerTest < ActionController::TestCase
         context 'with no source plates' do
           setup do
             @plate_count = Plate.count
-            post :create, params: { plates: { creator_id: @gel_dilution_plates_creator.id, barcode_printer: @barcode_printer.id, user_barcode: '2470000100730' } }
+            post :create, params: { plates: { creator_id: @gel_dilution_plates_creator.id, barcode_printer: @barcode_printer.id, user_barcode: '1234567' } }
           end
 
           should 'change Plate.count by 1' do
@@ -62,7 +57,7 @@ class PlatesControllerTest < ActionController::TestCase
             setup do
               @well = create :well
               @parent_plate.wells << [@well]
-              @parent_raw_barcode = Barcode.calculate_barcode(Plate.prefix, @parent_plate.barcode.to_i)
+              @parent_raw_barcode = @parent_plate.machine_barcode
             end
 
             context "and we don't select any dilution factor" do
@@ -120,7 +115,7 @@ class PlatesControllerTest < ActionController::TestCase
                 setup do
                   @well2 = create :well
                   @parent_plate2.wells << [@well2]
-                  @parent2_raw_barcode = Barcode.calculate_barcode(Plate.prefix, @parent_plate2.barcode.to_i)
+                  @parent2_raw_barcode = @parent_plate2.machine_barcode
                 end
 
                 context 'and first parent has a dilution factor of 3.53, and second parent with 4.56' do
@@ -234,7 +229,7 @@ class PlatesControllerTest < ActionController::TestCase
         context 'Create Pico Assay Plates' do
           context 'with one source plate' do
             setup do
-              @parent_raw_barcode = Barcode.calculate_barcode(Plate.prefix, @parent_plate.barcode.to_i)
+              @parent_raw_barcode = @parent_plate.machine_barcode
             end
 
             context 'without a dilution factor' do
@@ -279,9 +274,9 @@ class PlatesControllerTest < ActionController::TestCase
           context 'with 3 source plates' do
             setup do
               @picoassayplate_count = PicoAssayPlate.count
-              @parent_raw_barcode  = Barcode.calculate_barcode(Plate.prefix, @parent_plate.barcode.to_i)
-              @parent_raw_barcode2 = Barcode.calculate_barcode(Plate.prefix, @parent_plate2.barcode.to_i)
-              @parent_raw_barcode3 = Barcode.calculate_barcode(Plate.prefix, @parent_plate3.barcode.to_i)
+              @parent_raw_barcode  = @parent_plate.machine_barcode
+              @parent_raw_barcode2 = @parent_plate2.machine_barcode
+              @parent_raw_barcode3 = @parent_plate3.machine_barcode
               post :create, params: { plates: { creator_id: @pico_assay_plate_creator.id, barcode_printer: @barcode_printer.id, source_plates: "#{@parent_raw_barcode}\n#{@parent_raw_barcode2}\t#{@parent_raw_barcode3}", user_barcode: '2470000100730' } }
             end
 

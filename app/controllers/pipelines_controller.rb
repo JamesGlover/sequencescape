@@ -1,23 +1,16 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 class PipelinesController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
   before_action :evil_parameter_hack!
-  before_action :find_pipeline_by_id, only: [:show, :setup_inbox, :set_inbox, :training_batch, :activate, :deactivate, :destroy, :batches]
+  before_action :find_pipeline_by_id, only: [:show, :setup_inbox, :set_inbox, :activate, :deactivate, :destroy, :batches]
   before_action :lab_manager_login_required, only: [:update_priority, :deactivate, :activate]
   before_action :prepare_batch_and_pipeline, only: [:summary, :finish]
 
   after_action :set_cache_disabled!, only: [:show]
 
   def index
-    @pipelines = Pipeline.active.internally_managed.alphabetical.all
-    store = Hash.new { |h, k| h[k] = [] }
-    @grouping = @pipelines.each_with_object(store) { |p, h| h[p.group_name] << p }
+    @pipelines = Pipeline.active.internally_managed.alphabetical
+    @grouping = @pipelines.group_by(&:group_name)
 
     respond_to do |format|
       format.html
@@ -56,6 +49,7 @@ class PipelinesController < ApplicationController
       # the result now anyway.
       @requests_comment_count = Comment.counts_for(@requests.to_a)
       @assets_comment_count = Comment.counts_for(@requests.map(&:asset))
+      @requests_samples_count = Request.where(id: @requests.to_a).joins(:samples).group(:id).count
     end
   end
 
@@ -73,10 +67,6 @@ class PipelinesController < ApplicationController
       flash[:notice] = 'Failed to set pipeline controls'
       render action: 'setup_inbox', id: @pipeline.id
     end
-  end
-
-  def training_batch
-    @controls = @pipeline.controls
   end
 
   def summary; end

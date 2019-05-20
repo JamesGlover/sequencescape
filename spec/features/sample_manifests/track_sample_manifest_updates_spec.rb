@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'rails_helper'
 require 'timecop'
 
@@ -18,7 +19,6 @@ feature 'track SampleManifest updates' do
   let(:barcode) { 1234567 }
   let!(:supplier) { create :supplier }
   let!(:study) { create :study }
-  let!(:submission_workflow) { create :submission_workflow }
 
   background do
     new_time = Time.zone.local(2010, 7, 12, 10, 25, 0)
@@ -40,7 +40,7 @@ feature 'track SampleManifest updates' do
     expect(BroadcastEvent.count).to eq broadcast_events_count + 1
 
     samples = sample_manifest.samples.each_with_index do |sample, index|
-      sample.update_attributes(sanger_sample_id: "sample_#{index}")
+      sample.update(sanger_sample_id: "sample_#{index}")
     end
     sample1 = samples[1]
     sample7 = samples[7]
@@ -132,8 +132,7 @@ feature 'track SampleManifest updates' do
              ['Updated by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'jane']]
 
     expect(fetch_table('table#events')).to eq(table)
-
-    asset = Asset.find_from_machine_barcode('1221234567841')
+    asset = Asset.find_from_barcode('1221234567841')
     visit(history_asset_path(asset))
     table = [['Message', 'Content', 'Created at', 'Created by'],
              ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john'],

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 class Api::WellIO < Api::Base
   module Extensions
     module ClassMethods
@@ -55,11 +49,10 @@ class Api::WellIO < Api::Base
   end
 
   with_association(:plate) do
-    map_attribute_to_json_attribute(:barcode, 'plate_barcode')
     map_attribute_to_json_attribute(:uuid, 'plate_uuid')
-
-    extra_json_attributes do |object, json_attributes|
-      json_attributes['plate_barcode_prefix'] = object.prefix unless object.nil?
+    with_association(:sanger_barcode) do
+      map_attribute_to_json_attribute(:number_as_string, 'plate_barcode')
+      map_attribute_to_json_attribute(:barcode_prefix, 'plate_barcode_prefix')
     end
   end
 
@@ -70,6 +63,4 @@ class Api::WellIO < Api::Base
       map_attribute_to_json_attribute(:name, 'sample_name')
     end
   end
-
-  self.related_resources = [:lanes, :requests]
 end

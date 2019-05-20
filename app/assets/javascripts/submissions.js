@@ -1,6 +1,3 @@
-//This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
-//Please refer to the LICENSE and README files for information on licensing and authorship of this file.
-//Copyright (C) 2011,2012,2013,2015,2016 Genome Research Ltd.
 
 // Submission workflow jQuery Plugin...
 (function(window, $, undefined){
@@ -61,8 +58,8 @@
 
     markPaneIncomplete : function() {
 
-      this.addClass('panel-info').
-        removeClass('panel-success panel-danger');
+      this.addClass('section-in-progress').
+        removeClass('section-complete section-error');
 
       // Move this to an initialised callback
       $('#add-order').attr('disabled',true);
@@ -72,14 +69,14 @@
 
     markPaneInvalid : function() {
 
-      return this.addClass('panel-danger').
-        removeClass('panel-info panel-success');
+      return this.addClass('section-error').
+        removeClass('section-in-progress section-complete');
     },
 
     markPaneComplete : function() {
 
-      this.addClass('panel-success').
-        removeClass('panel-info panel-danger').
+      this.addClass('section-complete').
+        removeClass('section-in-progress section-error').
         find('input, select');
 
       // Move this to an initialised callback
@@ -125,7 +122,7 @@
 
     delete SCAPE.submission.template_id;
 
-    $('#order-parameters').slideUp(function(){
+    $('#order-parameters').slideUp(100, function(){
       $(this).html('');
       currentPane.submission('markPaneIncomplete');
 
@@ -144,7 +141,7 @@
               currentPane.submission('markPaneComplete'):
               currentPane.submission('markPaneIncomplete');
 
-            $('#order-parameters').show(1000);
+            $('#order-parameters').show(100);
           }
         );
         return true;
@@ -203,7 +200,7 @@
             detach().
             html(data).
             submission('markPaneComplete').
-            removeClass('active invalid');
+            removeClass('order-active invalid');
 
 
           $('#order-controls').before(currentPane);
@@ -212,7 +209,7 @@
           $('#build-form').attr('action', '/submissions/'+ SCAPE.submission.id);
           $('#start-submission').removeAttr('disabled');
 
-          $('.pane').not('#blank-order').addClass('active');
+          $('.pane').not('#blank-order').addClass('order-active');
 
         });
 
@@ -272,7 +269,7 @@
     $('#order-template').find('select, input').attr('disabled',true);
 
 
-    $('.active').removeClass('active');
+    $('.order-active').removeClass('order-active');
 
     // Stop the submission from being built until new the order is either
     // saved or cancelled...
@@ -282,7 +279,7 @@
 
     var newOrder = $('<li>').
       html( $('#blank-order').html() ).
-      addClass('pane active order').hide();
+      addClass('pane order-active order').hide();
 
     // Remove the disable from the form inputs
     // but leave the save button disabled
@@ -344,7 +341,7 @@
 
     newOrder.slideDown();
 
-    newOrder.find('select').select2({theme: "bootstrap"});
+    newOrder.find('select').select2({theme: "bootstrap4"});
 
   };
 
@@ -356,7 +353,7 @@
       currentPane.remove();
       if ($('.order.completed').length === 0) {
         $('#order-template').
-          addClass('active').
+          addClass('order-active').
           find('select, input').
           removeAttr('disabled');
       }
@@ -398,7 +395,7 @@
              delete SCAPE.submission.id;
 
              $('#order-template').
-               addClass('active').
+               addClass('order-active').
                find('select, input').
                removeAttr('disabled');
 
@@ -419,7 +416,7 @@
 
     var currentAssetsPanel      = $(event.currentTarget).closest('.assets');
 
-    var nextAssetPanelClass = $(event.currentTarget).data('selector')
+    var nextAssetPanelClass = $(event.currentTarget).data('selector');
     var nextAssetPanel = currentAssetsPanel.siblings(nextAssetPanelClass).first();
 
     currentAssetsPanel.fadeOut(function(){
@@ -439,8 +436,8 @@
     $('#submission_template_id').on('change',templateChangeHandler);
 
     // Validate the order-parameters
-    $('#order-parameters').on('keypress','.required',validateOrderParams)
-    $('#order-parameters').on('blur','.required',validateOrderParams)
+    $('#order-parameters').on('keypress','.required',validateOrderParams);
+    $('#order-parameters').on('blur','.required',validateOrderParams);
 
     $('#add-order').click(addOrderHandler);
 

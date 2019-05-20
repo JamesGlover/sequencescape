@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 module BroadcastEvent::MetadataHelpers
   class SimpleMetadataFinder
     attr_reader :name, :method
@@ -33,6 +27,7 @@ module BroadcastEvent::MetadataHelpers
     def has_metadata(key, method = nil, &block)
       return metadata_finders << SimpleMetadataFinder.new(key, method) unless method.nil?
       return metadata_finders << BlockMetadataFinder.new(key, &block) unless block.nil?
+
       raise StandardError, "No block or method defined for #{key} on #{name}"
     end
 

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2015,2016 Genome Research Ltd.
-
 class Plate::Creator < ApplicationRecord
   PlateCreationError = Class.new(StandardError)
 
@@ -31,23 +25,26 @@ class Plate::Creator < ApplicationRecord
 
   serialize :valid_options
 
-  def can_create_plates?(source_plate)
-    parent_plate_purposes.empty? || parent_plate_purposes.include?(source_plate.purpose)
-  end
-
   # Executes the plate creation so that the appropriate child plates are built.
   def execute(source_plate_barcodes, barcode_printer, scanned_user, creator_parameters = nil)
     ActiveRecord::Base.transaction do
       new_plates = create_plates(source_plate_barcodes, scanned_user, creator_parameters)
       return false if new_plates.empty?
+
       new_plates.group_by(&:plate_purpose).each do |plate_purpose, plates|
         print_job = LabelPrinter::PrintJob.new(barcode_printer.name,
-                                              LabelPrinter::Label::PlateCreator,
-                                              plates: plates, plate_purpose: plate_purpose, user_login: scanned_user.login)
+                                               LabelPrinter::Label::PlateCreator,
+                                               plates: plates, plate_purpose: plate_purpose, user_login: scanned_user.login)
         return false unless print_job.execute
       end
       true
     end
+  end
+
+  private
+
+  def can_create_plates?(source_plate)
+    parent_plate_purposes.empty? || parent_plate_purposes.include?(source_plate.purpose)
   end
 
   def create_plate_without_parent(creator_parameters)
@@ -68,15 +65,16 @@ class Plate::Creator < ApplicationRecord
       create_plate_without_parent(creator_parameters)
     else
       # In the majority of cases the users are creating stamps of the provided plates.
-      scanned_barcodes = source_plate_barcodes.scan(/\d+/)
+      scanned_barcodes = source_plate_barcodes.split(/[\s,]+/)
       raise PlateCreationError, "Scanned plate barcodes in incorrect format: #{source_plate_barcodes.inspect}" if scanned_barcodes.blank?
 
       # NOTE: Plate barcodes are not unique within certain laboratories.  That means that we cannot do:
-      #  plates = Plate.with_machine_barcode(*scanned_barcodes).all(:include => [ :location, { :wells => :aliquots } ])
+      #  plates = Plate.with_barcode(*scanned_barcodes).all(:include => [ :location, { :wells => :aliquots } ])
       # Because then you get multiple matches.  So we take the first match, which is just not right.
+
       scanned_barcodes.each_with_object([]) do |scanned, plates|
         plate =
-          Plate.with_machine_barcode(scanned).includes(:location, wells: :aliquots).first or
+          Plate.with_barcode(scanned).eager_load(wells: :aliquots).first or
           raise ActiveRecord::RecordNotFound, "Could not find plate with machine barcode #{scanned.inspect}"
 
         unless can_create_plates?(plate)
@@ -87,18 +85,15 @@ class Plate::Creator < ApplicationRecord
       end
     end
   end
-  private :create_plates
 
   def create_child_plates_from(plate, current_user, creator_parameters)
     stock_well_picker = plate.plate_purpose.stock_plate? ? ->(w) { [w] } : ->(w) { w.stock_wells }
-    parent_wells = plate.wells.includes(:aliquots)
+    parent_wells = plate.wells
 
     plate_purposes.map do |target_plate_purpose|
-      target_plate_purpose.target_class.create_with_barcode!(plate.barcode) do |child_plate|
-        child_plate.plate_purpose = target_plate_purpose
+      target_plate_purpose.create!(:without_wells, barcode: plate.barcode_number) do |child_plate|
         child_plate.size          = plate.size
-        child_plate.location      = plate.location
-        child_plate.name          = "#{target_plate_purpose.name} #{child_plate.barcode}"
+        child_plate.name          = "#{target_plate_purpose.name} #{child_plate.human_barcode}"
       end.tap do |child_plate|
         child_plate.wells << parent_wells.map do |well|
           well.dup.tap do |child_well|
@@ -114,5 +109,4 @@ class Plate::Creator < ApplicationRecord
       end
     end
   end
-  private :create_child_plates_from
 end

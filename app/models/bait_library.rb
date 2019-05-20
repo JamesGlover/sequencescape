@@ -1,9 +1,9 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2015 Genome Research Ltd.
+# frozen_string_literal: true
 
+# A bait library is used in the sequence capture process (eg. ISC)
+# to enrich for DNA regions matching the library.
+# This allows for greater coverage of coding sequences, or
+# the separation of DNA by species.
 class BaitLibrary < ApplicationRecord
   include SharedBehaviour::Named
 
@@ -42,11 +42,6 @@ class BaitLibrary < ApplicationRecord
   validates_uniqueness_of :supplier_identifier, scope: :bait_library_supplier_id, allow_nil: true
   before_validation :blank_as_nil
 
-  def blank_as_nil
-    self.supplier_identifier = nil if supplier_identifier.blank?
-  end
-  private :blank_as_nil
-
   # The names of the bait library are considered unique within the supplier
   validates_presence_of :name
   validates_uniqueness_of :name, scope: :bait_library_supplier_id
@@ -59,8 +54,16 @@ class BaitLibrary < ApplicationRecord
 
   scope :visible, -> { where(visible: true) }
 
+  delegate :category, to: :bait_library_type
+
   def hide
     self.visible = false
     save!
+  end
+
+  private
+
+  def blank_as_nil
+    self.supplier_identifier = nil if supplier_identifier.blank?
   end
 end

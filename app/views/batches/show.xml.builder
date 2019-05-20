@@ -13,7 +13,7 @@ xml.batch do
               { aliquots: [:library, :tag, :tag2, :aliquot_index, :sample] }
             ],
             aliquots: [:library, :tag, :tag2, :aliquot_index, :bait_library, :sample]
-          }},
+          } },
           :asset
         ]
       ).each do |batch_request|
@@ -29,13 +29,13 @@ xml.batch do
           # separately and loop around.
           if request.asset.resource?
             xml.control(
-              "id"         => request.asset.id,
-              "name"       => request.asset.name,
+              "id" => request.asset.id,
+              "name" => request.asset.name,
               "request_id" => request.id
             ) {
               request.asset.aliquots.each { |aliquot| output_aliquot(xml, aliquot) }
             }
-            next    # Loop as there will never be a spiked in buffer on this.
+            next # Loop as there will never be a spiked in buffer on this.
           end
 
           target_asset_aliquots = request.target_asset.aliquots
@@ -51,15 +51,16 @@ xml.batch do
           elsif target_asset_aliquots.all?(&:tagged?)
             # Any lane where every aliquot is tagged is considered to be a pool
             xml.pool(
-              "id"         => request.asset.id,                                 # TODO: remove
-              "name"       => request.asset.name,                               # TODO: remove
+              "id" => request.asset.id, # TODO: remove
+              "name" => request.asset.name, # TODO: remove
               "request_id" => request.id,
-              "qc_state"   => request.target_asset.compatible_qc_state
+              "qc_state" => request.target_asset.compatible_qc_state
             ) {
               spiked_in_phiX = request.target_asset.spiked_in_buffer
 
               target_asset_aliquots.each do |aliquot|
                 next if spiked_in_phiX && spiked_in_phiX.primary_aliquot =~ aliquot
+
                 output_aliquot(xml, aliquot)
               end
             }
@@ -67,10 +68,10 @@ xml.batch do
             # This is a lane that is not multiplexed.  It may have spiked in phiX in it, which is tagged, so we'll remove
             # any aliquots that are tagged from the view.
             xml.library(
-              "id"         => request.target_asset.primary_aliquot.library_id,  # TODO: remove
-              "name"       => request.asset.name,                               # TODO: remove
+              "id" => request.target_asset.primary_aliquot.library_id, # TODO: remove
+              "name" => request.asset.name, # TODO: remove
               "request_id" => request.id,
-              "qc_state"   => request.target_asset.compatible_qc_state
+              "qc_state" => request.target_asset.compatible_qc_state
             ) {
               target_asset_aliquots.each do |aliquot|
                 output_aliquot(xml, aliquot) unless aliquot.tag.present?

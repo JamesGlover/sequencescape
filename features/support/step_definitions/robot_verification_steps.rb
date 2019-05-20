@@ -1,13 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
-Given /^I have a released cherrypicking batch$/ do
-  step("I have a released cherrypicking batch with 96 samples and the minimum robot pick is '1.0'")
-end
-
 Given(/^I have a released cherrypicking batch with (\d+) samples and the minimum robot pick is "([^"]*)"$/) do |number_of_samples, minimum_robot_pick|
   step("I have a cherrypicking batch with #{number_of_samples} samples")
   step('a plate barcode webservice is available and returns "99999"')
@@ -21,8 +11,6 @@ Given(/^I have a released cherrypicking batch with (\d+) samples and the minimum
   step('I fill in "nano_grams_per_micro_litre_concentration_required" with "50"')
   fill_in('nano_grams_per_micro_litre_robot_minimum_picking_volume', with: minimum_robot_pick)
   step('I press "Next step"')
-  step('I press "Next step"')
-  step('I select "Genotyping freezer" from "Location"')
   step('I press "Next step"')
   step('I press "Release this batch"')
   step('the last batch has a barcode of "550000555760"')
@@ -41,8 +29,6 @@ Given(/^I have a released low concentration cherrypicking batch with (\d+) sampl
   step('I fill in "nano_grams_per_micro_litre_concentration_required" with "50"')
   fill_in('nano_grams_per_micro_litre_robot_minimum_picking_volume', with: minimum_robot_pick)
   step('I press "Next step"')
-  step('I press "Next step"')
-  step('I select "Genotyping freezer" from "Location"')
   step('I press "Next step"')
   step('I press "Release this batch"')
   step('the last batch has a barcode of "550000555760"')
@@ -81,8 +67,6 @@ Given(/^I have a released cherrypicking batch with 3 plates and the minimum robo
   fill_in('nano_grams_per_micro_litre_robot_minimum_picking_volume', with: minimum_robot_pick)
   step('I press "Next step"')
   step('I press "Next step"')
-  step('I select "Genotyping freezer" from "Location"')
-  step('I press "Next step"')
   step('I press "Release this batch"')
   step('the last batch has a barcode of "550000555760"')
 end
@@ -90,12 +74,12 @@ end
 Given /^I have a released cherrypicking batch with 1 plate which doesnt need buffer$/ do
   step('I have a released cherrypicking batch with 1 samples and the minimum robot pick is "1"')
   plate = Plate.last
-  plate.wells.each { |well| well.well_attribute.update_attributes!(buffer_volume: nil) }
+  plate.wells.each { |well| well.well_attribute.update!(buffer_volume: nil) }
 end
 
 Given /^user "([^"]*)" has a user barcode of "([^"]*)"$/ do |login, user_barcode|
   user = User.find_by(login: login)
-  user.update_attributes!(barcode: user_barcode)
+  user.update!(barcode: user_barcode)
 end
 
 Transform /^the last batch$/ do |_|
@@ -104,8 +88,8 @@ end
 
 Then /^the downloaded tecan file for batch "([^"]*)" and plate "([^"]*)" is$/ do |batch_barcode, plate_barcode, tecan_file|
   batch = Batch.find_by(barcode: Barcode.number_to_human(batch_barcode)) or raise StandardError, "Cannot find batch with barcode #{batch_barcode.inspect}"
-  plate = Plate.find_from_machine_barcode(plate_barcode) or raise StandardError, "Cannot find plate with machine barcode #{plate_barcode.inspect}"
-  generated_file = batch.tecan_gwl_file_as_text(plate.barcode, batch.total_volume_to_cherrypick, 'ABgene 0765')
+  plate = Plate.find_from_barcode(plate_barcode) or raise StandardError, "Cannot find plate with machine barcode #{plate_barcode.inspect}"
+  generated_file = batch.tecan_gwl_file_as_text(plate.human_barcode, batch.total_volume_to_cherrypick, 'ABgene 0765')
   generated_lines = generated_file.split(/\n/)
   generated_lines.shift(2)
   assert_not_nil generated_lines
@@ -117,16 +101,4 @@ end
 
 Then /^the source plates should be sorted by bed:$/ do |expected_results_table|
   expected_results_table.diff!(table(fetch_table('table#source_beds')))
-end
-
-Given /^the minimum robot pick is ([0-9\.]+)$/ do |volume|
-  configatron.tecan_minimum_volume = volume.to_f
-end
-
-Before('@tecan') do
-  @cache_tecan_minimum = configatron.tecan_minimum_volume
-end
-
-After('@tecan') do
-  configatron.tecan_minimum_volume = @cache_tecan_minimum
 end

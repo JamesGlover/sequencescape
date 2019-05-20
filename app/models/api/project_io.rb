@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 class Api::ProjectIO < Api::Base
   module Extensions
     module ClassMethods
@@ -16,17 +10,15 @@ class Api::ProjectIO < Api::Base
       base.class_eval do
         extend ClassMethods
 
-        scope :including_associations_for_json, -> { includes([
-          :uuid_object, {
+        scope :including_associations_for_json, -> {
+          includes([
+            :uuid_object, {
               project_metadata: [:project_manager, :budget_division],
               roles: :users
             }
-        ])}
+          ])
+        }
       end
-    end
-
-    def related_resources
-      ['studies']
     end
   end
 
@@ -56,21 +48,13 @@ class Api::ProjectIO < Api::Base
   end
 
   extra_json_attributes do |object, json_attributes|
-    json_attributes['uuid'] = object.uuid if object.respond_to?(:uuid)
-
-    # Users and roles
-    if object.respond_to?(:user)
-      json_attributes['user'] = object.user.nil? ? 'unknown' : object.user.login
-    end
-    if object.respond_to?(:roles)
-      object.roles.each do |role|
-        json_attributes[role.name.underscore] = role.users.map do |user|
-          {
-            login: user.login,
-            email: user.email,
-            name: user.name
-          }
-        end
+    object.roles.each do |role|
+      json_attributes[role.name.underscore] = role.users.map do |user|
+        {
+          login: user.login,
+          email: user.email,
+          name: user.name
+        }
       end
     end
   end

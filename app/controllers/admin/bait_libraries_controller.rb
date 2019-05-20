@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2013,2015 Genome Research Ltd.
-
 class Admin::BaitLibrariesController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
@@ -39,7 +33,7 @@ class Admin::BaitLibrariesController < ApplicationController
 
   def update
     respond_to do |format|
-      if @bait_library.update_attributes(params[:bait_library])
+      if @bait_library.update(params[:bait_library])
         flash[:notice] = 'Bait Library was successfully updated.'
         format.html { redirect_to(admin_bait_libraries_path) }
       else

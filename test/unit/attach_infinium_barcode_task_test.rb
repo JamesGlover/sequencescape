@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class AttachInfiniumBarcodeTest < TaskTestBase
@@ -32,16 +26,16 @@ class AttachInfiniumBarcodeTest < TaskTestBase
       end
       context 'with valid parameters' do
         setup do
-          params = { barcodes: { (@plate1.id).to_s => '111', (@plate2.id).to_s => '222' } }
+          params = { barcodes: { (@plate1.id).to_s => 'WG4000211-DNA', (@plate2.id).to_s => 'WG4000212-DNA' } }
           @task.do_task(@workflow, params)
         end
 
         should 'set the infinium barcode on plate 1' do
-          assert_equal '111', Plate.find(@plate1.id).infinium_barcode
+          assert_equal 'WG4000211-DNA', Plate.find(@plate1.id).infinium_barcode
         end
 
         should 'set the infinium barcode on plate 2' do
-          assert_equal '222', Plate.find(@plate2.id).infinium_barcode
+          assert_equal 'WG4000212-DNA', Plate.find(@plate2.id).infinium_barcode
         end
       end
       context 'with plate that doesnt exist' do
@@ -51,7 +45,7 @@ class AttachInfiniumBarcodeTest < TaskTestBase
         end
 
         should 'return false' do
-          assert !@returned_task_value
+          assert_not @returned_task_value
         end
       end
     end

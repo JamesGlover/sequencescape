@@ -1,8 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2013,2015 Genome Research Ltd.
 require 'event_factory'
 class ProjectsController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
@@ -23,11 +18,6 @@ class ProjectsController < ApplicationController
   end
 
   def show
-    if current_user != :false
-      @workflow = current_user.workflow
-      # TODO[xxx]: filtered the project based on user workflow
-    end
-
     respond_to do |format|
       format.html
       format.xml
@@ -81,7 +71,7 @@ class ProjectsController < ApplicationController
 
   def update
     respond_to do |format|
-      if @project.update_attributes(params[:project])
+      if @project.update(params[:project])
         flash[:notice] = 'Project was successfully updated.'
         format.html { redirect_to(@project) }
         format.xml  { head :ok }
@@ -113,7 +103,7 @@ class ProjectsController < ApplicationController
 
   def collaborators
     @project    = Project.find(params[:id])
-    @all_roles  = ['owner', 'follower', 'manager']
+    @all_roles  = %w[owner follower manager]
     @roles      = Role.where(authorizable_id: @project.id, authorizable_type: 'Project')
     @users      = User.order(:first_name)
   end

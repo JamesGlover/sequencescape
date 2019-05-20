@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2014,2015 Genome Research Ltd.
-
 require './test/test_helper'
 
 class ReportContractTest < ActiveSupport::TestCase
@@ -21,7 +15,6 @@ class ReportContractTest < ActiveSupport::TestCase
     view_sample_study_reference_genome
     view_sample_tubes
     view_samples
-    view_started_requests
     view_studies
     view_tags
     view_wells

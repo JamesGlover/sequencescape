@@ -1,20 +1,15 @@
-# This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2014 Genome Research Ltd.
 module Hiseq2500Helper
   def self.create_request_type(pl, ended = 'paired')
     RequestType.create!(
-        key: "illumina_#{pl}_hiseq_2500_#{ended}_end_sequencing",
-        name: "Illumina-#{pl.upcase} HiSeq 2500 #{ended.titleize} end sequencing",
-        workflow: Submission::Workflow.find_by(key: 'short_read_sequencing'),
-        asset_type: 'LibraryTube',
-        order: 2,
-        initial_state: 'pending',
-        multiples_allowed: true,
-        request_class_name: 'HiSeqSequencingRequest',
-        product_line: ProductLine.find_by(name: "Illumina-#{pl.upcase}")
-      )
+      key: "illumina_#{pl}_hiseq_2500_#{ended}_end_sequencing",
+      name: "Illumina-#{pl.upcase} HiSeq 2500 #{ended.titleize} end sequencing",
+      asset_type: 'LibraryTube',
+      order: 2,
+      initial_state: 'pending',
+      multiples_allowed: true,
+      request_class_name: 'HiSeqSequencingRequest',
+      product_line: ProductLine.find_by(name: "Illumina-#{pl.upcase}")
+    )
   end
 
   def self.template(settings)
@@ -46,14 +41,14 @@ module Hiseq2500Helper
 
   def self.input_fields(sizes, libraries)
     [
-      FieldInfo.new(kind: 'Text', default_value: '', parameters: {}, display_name: 'Fragment size required (from)', key: 'fragment_size_required_from'),
-      FieldInfo.new(kind: 'Text', default_value: '', parameters: {}, display_name: 'Fragment size required (to)', key: 'fragment_size_required_to'),
+      FieldInfo.new(kind: 'Text', default_value: '', display_name: 'Fragment size required (from)', key: 'fragment_size_required_from'),
+      FieldInfo.new(kind: 'Text', default_value: '', display_name: 'Fragment size required (to)', key: 'fragment_size_required_to'),
       FieldInfo.new(
-        kind: 'Selection', default_value: 'Standard', parameters: { selection: libraries },
+        kind: 'Selection', default_value: 'Standard', selection: libraries,
         display_name: 'Library type',
         key: 'library_type'
       ),
-      FieldInfo.new(kind: 'Selection', default_value: sizes.last, parameters: { selection: sizes }, display_name: 'Read length', key: 'read_length')
+      FieldInfo.new(kind: 'Selection', default_value: sizes.last, selection: sizes, display_name: 'Read length', key: 'read_length')
     ]
   end
 

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015,2016 Genome Research Ltd.
-
 class Uuid < ApplicationRecord
   # Allows tests to dictate the next UUID generted for a given class
   class_attribute :store_for_tests
@@ -11,25 +5,27 @@ class Uuid < ApplicationRecord
   module Uuidable
     def self.included(base)
       base.class_eval do
-        # We need to add some class level changes to this model because the ar-extensions gem might be
-        # used.
-        # extend ArExtensionsFix
-
+        # Lazy uuid generation disables uuid generation on record creation. For the most part this is
+        # undesireable (see below) but is useful for aliquots, as we do not expose the uuids via the API
+        # and only require them asynchronously.
+        class_attribute :lazy_uuid_generation
+        self.lazy_uuid_generation = false
         # Ensure that the resource has a UUID and that it's always created when the instance is created.
         # It seems better not to do this but the performance of the API is directly affected by having to
         # create these instances when they do not exist.
         has_one :uuid_object, class_name: 'Uuid', as: :resource, dependent: :destroy, inverse_of: :resource
-        after_create :ensure_uuid_created
+        after_create :ensure_uuid_created, unless: :lazy_uuid_generation?
 
         # Some named scopes ...
         scope :include_uuid, ->() { includes(:uuid_object) }
+        scope :with_uuid, ->(uuid) { include_uuid.where(uuids: { external_id: uuid }) }
       end
     end
 
     # In the test environment we need to have a slightly different behaviour, as we can predefine
     # the UUID for a record to make things predictable.  In production new records always have new
     # UUIDs.
-    if ['test', 'cucumber'].include?(Rails.env)
+    if %w[test cucumber].include?(Rails.env)
       def ensure_uuid_created
         new_uuid = Uuid.store_for_tests && Uuid.store_for_tests.next_uuid_for(self.class.base_class)
         create_uuid_object!(resource: self, external_id: new_uuid)
@@ -57,38 +53,6 @@ class Uuid < ApplicationRecord
     #++
     def uuid
       (uuid_object || create_uuid_object).uuid
-    end
-
-    # The behaviour of the ar-extensions gem means that the after_create callbacks aren't being executed
-    # for any of the rows we create on import.  What we need to do is ensure that any rows in the table
-    # that do not have UUIDs have their UUIDs created, but we also need to do this unobtrusively.
-    module ArExtensionsFix
-      def self.extended(base)
-        base.singleton_class.alias_method(:import_without_uuid_creation, :import)
-        base.singleton_class.alias_method(:import, :import_with_uuid_creation)
-      end
-
-      def import_with_uuid_creation(*args, &block)
-        import_without_uuid_creation(*args, &block).tap do |results|
-          generate_missing_uuids unless results.num_inserts.zero?
-        end
-      end
-
-      def generate_missing_uuids
-        records_for_missing_uuids { |id| Uuid.create!(resouce_type: name, resource_id: id, external_id: Uuid.generate_uuid) }
-      end
-      private :generate_missing_uuids
-
-      def records_for_missing_uuids
-        connection.select_all(%Q{
-          SELECT r.id AS id
-          FROM #{quoted_table_name} r
-          LEFT OUTER JOIN #{Uuid.quoted_table_name} u
-          ON r.id=u.resource_id AND u.resource_type="#{self}"
-          WHERE u.id IS NULL
-        }).map { |r| yield(r['id']) }
-      end
-      private :records_for_missing_uuids
     end
   end
 
@@ -153,6 +117,7 @@ class Uuid < ApplicationRecord
   # @return [String] the uuid .
   def self.find_uuid!(resource_type, resource_id)
     return unless resource_id # return nil for nil
+
     find_uuid(resource_type, resource_id) ||
       create!(resource_type: resource_type, resource_id: resource_id).external_id
   end
@@ -163,6 +128,7 @@ class Uuid < ApplicationRecord
   # @return [String] the uuid .
   def self.generate_uuids!(resource_type, resource_ids)
     return if resource_ids.empty?
+
     ids_missing_uuids = filter_uncreated_uuids(resource_type, resource_ids)
     uuids_to_create = ids_missing_uuids.map { |id| create!(resource_type: resource_type, resource_id: id, external_id: generate_uuid) }
     # Uuid.import uuids_to_create unless uuids_to_create.empty?

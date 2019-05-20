@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 module SampleManifest::MultiplexedLibraryBehaviour
   module ClassMethods
     def create_for_multiplexed_library!(attributes, *args, &block)
@@ -34,7 +28,7 @@ module SampleManifest::MultiplexedLibraryBehaviour
         {
           sample: sample,
           container: {
-            barcode: sample.primary_receptacle.sanger_human_barcode
+            barcode: sample.primary_receptacle.human_barcode
           },
           library_information: sample.primary_receptacle.library_information
         }
@@ -48,7 +42,11 @@ module SampleManifest::MultiplexedLibraryBehaviour
     def multiplexed_library_tube
       # Should we add something to be able to find the multiplexed library tube from database
       # samples.first.primary_receptacle.requests.first.target_asset
-      @mx_tube || raise(MxLibraryTubeException.new, 'Mx tube not found')
+      @mx_tube || samples.first.primary_receptacle.requests.first.target_asset || raise(MxLibraryTubeException.new, 'Mx tube not found')
+    end
+
+    def pending_external_library_creation_requests
+      multiplexed_library_tube.requests_as_target.for_state('pending')
     end
 
     def labware
@@ -66,7 +64,7 @@ module SampleManifest::MultiplexedLibraryBehaviour
     def details
       samples.each do |sample|
         yield({
-          barcode: sample.assets.first.sanger_human_barcode,
+          barcode: sample.assets.first.human_barcode,
           sample_id: sample.sanger_sample_id
         })
       end
@@ -76,7 +74,7 @@ module SampleManifest::MultiplexedLibraryBehaviour
       [].tap do |details|
         samples.each do |sample|
           details << {
-            barcode: sample.assets.first.sanger_human_barcode,
+            barcode: sample.assets.first.human_barcode,
             sample_id: sample.sanger_sample_id
           }
         end
@@ -84,8 +82,9 @@ module SampleManifest::MultiplexedLibraryBehaviour
     end
 
     def validate_sample_container(sample, row)
-      manifest_barcode, primary_barcode = row['SANGER TUBE ID'], sample.primary_receptacle.sanger_human_barcode
+      manifest_barcode, primary_barcode = row['SANGER TUBE ID'], sample.primary_receptacle.human_barcode
       return if primary_barcode == manifest_barcode
+
       yield("You can not move samples between tubes. #{sample.sanger_sample_id} is supposed to be in '#{primary_barcode}'' but has been moved to '#{manifest_barcode}'.")
     end
 
@@ -122,6 +121,7 @@ module SampleManifest::MultiplexedLibraryBehaviour
       # Tag Group validation
       tag_group = tag_group_cache(row[SampleManifest::Headers::TAG_GROUP_FIELD])
       return yield "Couldn't find a tag group called '#{row[SampleManifest::Headers::TAG_GROUP_FIELD]}'" if tag_group.nil?
+
       yield "#{tag_group.name} doesn't include a tag with index #{row['TAG INDEX']}" if tag_group.tags.detect { |tag| tag.map_id == row['TAG INDEX'].to_i }.nil?
 
       # Keep track if our first row is dual indexed or not.
@@ -131,6 +131,7 @@ module SampleManifest::MultiplexedLibraryBehaviour
 
       tag2_group = tag_group_cache(row[SampleManifest::Headers::TAG2_GROUP_FIELD])
       return yield "Couldn't find a tag group called '#{row[SampleManifest::Headers::TAG_GROUP_FIELD]}' for tag 2" if tag2_group.nil?
+
       yield "#{tag2_group.name} doesn't include a tag with index #{row[SampleManifest::Headers::TAG2_INDEX_FIELD]}" if tag2_group.tags.detect { |tag| tag.map_id == row[SampleManifest::Headers::TAG2_INDEX_FIELD].to_i }.nil?
     end
 

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2014,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class SampleRegistrarTest < ActiveSupport::TestCase
@@ -59,7 +53,7 @@ class SampleRegistrarTest < ActiveSupport::TestCase
 
       should 'set the barcode on the sample tube based on the AssetBarcode service' do
         sample_tube = SampleTube.last
-        assert_equal(AssetBarcode.last.id.to_s, sample_tube.barcode)
+        assert_equal(AssetBarcode.last.id.to_s, sample_tube.barcode_number)
       end
 
       should 'put the sample into the study' do

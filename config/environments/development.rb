@@ -4,10 +4,10 @@ Rails.application.configure do
   # In the development environment your application's code is reloaded on
   # every request. This slows down response time but is perfect for development
   # since you don't have to restart the web server when you make code changes.
-  config.cache_classes = false
+  config.cache_classes = ENV.fetch('CACHE_CLASSES', 'true') == 'true'
 
   # Do not eager load code on boot.
-  config.eager_load = false
+  config.eager_load = true
 
   # Show full error reports.
   config.consider_all_requests_local = true
@@ -33,9 +33,14 @@ Rails.application.configure do
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
+  config.log_formatter = ::Logger::Formatter.new
+  if ENV['RAILS_LOG_TO_FILE'].blank?
+    config.logger = ActiveSupport::Logger.new(STDOUT)
+  end
 
   # Raise an error on page load if there are pending migrations.
-  config.active_record.migration_error = :page_load
+  custom_db = ENV.fetch('DATABASE_URL', nil).present?
+  config.active_record.migration_error = custom_db ? false : :page_load
 
   # Debug mode disables concatenation and preprocessing of assets.
   # This option may cause significant delays in view rendering with a large
@@ -61,3 +66,5 @@ Rails.application.configure do
     end
   end
 end
+
+Rack::MiniProfiler.config.position = 'right'

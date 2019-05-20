@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 class GelsController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
@@ -20,7 +14,7 @@ class GelsController < ApplicationController
   end
 
   def lookup
-    @plate = Plate.find_by(barcode: params[:barcode], barcode_prefix_id: BarcodePrefix.find_by(prefix: Plate.prefix))
+    @plate = Plate.find_from_barcode([params[:barcode], "#{Plate.default_prefix}#{params[:barcode]}"])
     unless @plate
       flash[:error] = 'plate not found'
       render action: :find
@@ -38,7 +32,7 @@ class GelsController < ApplicationController
     ActiveRecord::Base.transaction do
       params[:wells].keys.each do |well_id|
         well = Well.find(well_id)
-        well.well_attribute.update_attributes!(gel_pass: params[:wells][well_id][:qc_state])
+        well.well_attribute.update!(gel_pass: params[:wells][well_id][:qc_state])
         well.events.create_gel_qc!(params[:wells][well_id][:qc_state], current_user)
       end
       Plate.find(params[:id]).events.create_gel_qc!('', current_user)

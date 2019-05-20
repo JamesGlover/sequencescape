@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 # This class doesn't inherit from either library creation class because most of the behaviour is unwanted.
 # For example, we don't know the read length etc. when the request is created
 class ExternalLibraryCreationRequest < SystemRequest
@@ -11,9 +5,15 @@ class ExternalLibraryCreationRequest < SystemRequest
     # We have a vastly simplified two state state machine. Requests are passed once the manifest is processed
     state :pending, initial: true
     state :passed, enter: :on_passed
+    state :failed
+    state :cancelled
 
     event :_manifest_processed do
       transitions to: :passed, from: :pending
+    end
+
+    event :cancel do
+      transitions to: :cancelled, from: :pending
     end
   end
 
@@ -29,9 +29,10 @@ class ExternalLibraryCreationRequest < SystemRequest
     pending?
   end
 
+  private
+
   def perform_transfer_of_contents
     target_asset.aliquots << asset.aliquots.map(&:dup)
     target_asset.save!
   end
-  private :perform_transfer_of_contents
 end

@@ -1,15 +1,9 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 # Advanced Product Criteria can have 'unprocessable' thresholds
 # as well as fails.
 class ProductCriteria::Advanced < ProductCriteria::Basic
   attr_reader :qc_decision
 
-  STATE_ORDER = ['failed', 'unprocessable']
+  STATE_ORDER = %w[failed unprocessable]
 
   TARGET_PLATE_PURPOSES = 'target_plate_purposes'
 

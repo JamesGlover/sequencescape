@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 module ::Core::Io::Base::JsonFormattingBehaviour::Input
   class ReadOnlyAttribute < ::Core::Service::Error
     def initialize(attribute)
@@ -40,7 +34,7 @@ module ::Core::Io::Base::JsonFormattingBehaviour::Input
     end)
 
     # Now the harder bit: for attribute we need to work out how we would fill in the attribute
-    # structure for an update_attributes! call.
+    # structure for an update! call.
     initial_structure = {}
     read_write.each do |json, attribute|
       steps       = attribute.split('.')
@@ -57,6 +51,7 @@ module ::Core::Io::Base::JsonFormattingBehaviour::Input
             [nil, step]
           elsif association = model.reflections[step]
             raise StandardError, 'Nested attributes only works with belongs_to or has_one' unless [:belongs_to, :has_one].include?(association.macro.to_sym)
+
             [association.klass, :"#{step}_attributes"]
           else
             [nil, step]
@@ -72,19 +67,19 @@ module ::Core::Io::Base::JsonFormattingBehaviour::Input
       path.inject(initial_structure) { |part, step| part[step] ||= {} }
       code << "process_if_present(params, #{json.split('.').inspect}) do |value|"
       code << if path.empty?
-        '  attributes.tap do |section|'
+                '  attributes.tap do |section|'
               else
-        "  #{path.inspect}.inject(attributes) { |a,s| a[s] }.tap do |section|"
+                "  #{path.inspect}.inject(attributes) { |a,s| a[s] }.tap do |section|"
               end
 
       code << if model.nil?
-        "    section[:#{leaf}] = value #nil"
+                "    section[:#{leaf}] = value #nil"
               elsif model.respond_to?(:reflections) and association = model.reflections[leaf]
-        "    handle_#{association.macro}(section, #{leaf.inspect}, value, object)"
+                "    handle_#{association.macro}(section, #{leaf.inspect}, value, object)"
               elsif model.respond_to?(:klass) and association = model.klass.reflections[leaf]
-        "    handle_#{association.macro}(section, #{leaf.inspect}, value, object)"
+                "    handle_#{association.macro}(section, #{leaf.inspect}, value, object)"
               else
-        "    section[:#{leaf}] = value"
+                "    section[:#{leaf}] = value"
               end
       code << '  end'
       code << 'end'
@@ -114,6 +109,7 @@ module ::Core::Io::Base::JsonFormattingBehaviour::Input
     value = path.inject(json) do |current, step|
       return unless current.respond_to?(:key?) # Could be nested attribute but not present!
       return unless current.key?(step)
+
       current[step]
     end
     yield(value)

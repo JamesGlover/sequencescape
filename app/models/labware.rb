@@ -1,12 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
-require 'eventful_record'
-require 'external_properties'
-
 require 'eventful_record'
 require 'external_properties'
 
@@ -16,35 +7,42 @@ class Labware < ApplicationRecord
   include ModelExtensions::Asset
   include AssetLink::Associations
   include SharedBehaviour::Named
+  include Api::Messages::QcResultIO::AssetExtensions
+
+  # Key/value stores and attributes
+  include ExternalProperties
+  include ActsAsDescriptable
+
+  include Uuid::Uuidable
+
+  # Links to other databases
+  include Identifiable
+
+  include Commentable
+  include Event::PlateEvents
 
   SAMPLE_PARTIAL = 'assets/samples_partials/blank'
 
+  QC_STATES = [
+    %w[passed pass],
+    %w[failed fail],
+    %w[pending pending],
+    [nil, '']
+  ]
+
+  QC_STATES.reject { |k, _v| k.nil? }.each do |state, qc_state|
+    line = __LINE__ + 1
+    class_eval("
+      def qc_#{qc_state}
+        self.qc_state = #{state.inspect}
+        self.save!
+      end
+    ", __FILE__, line)
+  end
+
   class_attribute :stock_message_template, instance_writer: false
 
-  module InstanceMethods
-    # Assets are, by default, non-barcoded
-    def generate_barcode
-      # Does nothing!
-    end
-
-    # Returns nil because assets really don't have barcodes!
-    def barcode_type
-      nil
-    end
-  end
-  include InstanceMethods
-
   class VolumeError < StandardError
-  end
-
-  def summary_hash
-    {
-      asset_id: id
-    }
-  end
-
-  def sample_partial
-    self.class::SAMPLE_PARTIAL
   end
 
   self.per_page = 500
@@ -52,6 +50,8 @@ class Labware < ApplicationRecord
 
   has_many :asset_audits
   has_many :volume_updates, foreign_key: :target_id
+  has_many :barcodes, foreign_key: :asset_id, inverse_of: :asset, dependent: :destroy
+  has_many :qc_results, dependent: :destroy
 
   has_many :receptacles, inverse_of: :labware
   has_many :aliquots, through: :receptacles
@@ -59,11 +59,30 @@ class Labware < ApplicationRecord
 
   # TODO: Remove 'requests' and 'source_request' as they are abiguous
   has_many :requests, through: :receptacles
+  has_many :external_library_creation_requests, through: :receptacles
   has_many :events_on_requests, through: :requests, source: :events
-  has_one  :source_request, through: :receptacles
-  has_many :requests_as_source, through: :receptacles
-  has_many :requests_as_target, through: :receptacles
+  has_one  :source_request, ->() { includes(:request_metadata) }, through: :receptacles
+  has_many :requests_as_source, ->() { includes(:request_metadata) }, through: :receptacles
+  has_many :requests_as_target, ->() { includes(:request_metadata) }, through: :receptacles
   has_many :state_changes, foreign_key: :target_id
+
+  # Orders
+  has_many :submitted_assets
+  has_many :orders, through: :submitted_assets
+  has_many :ordered_studies, through: :orders, source: :study
+  has_many :messengers, as: :target, inverse_of: :target
+  has_one :custom_metadatum_collection, foreign_key: :asset_id
+  has_one :creation_request, class_name: 'Request', foreign_key: :target_asset_id
+
+  delegate :metadata, to: :custom_metadatum_collection
+
+  delegate :last_qc_result_for, to: :qc_results
+
+  broadcast_via_warren
+
+  after_create :generate_name_with_id, if: :name_needs_to_be_generated?
+
+  scope :requests_as_source_is_a?, ->(t) { joins(:requests_as_source).where(requests: { sti_type: [t, *t.descendants].map(&:name) }) }
 
   scope :include_requests_as_target, -> { includes(:requests_as_target) }
   scope :include_requests_as_source, -> { includes(:requests_as_source) }
@@ -71,54 +90,34 @@ class Labware < ApplicationRecord
   scope :where_is_a?,     ->(clazz) { where(sti_type: [clazz, *clazz.descendants].map(&:name)) }
   scope :where_is_not_a?, ->(clazz) { where(['sti_type NOT IN (?)', [clazz, *clazz.descendants].map(&:name)]) }
 
-  # Orders
-  has_many :submitted_assets
-  has_many :orders, through: :submitted_assets
-  has_many :messengers, as: :target, inverse_of: :target
-  has_one :custom_metadatum_collection, foreign_key: :asset_id
-  delegate :metadata, to: :custom_metadatum_collection
-
-  broadcast_via_warren
-
-  scope :requests_as_source_is_a?, ->(t) { joins(:requests_as_source).where(requests: { sti_type: [t, *t.descendants].map(&:name) }) }
-
-  # to override in subclass
-  def location
-    nil
-  end
-
-  belongs_to :barcode_prefix
   scope :sorted, ->() { order('map_id ASC') }
 
   scope :position_name, ->(description, size) {
     joins(:map).where(description: description, asset_size: size)
   }
-  scope :for_summary, -> { includes([:map, :barcode_prefix]) }
+  scope :for_summary, -> { includes(:map, :barcodes) }
 
   scope :of_type, ->(*args) { where(sti_type: args.map { |t| [t, *t.descendants] }.flatten.map(&:name)) }
 
   scope :recent_first, -> { order(id: :desc) }
 
-  scope :include_for_show, ->() { includes({ requests: [:request_type, :request_metadata] }, requests_as_target: [:request_type, :request_metadata]) }
+  scope :include_for_show, -> { includes({ requests: [:request_type, :request_metadata] }, requests_as_target: [:request_type, :request_metadata]) }
 
-  # Assets usually have studies through aliquots, which is only relevant to
-  # Receptacles. This method just ensures all assets respond to studies
-  def studies
-    Study.none
-  end
+  # The use of a sub-query here is a performance optimization. If we join onto the asset_links
+  # table instead, rails is unable to paginate the results efficiently, as it needs to use DISTINCT
+  # when working out offsets. This is substantially slower.
+  scope :without_children, -> { where.not(id: AssetLink.where(direct: true).select(:ancestor_id)) }
+  scope :include_plates_with_children, ->(filter) { filter ? all : without_children }
 
-  def barcode_and_created_at_hash
-    return {} if barcode.blank?
-    {
-      barcode: generate_machine_barcode,
-      created_at: created_at
-    }
-  end
+  # Named scope for search by query string behaviour
+  scope :for_search_query, ->(query) {
+    where.not(sti_type: 'Well').where('assets.name LIKE :name', name: "%#{query}%").includes(:barcodes)
+         .or(where.not(sti_type: 'Well').with_safe_id(query).includes(:barcodes))
+  }
 
-  def study_ids
-    []
-  end
+  scope :for_lab_searches_display, -> { includes(:barcodes, requests: [:pipeline, :batch]).order('requests.pipeline_id ASC') }
 
+<<<<<<< HEAD:app/models/labware.rb
   # All studies related to this asset
   def related_studies
     (orders.map(&:study) + studies).compact.uniq
@@ -144,59 +143,86 @@ class Labware < ApplicationRecord
       arguments[:prefix_id] = prefix_id
     end
 
-    search << ')'
+  # We accept not only an individual barcode but also an array of them.
+  scope :with_barcode, ->(*barcodes) {
+    db_barcodes = Barcode.extract_barcodes(barcodes)
+    includes(:barcodes).where(barcodes: { barcode: db_barcodes }).distinct
+  }
 
-    if with_includes
-      where(search, arguments)
+  # In contrast to with_barocde, filter_by_barcode only filters in the event
+  # a parameter is supplied. eg. an empty string does not filter the data
+  scope :filter_by_barcode, ->(*barcodes) {
+    db_barcodes = Barcode.extract_barcodes(barcodes)
+    db_barcodes.blank? ? includes(:barcodes) : includes(:barcodes).where(barcodes: { barcode: db_barcodes }).distinct
+  }
+
+  scope :source_assets_from_machine_barcode, ->(destination_barcode) {
+    destination_asset = find_from_barcode(destination_barcode)
+    if destination_asset
+      source_asset_ids = destination_asset.parents.map(&:id)
+      if source_asset_ids.empty?
+        none
+      else
+        where(id: source_asset_ids)
+      end
     else
-      where(search, arguments).includes(:requests).order('requests.pipeline_id ASC')
+      none
     end
-                          }
+  }
 
- scope :with_name, ->(*names) { where(name: names.flatten) }
+  class << self
+    def find_from_any_barcode(source_barcode)
+      if source_barcode.blank?
+        nil
+      elsif /\A[0-9]{1,7}\z/.match?(source_barcode) # Just a number
+        joins(:barcodes).where('barcodes.barcode LIKE "__?_"', source_barcode).first # rubocop:disable Rails/FindBy
+      else
+        find_from_barcode(source_barcode)
+      end
+    end
 
-  extend EventfulRecord
-  has_many_events do
-    event_constructor(:create_external_release!,       ExternalReleaseEvent,          :create_for_asset!)
-    event_constructor(:create_pass!,                   Event::AssetSetQcStateEvent,   :create_updated!)
-    event_constructor(:create_fail!,                   Event::AssetSetQcStateEvent,   :create_updated!)
-    event_constructor(:create_state_update!,           Event::AssetSetQcStateEvent,   :create_updated!)
-    event_constructor(:create_scanned_into_lab!,       Event::ScannedIntoLabEvent,    :create_for_asset!)
-    event_constructor(:create_plate!,                  Event::PlateCreationEvent,     :create_for_asset!)
-    event_constructor(:create_plate_with_date!,        Event::PlateCreationEvent,     :create_for_asset_with_date!)
-    event_constructor(:create_sequenom_stamp!,         Event::PlateCreationEvent,     :create_sequenom_stamp_for_asset!)
-    event_constructor(:create_sequenom_plate!,         Event::PlateCreationEvent,     :create_sequenom_plate_for_asset!)
-    event_constructor(:create_gel_qc!,                 Event::SampleLogisticsQcEvent, :create_gel_qc_for_asset!)
-    event_constructor(:create_pico!,                   Event::SampleLogisticsQcEvent, :create_pico_result_for_asset!)
-    event_constructor(:created_using_sample_manifest!, Event::SampleManifestEvent,    :created_sample!)
-    event_constructor(:updated_using_sample_manifest!, Event::SampleManifestEvent,    :updated_sample!)
-    event_constructor(:updated_fluidigm_plate!, Event::SequenomLoading, :updated_fluidigm_plate!)
-    event_constructor(:update_gender_markers!,         Event::SequenomLoading,        :created_update_gender_makers!)
-    event_constructor(:update_sequenom_count!,         Event::SequenomLoading,        :created_update_sequenom_count!)
+    def find_by_barcode(source_barcode)
+      with_barcode(source_barcode).first
+    end
+    alias find_from_barcode find_by_barcode
   end
-  has_many_lab_events
 
-  has_one_event_with_family 'scanned_into_lab'
-  has_one_event_with_family 'moved_to_2d_tube'
+  def summary_hash
+    {
+      asset_id: id
+    }
+  end
 
-  # Key/value stores and attributes
-  include ExternalProperties
-  acts_as_descriptable :serialized
+  def sample_partial
+    self.class::SAMPLE_PARTIAL
+  end
 
-  include Uuid::Uuidable
+  # to override in subclass
+  def location
+    nil
+  end
 
-  # Links to other databases
-  include Identifiable
+  # Assets usually have studies through aliquots, which is only relevant to
+  # Receptacles. This method just ensures all assets respond to studies
+  def studies
+    Study.none
+  end
 
-  include Commentable
-  include Event::PlateEvents
+  def study_ids
+    []
+  end
+
+  # All studies related to this asset
+  def related_studies
+    (ordered_studies + studies).compact.uniq
+  end
 
   # Returns the request options used to create this asset.  By default assumed to be empty.
   def created_with_request_options
     {}
   end
 
-  def is_sequenceable?
+  def sequenceable?
     false
   end
 
@@ -221,8 +247,6 @@ class Labware < ApplicationRecord
     # If it's not a tube or a plate, defaults to stock_plate
     stock_plate
   end
-
-  has_one :creation_request, class_name: 'Request', foreign_key: :target_asset_id
 
   def label
     sti_type || 'Unknown'
@@ -250,6 +274,7 @@ class Labware < ApplicationRecord
     if asset_group.study
       wells.each do |well|
         next unless well.sample
+
         well.sample.studies << asset_group.study
         well.sample.save!
       end
@@ -258,15 +283,12 @@ class Labware < ApplicationRecord
     asset_group
   end
 
-  after_create :generate_name_with_id, if: :name_needs_to_be_generated?
-
-  def name_needs_to_be_generated?
-    @name_needs_to_be_generated
+  def role
+    stock_plate&.stock_role
   end
-  private :name_needs_to_be_generated?
 
   def generate_name_with_id
-    update_attributes!(name: "#{name} #{id}")
+    update!(name: "#{name} #{id}")
   end
 
   def generate_name(new_name)
@@ -293,7 +315,7 @@ class Labware < ApplicationRecord
   end
 
   def display_name
-    name.blank? ? "#{sti_type} #{id}" : name
+    name.presence || "#{sti_type} #{id}"
   end
 
   def external_identifier
@@ -317,24 +339,6 @@ class Labware < ApplicationRecord
     end
   end
 
-  def update_external_release
-    external_release_nil_before = external_release.nil?
-    yield
-    save!
-    events.create_external_release!(!external_release_nil_before) unless external_release.nil?
-  end
-  private :update_external_release
-
-  def self.find_by_human_barcode(barcode, location)
-    data = Barcode.split_human_barcode(barcode)
-    if data[0] == 'DN'
-      plate = Plate.find_by(barcode: data[1])
-      well = plate.find_well_by_name(location)
-      return well if well
-    end
-    raise ActiveRecord::RecordNotFound, "Couldn't find well with for #{barcode} #{location}"
-  end
-
   def assign_relationships(parents, child)
     parents.each do |parent|
       parent.children.delete(child)
@@ -343,84 +347,16 @@ class Labware < ApplicationRecord
     AssetLink.create_edge(self, child)
   end
 
-  # We accept not only an individual barcode but also an array of them.  This builds an appropriate
-  # set of conditions that can find any one of these barcodes.  We map each of the individual barcodes
-  # to their appropriate query conditions (as though they operated on their own) and then we join
-  # them together with 'OR' to get the overall conditions.
-  scope :with_machine_barcode, ->(*barcodes) {
-    query_details = barcodes.flatten.map do |source_barcode|
-      case source_barcode.to_s
-      when /^\d{13}$/ # An EAN13 barcode
-        barcode_number = Barcode.number_to_human(source_barcode)
-        prefix_string  = Barcode.prefix_from_barcode(source_barcode)
-        barcode_prefix = BarcodePrefix.find_by(prefix: prefix_string)
-
-        if barcode_number.nil? or prefix_string.nil? or barcode_prefix.nil?
-          { query: 'FALSE' }
-        else
-          { query: '(barcode=? AND barcode_prefix_id=?)', parameters: [barcode_number, barcode_prefix.id] }
-        end
-      when /^\d{10}$/ # A Fluidigm barcode
-        { joins: 'JOIN plate_metadata AS pmmb ON pmmb.plate_id = assets.id', query: '(pmmb.fluidigm_barcode=?)', parameters: source_barcode.to_s }
-      else
-        { query: 'FALSE' }
-      end
-    end.inject(query: ['FALSE'], parameters: [nil], joins: []) do |building, current|
-      building.tap do
-        building[:joins]      << current[:joins]
-        building[:query]      << current[:query]
-        building[:parameters] << current[:parameters]
-      end
-    end
-
-      where([query_details[:query].join(' OR '), *query_details[:parameters].flatten.compact])
-        .joins(query_details[:joins].compact.uniq)
-  }
-
-  scope :source_assets_from_machine_barcode, ->(destination_barcode) {
-    destination_asset = find_from_machine_barcode(destination_barcode)
-    if destination_asset
-      source_asset_ids = destination_asset.parents.map(&:id)
-      if source_asset_ids.empty?
-        none
-      else
-         where(id: source_asset_ids)
-      end
-    else
-      none
-    end
-  }
-
-  def self.find_from_any_barcode(source_barcode)
-    if source_barcode.blank?
-      nil
-    elsif source_barcode.size == 13 && Barcode.check_EAN(source_barcode)
-      with_machine_barcode(source_barcode).first
-    elsif match = /\A([A-z]{2})([0-9]{1,7})\w{0,1}\z/.match(source_barcode) # Human Readable
-      prefix = BarcodePrefix.find_by(prefix: match[1])
-      find_by(barcode: match[2], barcode_prefix_id: prefix.id)
-    elsif /\A[0-9]{1,7}\z/.match?(source_barcode) # Just a number
-      find_by(barcode: source_barcode)
-    end
-  end
-
-  def self.find_from_machine_barcode(source_barcode)
-    with_machine_barcode(source_barcode).first
-  end
-
-  def generate_machine_barcode
-    (Barcode.calculate_barcode(barcode_prefix.prefix, barcode.to_i)).to_s
-  end
-
   def external_release_text
     return 'Unknown' if external_release.nil?
+
     external_release? ? 'Yes' : 'No'
   end
 
   def add_parent(parent)
     return unless parent
-    # should be self.parents << parent but that doesn't work
 
+    # should be self.parents << parent but that doesn't work
     save!
     parent.save!
     AssetLink.create_edge!(parent, self)
@@ -437,7 +373,7 @@ class Labware < ApplicationRecord
     self.class.create!(name: name) do |new_asset|
       new_asset.aliquots = aliquots.map(&:dup)
       new_asset.volume   = transfer_volume
-      update_attributes!(volume: volume - transfer_volume) #  Update ourselves
+      update!(volume: volume - transfer_volume) #  Update ourselves
     end.tap do |new_asset|
       new_asset.add_parent(self)
     end
@@ -455,12 +391,27 @@ class Labware < ApplicationRecord
     requests_as_target.size > 1
   end
 
-  def can_be_created?
-    false
-  end
-
   def compatible_purposes
     Purpose.none
+  end
+
+  # Most assets don't have a barcode
+  def barcode_number
+    nil
+  end
+
+  def prefix
+    nil
+  end
+
+  # By default only barcodeable assets generate barcodes
+  def generate_barcode
+    nil
+  end
+
+  # Returns nil because assets really don't have barcodes!
+  def barcode_type
+    nil
   end
 
   def automatic_move?
@@ -493,5 +444,26 @@ class Labware < ApplicationRecord
   # asset. In most cases this is because the asset is not a stock
   def register_stock!
     receptacles.each(&:register_stock!)
+  end
+
+  def update_from_qc(qc_result)
+    Rails.logger.info "#{self.class.name} #{id} updated by QcResult #{qc_result.id}"
+  end
+
+  def get_qc_result_value_for(key)
+    last_qc_result_for(key).pluck(:value).first
+  end
+
+  private
+
+  def update_external_release
+    external_release_nil_before = external_release.nil?
+    yield
+    save!
+    events.create_external_release!(!external_release_nil_before) unless external_release.nil?
+  end
+
+  def name_needs_to_be_generated?
+    instance_variable_defined?(:@name_needs_to_be_generated) && @name_needs_to_be_generated
   end
 end

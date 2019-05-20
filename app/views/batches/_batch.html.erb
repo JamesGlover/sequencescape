@@ -1,8 +1,3 @@
-<%# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2014,2015,2016 Genome Research Ltd.%>
 
 <div class="info">
 <% if requests.empty? -%>
@@ -40,7 +35,7 @@
     <% requests.each_with_index do |request,index| -%>
       <tr id="request_<%= request.id %>" class="<%= cycle("rowodd", "roweven") %> row<%= index %>">
         <% if edit -%>
-          <td width="3%" class="center" style="cursor:move;"><%= image_tag "arrow_out.png", size: "13x13" %></td>
+          <td width="3%" class="center" style="cursor:move;"><%= icon('fas', 'arrows-alt-v') %></td>
         <% end -%>
           <td width="5%"><%= request.position %></td>
           <td width="7%"><%= request.sample_name %></td>
@@ -73,7 +68,7 @@
         <% end %>
         <td width='5%'><%= request.state.humanize %></td>
         <% if edit -%>
-          <td width="5%" class="center"><%= link_to image_tag("delete.png", size: "13x13"), action: "remove_request", id: @batch.id, request_id: request.id %></td>
+          <td width="5%" class="center"><%= link_to icon('fas', 'trash-alt', class: 'text-danger'), action: "remove_request", id: @batch.id, request_id: request.id %></td>
         <% end -%>
 
       </tr>

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 class AliquotIndexer
   attr_reader :lane, :aliquots
 
@@ -35,6 +29,7 @@ class AliquotIndexer
 
   def phix_map_id
     return nil unless lane.spiked_in_buffer.present?
+
     @phix_map_id ||= lane.spiked_in_buffer.primary_aliquot.tag.try(:map_id)
   end
 

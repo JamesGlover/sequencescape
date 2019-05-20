@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2015,2016 Genome Research Ltd.
-
 # This module can be included where the submission has a linear behaviour, with no branching.
 module Submission::LinearRequestGraph
   # TODO: When Item dies this code will not need to hand it around so much!
@@ -39,7 +33,7 @@ module Submission::LinearRequestGraph
   def create_target_asset_for!(request_type, source_asset = nil)
     request_type.create_target_asset! do |asset|
       asset.generate_barcode
-      asset.generate_name(source_asset.try(:name) || asset.barcode.to_s)
+      asset.generate_name(source_asset&.name || asset.try(:human_barcode))
     end
   end
   private :create_target_asset_for!
@@ -63,6 +57,7 @@ module Submission::LinearRequestGraph
   # that need creating.
   def create_request_chain!(request_type_and_multiplier_pairs, source_asset_qc_metric_and_item, multiplexing_assets, &block)
     raise StandardError, 'No request types specified!' if request_type_and_multiplier_pairs.empty?
+
     request_type, multiplier = request_type_and_multiplier_pairs.shift
 
     multiplier.times do |_|
@@ -126,8 +121,8 @@ module Submission::LinearRequestGraph
 
   def associate_built_requests(assets)
     assets.map(&:requests).flatten.each do |request|
-      request.update_attributes!(initial_study: nil) if request.initial_study != study
-      request.update_attributes!(initial_project: nil) if request.initial_project != project
+      request.update!(initial_study: nil) if request.initial_study != study
+      request.update!(initial_project: nil) if request.initial_project != project
       comments.split("\n").each do |comment|
         request.comments.create!(user: user, description: comment)
       end if comments.present?
@@ -141,7 +136,7 @@ module Submission::LinearRequestGraph
     item = asset.requests.first.item unless asset.requests.empty?
     return item if item.present?
 
-    Item.create!(workflow: workflow, name: "#{asset.display_name} #{id}", submission: submission)
+    Item.create!(name: "#{asset.display_name} #{id}", submission: submission)
   end
   private :create_item_for!
 end

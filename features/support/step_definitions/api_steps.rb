@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2014,2015 Genome Research Ltd.
-
 # This may create invalid UUID external_id values but it means that we don't have to conform to the
 # standard in our features.
 def recursive_diff(h1, h2)
@@ -63,15 +57,16 @@ Given /^no cookies are set for HTTP requests to the API$/ do
 end
 
 Given /^the WTSI single sign-on service recognises "([^\"]+)" as "([^\"]+)"$/ do |key, login|
-  User.find_or_create_by(login: login).update_attributes!(api_key: key)
+  User.find_or_create_by(login: login).update!(api_key: key)
 end
 
 Given /^the WTSI single sign-on service does not recognise "([^\"]+)"$/ do |cookie|
-  User.find_by(api_key: cookie).update_attributes!(api_key: nil)
+  User.find_by(api_key: cookie).update!(api_key: nil)
 end
 
 def api_request(action, path, body)
   raise StandardError, 'You must explicitly set the API version you are using' if @api_path.nil?
+
   @cookies ||= {}
 
   headers = {}
@@ -92,10 +87,6 @@ end
 
 Given /^I am using the latest version of the API$/ do
   step(%Q{I am using version "#{::Core::Service::API_VERSION}" of the API})
-end
-
-Given /^I am using version "([^\"]+)" of a legacy API$/ do |version|
-  @api_path = version
 end
 
 When /^I (GET|PUT|POST|DELETE) the API path "(\/[^\"]*)"$/ do |action, path|
@@ -119,12 +110,6 @@ When /^I (POST|PUT) the following "([^\"]+)" to the API path "(\/[^\"]*)":$/ do 
 end
 
 When /^I make an authorised (GET|DELETE) (?:(?:for|of) )?the API path "(\/[^\"]*)"$/ do |action, path|
-  api_request(action, path, nil) do |headers|
-    headers['HTTP_X_SEQUENCESCAPE_CLIENT_ID'] = 'cucumber'
-  end
-end
-
-When /^I make an authorised (PUT|POST) (?:to )?the API path "(\/[^\"]*)"$/ do |action, path|
   api_request(action, path, nil) do |headers|
     headers['HTTP_X_SEQUENCESCAPE_CLIENT_ID'] = 'cucumber'
   end
@@ -157,6 +142,7 @@ end
 When /^I retrieve the JSON for the last request in the study "([^\"]+)"$/ do |name|
   study = Study.find_by(name: name) or raise StandardError, "Cannot find the study #{name.inspect}"
   raise StandardError, "It appears there are no requests for study #{name.inspect}" if study.requests.empty?
+
   visit(url_for(controller: 'api/requests', action: 'show', id: study.requests.last, format: :json))
 end
 
@@ -178,16 +164,9 @@ Then /^ignoring "([^\"]+)" the JSON should be:$/ do |key_list, serialised_json|
   end
 end
 
-Then /^ignoring everything but "([^\"]+)" the JSON should be:$/ do |key_list, serialised_json|
-  keys = key_list.split('|')
-  assert_json_equal(serialised_json, page.source) do |key|
-    not keys.include?(key.to_s)
-  end
-end
-
 def strip_extraneous_fields(left, right)
   if left.is_a?(Hash) and right.is_a?(Hash)
-    right.delete_if { |k, _| not left.keys.include?(k) }
+    right.delete_if { |k, _| not left.key?(k) }
     left.each { |key, value| strip_extraneous_fields(value, right[key]) }
     right
   elsif left.is_a?(Array) and right.is_a?(Array)
@@ -242,7 +221,7 @@ end
 Then /^the HTTP response should be "([^\"]+)"$/ do |status|
   match = /^(\d+).*/.match(status) or raise StandardError, "Status #{status.inspect} should be an HTTP status code + message"
   begin
-  assert_equal(match[1].to_i, page.driver.status_code)
+    assert_equal(match[1].to_i, page.driver.status_code)
   rescue MiniTest::Assertion => e
     step 'show me the HTTP response body'
     raise e
@@ -255,10 +234,6 @@ end
 
 Then /^the HTTP response body should be empty$/ do
   assert(page.source.blank?, 'The response body is not blank')
-end
-
-Then /^the JSON should be an empty array$/ do
-  assert_hash_equal([], decode_json(page.source, 'Received'), 'The JSON is not an empty array')
 end
 
 Then /^the JSON should not contain "([^\"]+)" within any element of "([^\"]+)"$/ do |name, path|
@@ -293,7 +268,7 @@ Given /^the (library tube|plate) "([^\"]+)" is a child of the (sample tube|plate
   parent.children << child
   if [parent, child].all? { |a| a.is_a?(Receptacle) }
     child.aliquots = []
-    RequestType.transfer.create!(asset: parent, target_asset: child)
+    FactoryBot.create(:transfer_request, asset: parent, target_asset: child)
     child.save!
   end
 end
@@ -302,46 +277,38 @@ Given /^the well "([^\"]+)" is a child of the well "([^\"]+)"$/ do |child_name, 
   parent = Uuid.find_by(external_id: parent_name).resource or raise StandardError, "Cannot find #{parent_name.inspect}"
   child  = Uuid.find_by(external_id: child_name).resource or raise StandardError, "Cannot find #{child_name.inspect}"
   parent.children << child
-  if [parent, child].all? { |a| a.is_a?(Receptacle) }
-    child.aliquots = []
-    RequestType.transfer.create!(asset: parent, target_asset: child)
-    child.save!
-  end
+  child.aliquots.clear
+  FactoryBot.create(:transfer_request, asset: parent, target_asset: child)
+  child.save!
 end
 
 Given /^the sample "([^\"]+)" is in (\d+) sample tubes? with sequential IDs starting at (\d+)$/ do |name, count, base_id|
   sample = Sample.find_by(name: name) or raise StandardError, "Cannot find the sample #{name.inspect}"
   (1..count.to_i).each do |index|
-    FactoryGirl.create(:empty_sample_tube, name: "#{name} sample tube #{index}", id: (base_id.to_i + index - 1)).tap do |sample_tube|
+    FactoryBot.create(:empty_sample_tube, name: "#{name} sample tube #{index}", id: (base_id.to_i + index - 1)).tap do |sample_tube|
       sample_tube.aliquots.create!(sample: sample)
     end
   end
 end
 
 Given /^the pathogen project called "([^"]*)" exists$/ do |project_name|
-  project = FactoryGirl.create :project, name: project_name, approved: true, state: 'active'
-  project.update_attributes!(project_metadata_attributes: {
-    project_manager: ProjectManager.find_by(name: 'Unallocated'),
-    project_cost_code: 'ABC',
-    funding_comments: 'External funding',
-    collaborators: 'No collaborators',
-    external_funding_source: 'EU',
-    budget_division: BudgetDivision.find_by(name: 'Pathogen (including malaria)'),
-    sequencing_budget_cost_centre: 'Sanger',
-    project_funding_model: 'Internal'
-  })
+  project = FactoryBot.create :project, name: project_name, approved: true, state: 'active'
+  project.update!(project_metadata_attributes: {
+                    project_manager: ProjectManager.find_by(name: 'Unallocated'),
+                    project_cost_code: 'ABC',
+                    funding_comments: 'External funding',
+                    collaborators: 'No collaborators',
+                    external_funding_source: 'EU',
+                    budget_division: BudgetDivision.find_by(name: 'Pathogen (including malaria)'),
+                    sequencing_budget_cost_centre: 'Sanger',
+                    project_funding_model: 'Internal'
+                  })
 end
 
 Given /^project "([^"]*)" has an owner called "([^"]*)"$/ do |project_name, login_name|
   project = Project.find_by(name: project_name)
-  user = FactoryGirl.create :user, login: login_name, first_name: 'John', last_name: 'Doe', email: "#{login_name}@example.com"
+  user = FactoryBot.create :user, login: login_name, first_name: 'John', last_name: 'Doe', email: "#{login_name}@example.com"
   user.is_owner_of(project)
-end
-
-Given /^lane "([^"]*)" has qc_state "([^"]*)"$/ do |lane_uuid, state|
-  lane = Lane.find(Uuid.find_id(lane_uuid))
-  lane.qc_state = state
-  lane.save!
 end
 
 Given /^the sanger sample id for sample "([^"]*)" is "([^"]*)"$/ do |uuid_value, sanger_sample_id|
@@ -352,7 +319,8 @@ end
 
 Given /^the infinium barcode for plate "([^"]*)" is "([^"]*)"$/ do |plate_name, infinium_barcode|
   plate = Plate.find_by(name: plate_name)
-  plate.plate_metadata.update_attributes!(infinium_barcode: infinium_barcode)
+  plate.infinium_barcode = infinium_barcode
+  plate.save!
 end
 
 Given /^no (plate purpose|request type)s exist$/ do |model|

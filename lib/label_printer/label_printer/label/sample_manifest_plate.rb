@@ -13,11 +13,12 @@ module LabelPrinter
       end
 
       def bottom_right(plate)
-        "#{sample_manifest.study.abbreviation} #{plate.barcode}"
+        "#{sample_manifest.study.abbreviation} #{plate.barcode_number}"
       end
 
       def plates
         return [sample_manifest.printables.first] if only_first_label
+
         sample_manifest.printables
       end
     end

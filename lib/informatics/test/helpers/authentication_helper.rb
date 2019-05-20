@@ -74,43 +74,43 @@ class BaseLoginProxy
 
   private
 
-    def authenticated
-      raise NotImplementedError
-    end
+  def authenticated
+    raise NotImplementedError
+  end
 
-    def check
-      raise NotImplementedError
-    end
+  def check
+    raise NotImplementedError
+  end
 
-    def method_missing(method, *args)
-      @controller.reset!
-      authenticate
-      @controller.send(method, *args)
-      check
-    end
+  def method_missing(method, *args)
+    @controller.reset!
+    authenticate
+    @controller.send(method, *args)
+    check
+  end
 end
 
 class HttpLoginProxy < BaseLoginProxy
   protected
 
-    def authenticate
-      @controller.login_as @login if @login
-    end
+  def authenticate
+    @controller.login_as @login if @login
+  end
 
-    def check
-      @controller.assert_redirected_to controller: 'sessions', action: 'login'
-    end
+  def check
+    @controller.assert_redirected_to controller: 'sessions', action: 'login'
+  end
 end
 
 class XmlLoginProxy < BaseLoginProxy
   protected
 
-    def authenticate
-      @controller.accept 'application/xml'
-      @controller.authorize_as @login if @login
-    end
+  def authenticate
+    @controller.accept 'application/xml'
+    @controller.authorize_as @login if @login
+  end
 
-    def check
-      @controller.assert_response 401
-    end
+  def check
+    @controller.assert_response 401
+  end
 end

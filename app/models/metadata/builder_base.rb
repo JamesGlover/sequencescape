@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015 Genome Research Ltd.
-
 class Metadata::BuilderBase < ActionView::Helpers::FormBuilder
   attr_writer :locals
 
@@ -44,6 +38,7 @@ class Metadata::BuilderBase < ActionView::Helpers::FormBuilder
 
   def render_view(type, field, options = {})
     return nil unless @filter.call(@object.class.metadata_attribute_path(field))
+
     view   = @views[type.to_sym] or raise StandardError, "View not registered for '#{type}'"
 
     locals = @locals.merge(

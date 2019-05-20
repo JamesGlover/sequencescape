@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 ##
 # Extended validators are used to provide extra validation
 # of submission. They are associated with request types
@@ -26,6 +20,7 @@ class ExtendedValidator < ApplicationRecord
 
   def import_behaviour
     return if behaviour.nil?
+
     behavior_module = "ExtendedValidator::#{behaviour}".constantize
     class_eval do
       include(behavior_module)

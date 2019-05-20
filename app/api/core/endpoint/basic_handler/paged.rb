@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 module Core::Endpoint::BasicHandler::Paged
   def self.page_accessor(action, will_paginate_method, default_value = nil)
     lambda do |object|
@@ -29,6 +23,7 @@ module Core::Endpoint::BasicHandler::Paged
   def action_updates_for(options)
     response = options[:response]
     return unless response.handled_by == self
+
     yield(pages_to_actions(response.object, options))
   end
   private :action_updates_for
@@ -46,9 +41,10 @@ module Core::Endpoint::BasicHandler::Paged
 
   def page_of_results(target, page = 1, model = target)
     raise ActiveRecord::RecordNotFound, 'before the start of the results' if page <= 0
+
     target.paginate(
       page: page,
-      per_page: Core::Endpoint::BasicHandler::Paged.results_per_page,
+      per_page: results_per_page,
       total_entries: model.count(:all)
     ).tap do |results|
       raise ActiveRecord::RecordNotFound, 'past the end of the results' if (page > 1) && (page > results.total_pages)

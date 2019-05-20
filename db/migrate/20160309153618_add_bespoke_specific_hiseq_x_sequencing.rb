@@ -1,4 +1,8 @@
 class AddBespokeSpecificHiseqXSequencing < ActiveRecord::Migration
+  class SubmissionWorkflow < ApplicationRecord
+    self.table_name = 'submission_workflows'
+  end
+
   def up
     ActiveRecord::Base.transaction do
       rt = RequestType.create!(
@@ -15,8 +19,7 @@ class AddBespokeSpecificHiseqXSequencing < ActiveRecord::Migration
         order: 2,
         product_line_id: ProductLine.find_by!(name: 'Illumina-C'),
         request_class_name: 'HiSeqSequencingRequest',
-        request_purpose: RequestPurpose.standard,
-        workflow_id: Submission::Workflow.find_by(key: 'short_read_sequencing')
+        request_purpose: :standard
       )
       ['Standard', 'HiSeqX PCR free', 'qPCR only', 'Pre-quality controlled'].each do |name|
         rt.library_types << LibraryType.find_by!(name: name)
@@ -24,8 +27,8 @@ class AddBespokeSpecificHiseqXSequencing < ActiveRecord::Migration
       rt.request_type_validators.build([
         { request_option: 'read_length', valid_options: [150] },
         { request_option: 'library_type', valid_options: RequestType::Validator::LibraryTypeValidator.new(rt.id) },
-        { request_option: 'fragment_size_required_to', valid_options: ['350', '450'] },
-        { request_option: 'fragment_size_required_from', valid_options: ['350', '450'] }
+        { request_option: 'fragment_size_required_to', valid_options: %w[350 450] },
+        { request_option: 'fragment_size_required_from', valid_options: %w[350 450] }
       ])
       rt.save!
       Pipeline.find_by(name: 'HiSeq X PE (spiked in controls)').request_types << rt

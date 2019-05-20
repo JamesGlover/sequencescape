@@ -1,8 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
 require 'event_factory'
 class RequestsController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
@@ -23,16 +18,20 @@ class RequestsController < ApplicationController
 
     # Ok, here we pick the initial source for the Requests.  They either come from Request (as in all Requests), or they
     # are limited by the Asset / Item.
-    request_source = Request.order(created_at: :desc).includes(:asset, :request_type).where(search_params).paginate(per_page: 200, page: params[:page])
+    request_source = Request.includes(:request_type, :initial_study, :user, :events, asset: :barcodes)
+                            .order(id: :desc)
+                            .where(search_params)
+                            .paginate(per_page: 200, page: params[:page])
 
-    @item               = Item.find(params[:item_id]) if params[:item_id]
-    @item ||= @asset_id = Asset.find(params[:asset_id]) if params[:asset_id]
-    @request_type       = RequestType.find(params[:request_type_id]) if params[:request_type_id]
-    @study              = Study.find(params[:study_id]) if params[:study_id]
+    @asset        = Asset.find(params[:asset_id]) if params[:asset_id]
+    @request_type = RequestType.find(params[:request_type_id]) if params[:request_type_id]
+    @study        = Study.find(params[:study_id]) if params[:study_id]
+
+    @subtitle = (@study&.name || @asset&.display_name)
 
     # Deprecated?: It would be great if we could remove this
     if params[:request_type] and params[:workflow]
-      request_source = request_source.for_request_types(params[:request_type]).for_workflow(params[:workflow]).includes(:user)
+      request_source = request_source.for_request_types(params[:request_type]).includes(:user)
     end
 
     # Now, here we go: find all of the requests!
@@ -72,7 +71,7 @@ class RequestsController < ApplicationController
     end
 
     begin
-      if @request.update_attributes(parameters)
+      if @request.update(parameters)
         flash[:notice] = 'Request details have been updated'
         redirect_to request_path(@request)
       else
@@ -146,18 +145,6 @@ class RequestsController < ApplicationController
     @tasks = Task.all
   end
 
-  def expanded(_options = {})
-    render plain: '', status: :gone
-  end
-
-  def pending
-    render plain: '', status: :gone
-  end
-
-  def incomplete_requests_for_family(_options = {})
-    render plain: '', status: :gone
-  end
-
   def redirect_if_not_owner_or_admin
     unless current_user == @request.user or current_user.is_administrator? or current_user.is_manager?
       flash[:error] = 'Request details can only be altered by the owner or a manager'
@@ -200,14 +187,14 @@ class RequestsController < ApplicationController
     @change_decision = Request::ChangeDecision.new({ request: @request, user: @current_user }.merge(params[:change_decision] || {})).execute!
     flash[:notice] = 'Update. Below you find the new situation.'
     redirect_to filter_change_decision_request_path(params[:id])
-   rescue Request::ChangeDecision::InvalidDecision => exception
-      flash[:error] = 'Failed! Please, read the list of problem below.'
-      @change_decision = exception.object
-      render(action: :filter_change_decision)
+  rescue Request::ChangeDecision::InvalidDecision => exception
+    flash[:error] = 'Failed! Please, read the list of problem below.'
+    @change_decision = exception.object
+    render(action: :filter_change_decision)
   end
 
   def search_params
-    permitted = params.permit(:asset_id, :item_id, :state, :request_type_id, :workflow_id)
+    permitted = params.permit(:asset_id, :state, :request_type_id, :submission_id)
     permitted[:initial_study_id] = params[:study_id] if params[:study_id]
     permitted
   end

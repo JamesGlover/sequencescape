@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2015 Genome Research Ltd.
-
 # This is effectively pooling: all wells that have come from the same submission will be transferred
 # into the same well on the destination plate.
 class Transfer::BetweenPlatesBySubmission < Transfer
@@ -13,7 +7,6 @@ class Transfer::BetweenPlatesBySubmission < Transfer
 
   include TransfersToKnownDestination
   include ControlledDestinations
-  include BuildsStockWellLinks
 
   include Asset::Ownership::ChangesOwner
   set_target_for_owner(:destination)
@@ -32,6 +25,7 @@ class Transfer::BetweenPlatesBySubmission < Transfer
       # Submission group 1 will go into A1, group 2 into B1, group 3 C1, etc.
       Map.walk_plate_in_column_major_order(source.size) do |position, index|
         next unless index < groups.size
+
         destination_well = destination.wells.located_at(position.description).first or
           raise StandardError, "The destination does not have a well at #{position.description}"
         groups[index].each do |source|
@@ -47,10 +41,4 @@ class Transfer::BetweenPlatesBySubmission < Transfer
     self.transfers[source.map.description] = destination.map.description
   end
   private :record_transfer
-
-  # Request type for transfers is based on the plates, not the wells we're transferring
-  def request_type_between(_ignored_a, _ignored_b)
-    destination.transfer_request_type_from(source)
-  end
-  private :request_type_between
 end

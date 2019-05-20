@@ -10,7 +10,7 @@ Feature: Sample manifest
   Background:
     Given I am an "External" user logged in as "john"
     And the configuration exists for creating sample manifest Excel spreadsheets
-    And the "96 Well Plate" barcode printer "xyz" exists
+    And the "1D Tube" barcode printer "xyz1d" exists
     And the plate barcode webservice returns "1234567"
     Given a supplier called "Test supplier name" exists
     And I have an active study called "Test study"
@@ -28,13 +28,13 @@ Feature: Sample manifest
     When I select "Test study" from "Study"
     And I select "Default Tube" from "Template"
     And I select "Test supplier name" from "Supplier"
-    And I select "xyz" from "Barcode printer"
+    And I select "xyz1d" from "Barcode printer"
     And I fill in the field labeled "Tubes required" with "2"
     And I check "Print only the first label"
     And Pmb has the required label templates
     And Pmb is up and running
     When I press "Create manifest and print labels"
-    And I should see "Your 1 label(s) have been sent to printer xyz"
+    And I should see "Your 1 label(s) have been sent to printer xyz1d"
 
   Scenario: Create a tube manifest and print all the barcodes
     When I follow "Create manifest for 1D tubes"
@@ -42,12 +42,12 @@ Feature: Sample manifest
     When I select "Test study" from "Study"
     And I select "Default Tube" from "Template"
     And I select "Test supplier name" from "Supplier"
-    And I select "xyz" from "Barcode printer"
+    And I select "xyz1d" from "Barcode printer"
     And I fill in the field labeled "Tubes required" with "2"
     And Pmb has the required label templates
     And Pmb is up and running
     When I press "Create manifest and print labels"
-    And I should see "Your 2 label(s) have been sent to printer xyz"
+    And I should see "Your 2 label(s) have been sent to printer xyz1d"
 
   Scenario: Create a plate manifest and upload a manifest file without processing it
     Given a manifest has been created for "Test study"
@@ -68,10 +68,10 @@ Feature: Sample manifest
     When I select "Test study" from "Study"
     And I select "Default Plate" from "Template"
     And I select "Test supplier name" from "Supplier"
-    And I select "xyz" from "Barcode printer"
+    And I select "xyz1d" from "Barcode printer"
     And I fill in the field labeled "Count" with "1"
     When I press "Create manifest and print labels"
-    Then I should see "Manifest_"
+    Then I should see "Manifest "
     When I follow "View all manifests"
     Then I should see "Sample Manifests"
     Then I should see the manifest table:
@@ -96,10 +96,10 @@ Feature: Sample manifest
     When I select "Test study" from "Study"
     And I select "Default Tube" from "Template"
     And I select "Test supplier name" from "Supplier"
-    And I select "xyz" from "Barcode printer"
+    And I select "xyz1d" from "Barcode printer"
     And I fill in the field labeled "Tubes required" with "10"
     When I press "Create manifest and print labels"
-    Then I should see "Manifest_"
+    Then I should see "Manifest "
     Then I should see "Download Blank Manifest"
     Given 3 pending delayed jobs are processed
     When I follow "View all manifests"
@@ -321,7 +321,7 @@ Feature: Sample manifest
     Given a manifest has been created for "Test study"
     When I fill in "File to upload" with the file "test/data/test_is_control_is_resubmit.csv"
     And I press "Upload manifest"
-    Given the manifests are successfully processed
+    Given 1 pending delayed jobs are processed
     When I refresh the page
     Then I should see the manifest table:
       | Contains | Study      | Supplier           | Manifest       | Upload             | Errors | State     |

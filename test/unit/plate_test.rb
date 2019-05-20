@@ -1,16 +1,11 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 require 'test_helper'
+require './spec/lib/mock_parser'
 
 class PlateTest < ActiveSupport::TestCase
   def create_plate_with_fluidigm(fluidigm_barcode)
-    barcode = '12345678'
+    barcode = '1234567'
     purpose = create :plate_purpose
-    purpose.create!(:do_not_create_wells, name: "Cherrypicked #{barcode}", size: 192, barcode: barcode, plate_metadata_attributes: { fluidigm_barcode: fluidigm_barcode })
+    purpose.create!(:do_not_create_wells, name: "Cherrypicked #{barcode}", size: 192, barcode: barcode, fluidigm_barcode: fluidigm_barcode)
   end
 
   context '' do
@@ -66,39 +61,6 @@ class PlateTest < ActiveSupport::TestCase
       end
       should 'not find the sample name if its invalid' do
         assert_equal false, Plate.find(@plate.id).sample?('abcdef')
-      end
-    end
-
-    context '#control_well_exists?' do
-      setup do
-        @control_plate = create :control_plate, barcode: 134443
-        map = Map.find_by(description: 'A1', asset_size: 96)
-        @control_well_asset = Well.new(map: map)
-        @control_plate.add_and_save_well @control_well_asset
-        @control_plate.reload
-      end
-      context 'where control well is present' do
-        setup do
-          @plate_cw = Plate.create!
-          well = Well.new
-          @plate_cw.add_and_save_well well
-          @plate_cw.reload
-          create :well_request, asset: @control_well_asset, target_asset: well
-        end
-        should 'return true' do
-          assert @plate_cw.control_well_exists?
-        end
-      end
-
-      context 'where control well is not present' do
-        setup do
-          @plate_no_cw = create :plate
-          @plate_no_cw.add_and_save_well Well.new
-          @plate_no_cw.reload
-        end
-        should 'return false' do
-          assert_equal false, @plate_no_cw.control_well_exists?
-        end
       end
     end
   end
@@ -228,24 +190,10 @@ class PlateTest < ActiveSupport::TestCase
   end
 
   context 'with existing well data' do
-    class MockParser
-      def each_well_and_parameters
-        yield('B1', { set_concentration: '2', set_molarity: '3' })
-        yield('C1', { set_concentration: '4', set_molarity: '5' })
-      end
-    end
-
     setup do
       @plate = create :plate_with_empty_wells, well_count: 3
-      # @plate.wells.build([
-      #   { map: Map.find_by(description: 'A1') },
-      #   { map: Map.find_by(description: 'B1') },
-      #   { map: Map.find_by(description: 'C1') }
-      #   ])
       @plate.wells.first.set_concentration('12')
       @plate.wells.first.set_molarity('34')
-      # @plate.save! # Because we use a well scope, and mocking it is asking for trouble
-
       @plate.update_qc_values_with_parser(MockParser.new)
     end
 
@@ -257,6 +205,23 @@ class PlateTest < ActiveSupport::TestCase
       assert_equal 3.0, well_b1.get_molarity
       assert_equal 4.0, well_c1.get_concentration
       assert_equal 5.0, well_c1.get_molarity
+    end
+
+    should 'create QcResults per well' do
+      well_b1 = @plate.wells.detect { |w| w.map_description == 'B1' }.reload
+      well_c1 = @plate.wells.detect { |w| w.map_description == 'C1' }.reload
+      assert_equal 4, well_b1.qc_results.count
+      assert_equal 4, well_c1.qc_results.count
+      keys = well_b1.qc_results.map(&:key)
+      assert_includes keys, 'Concentration'
+      assert_includes keys, 'Molarity'
+      assert_equal 'Mock parser', well_b1.qc_results.first.assay_type
+      assert_equal '1.0', well_b1.qc_results.first.assay_version
+    end
+
+    should 'not create QcResults for missing wells' do
+      well_a1 = @plate.wells.detect { |w| w.map_description == 'A1' }.reload
+      assert_equal 0, well_a1.qc_results.count
     end
 
     should 'not clear existing data' do
@@ -279,13 +244,13 @@ class PlateTest < ActiveSupport::TestCase
     end
 
     should 'not find plates without owners' do
-      refute_includes Plate.with_descendants_owned_by(@user), @source_plate
+      assert_not_includes Plate.with_descendants_owned_by(@user), @source_plate
     end
 
     should 'allow filtering of source plates' do
       plates = Plate.source_plates
       assert_includes plates, @source_plate
-      refute_includes plates, @child_plate
+      assert_not_includes plates, @child_plate
     end
   end
 

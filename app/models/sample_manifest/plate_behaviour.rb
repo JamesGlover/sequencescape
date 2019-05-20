@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2014,2015 Genome Research Ltd.
-
 module SampleManifest::PlateBehaviour
   module ClassMethods
     def create_for_plate!(attributes, *args, &block)
@@ -44,8 +38,9 @@ module SampleManifest::PlateBehaviour
 
     def validate_sample_container(sample, row)
       manifest_barcode, manifest_location = row['SANGER PLATE ID'], row['WELL']
-      primary_barcode, primary_location   = sample.primary_receptacle.plate.sanger_human_barcode, sample.primary_receptacle.map.description
+      primary_barcode, primary_location   = sample.primary_receptacle.plate.human_barcode, sample.primary_receptacle.map.description
       return if primary_barcode == manifest_barcode and primary_location == manifest_location
+
       yield("You can not move samples between wells or modify barcodes: #{sample.sanger_sample_id} should be in '#{primary_barcode} #{primary_location}' but the manifest is trying to put it in '#{manifest_barcode} #{manifest_location}'")
     end
   end
@@ -67,12 +62,12 @@ module SampleManifest::PlateBehaviour
 
       # Ensure we maintain the information we need for printing labels and generating
       # the CSV file
-      @plates  = plates.sort_by(&:barcode)
+      @plates  = plates.sort_by(&:human_barcode)
       @details = []
       plates.each do |plate|
         well_data.slice!(0, plate.size).each do |map, sample_id|
           @details << {
-            barcode: plate.sanger_human_barcode,
+            barcode: plate.human_barcode,
             position: map.description,
             sample_id: sample_id
           }
@@ -105,7 +100,7 @@ module SampleManifest::PlateBehaviour
         {
           sample: sample,
           container: {
-            barcode: container.plate.sanger_human_barcode,
+            barcode: container.plate.human_barcode,
             position: container.map.description.sub(/^([^\d]+)(\d)$/, '\10\2')
           }
         }
@@ -124,7 +119,7 @@ module SampleManifest::PlateBehaviour
       samples.each do |sample|
         well = sample.wells.includes([:container, :map]).first
         yield({
-          barcode: well.plate.sanger_human_barcode,
+          barcode: well.plate.human_barcode,
           position: well.map.description,
           sample_id: sample.sanger_sample_id
         })
@@ -162,7 +157,7 @@ module SampleManifest::PlateBehaviour
     study_abbreviation = study.abbreviation
 
     well_data = []
-    plates = Array.new(count) { purpose.create!(:without_wells) }.sort_by(&:barcode)
+    plates = Array.new(count) { purpose.create!(:without_wells) }.sort_by(&:human_barcode)
 
     plates.each do |plate|
       sanger_sample_ids = generate_sanger_ids(plate.size)
@@ -176,7 +171,7 @@ module SampleManifest::PlateBehaviour
     end
 
     core_behaviour.generate_wells(well_data, plates)
-    self.barcodes = plates.map(&:sanger_human_barcode)
+    self.barcodes = plates.map(&:human_barcode)
 
     save!
   end

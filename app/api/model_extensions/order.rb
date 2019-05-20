@@ -1,10 +1,8 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2015 Genome Research Ltd.
-
 module ModelExtensions::Order
+  class RequestOptionForValidation < OpenStruct
+    delegate :errors, :include_unset_values?, to: :owner
+  end
+
   module Validations
     def self.included(base)
       base.class_eval do
@@ -32,14 +30,13 @@ module ModelExtensions::Order
     end
 
     def request_options_for_validation
-      OpenStruct.new({ owner: self }.reverse_merge(request_options || {})).tap do |v|
-        v.class.delegate(:errors, :include_unset_values?, to: :owner)
-      end
+      RequestOptionForValidation.new({ owner: self }.reverse_merge(request_options || {}))
     end
   end
 
   def validate_new_record(assets)
     raise StandardError, 'requested action is not supported on this resource' if not new_record? and asset_group? and assets.present?
+
     true
   end
 
@@ -51,14 +48,14 @@ module ModelExtensions::Order
 
       scope :include_study, -> { includes(study: :uuid_object) }
       scope :include_project, -> { includes(project: :uuid_object) }
-      scope :include_assets, -> { includes(assets: :uuid_object) }
+      scope :include_assets, -> { includes(assets: [:uuid_object, { aliquots: Io::Aliquot::PRELOADS }]) }
 
       has_many :submitted_assets, -> { joins(:asset) }, inverse_of: :order
       has_many :assets, through: :submitted_assets, before_add: :validate_new_record
 
-     scope :that_submitted_asset_id, ->(asset_id) {
-       where(submitted_assets: { asset_id: asset_id }).joins(:submitted_assets)
-     }
+      scope :that_submitted_asset_id, ->(asset_id) {
+        where(submitted_assets: { asset_id: asset_id }).joins(:submitted_assets)
+      }
 
       validate :extended_validation
       def extended_validation
@@ -95,6 +92,7 @@ module ModelExtensions::Order
     def []=(*keys_and_values)
       value = keys_and_values.pop
       return if value.nil?
+
       node_and_leaf(*keys_and_values) { |node, leaf| node[leaf] = value }
     end
 
@@ -162,6 +160,7 @@ module ModelExtensions::Order
 
   def request_type_objects
     return [] if request_types.blank?
+
     ::RequestType.find(request_types)
   end
 end

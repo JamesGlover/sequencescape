@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015,2016 Genome Research Ltd.
-
 class SpikedBuffer < LibraryTube
   # The index of a spiked buffer is the first parent library tube.  Note that this does not cover cases where
   # the sti_type is a derivative of LibraryTube, which is actually fine because SpikedBuffer is a LibraryTube
@@ -32,6 +26,7 @@ class SpikedBuffer < LibraryTube
 
   def percentage_of_index
     return nil unless index
+
     100 * index.volume / volume
   end
 

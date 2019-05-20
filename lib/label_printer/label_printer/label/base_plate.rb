@@ -17,7 +17,7 @@ module LabelPrinter
       end
 
       def bottom_left(plate)
-        plate.sanger_human_barcode
+        plate.human_barcode
       end
 
       def top_right(plate)
@@ -32,6 +32,11 @@ module LabelPrinter
       def barcode(plate)
         plate.ean13_barcode
       end
+
+      # TODO: Revert to code 39 once Tecan issue has been fixed
+      # def barcode(plate)
+      #   plate.instance_of?(WorkingDilutionPlate) ? plate.human_barcode : plate.ean13_barcode
+      # end
 
       def date_today
         Date.today.strftime('%e-%^b-%Y')

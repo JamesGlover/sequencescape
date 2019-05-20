@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 class PlatesController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
@@ -32,8 +26,7 @@ class PlatesController < ApplicationController
       barcode_printer       = BarcodePrinter.find(params[:plates][:barcode_printer])
       source_plate_barcodes = params[:plates][:source_plates]
 
-      user_barcode = Barcode.barcode_to_human(params[:plates][:user_barcode])
-      scanned_user = User.find_by(barcode: user_barcode) if user_barcode
+      scanned_user = User.find_with_barcode_or_swipecard_code(params[:plates][:user_barcode])
 
       respond_to do |format|
         if scanned_user.nil?
@@ -56,23 +49,20 @@ class PlatesController < ApplicationController
   end
 
   def to_sample_tubes
-    @locations = Location.all
     @barcode_printers = BarcodePrinter.all
     @studies = Study.alphabetical
   end
 
   def create_sample_tubes
-    location = Location.find(params[:plates][:destination_freezer])
     barcode_printer = BarcodePrinter.find(params[:plates][:barcode_printer])
-    plates = Plate.plates_from_scanned_plates_and_typed_plate_ids(params[:plates][:source_plates])
+    barcode_array = params[:plates][:source_plates].scan(/\w+/)
+    plates = Plate.with_barcode(barcode_array)
     study = Study.find(params[:plates][:study])
 
     respond_to do |format|
-      if asset_group = Plate.create_sample_tubes_asset_group_and_print_barcodes(plates, barcode_printer, location, study)
+      if asset_group = Plate.create_sample_tubes_asset_group_and_print_barcodes(plates, barcode_printer, study)
         flash[:notice] = 'Created tubes and printed barcodes'
         # makes request properties partial show
-        @current_user.workflow = Submission::Workflow.find_by(key: 'short_read_sequencing')
-        @current_user.save!
         format.html { redirect_to(new_submission_path(study_id: asset_group.study.id)) }
         format.xml  { render xml: asset_group, status: :created }
         format.json { render json: asset_group, status: :created }

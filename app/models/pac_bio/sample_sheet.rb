@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 class PacBio::SampleSheet
   def header_metadata(batch)
     [
@@ -20,8 +14,8 @@ class PacBio::SampleSheet
 
   def column_headers
     ['Well No.', 'Sample Name', 'DNA Template Prep Kit Box Barcode', 'Prep Kit Parameters', 'Binding Kit Box Barcode', 'Binding Kit Parameters',
-      'Collection Protocol', 'CP Parameters', 'Basecaller', 'Basecaller Parameters', 'Secondary Analysis Protocol', 'Secondary Analysis Parameters',
-      'Sample Comments', 'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5', 'User Field 6', 'Results Data Output Path']
+     'Collection Protocol', 'CP Parameters', 'Basecaller', 'Basecaller Parameters', 'Secondary Analysis Protocol', 'Secondary Analysis Parameters',
+     'Sample Comments', 'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5', 'User Field 6', 'Results Data Output Path']
   end
 
   def create_csv_from_batch(batch)
@@ -79,7 +73,7 @@ class PacBio::SampleSheet
       well.uuid,
       concat(library_tubes, :uuid),
       batch.uuid,
-      well.plate.barcode,
+      well.plate.barcode_number,
       concat(requests, :uuid),
       nil,
       nil
@@ -89,6 +83,7 @@ class PacBio::SampleSheet
   def lookup_collection_protocol(request)
     return 'Standard Seq v3' if request.request_metadata.sequencing_type == 'Standard'
     return 'MagBead Standard Seq v2' if request.request_metadata.sequencing_type == 'MagBead'
+
     request.request_metadata.sequencing_type
   end
 end

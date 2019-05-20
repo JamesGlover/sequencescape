@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class ManifestGeneratorTest < ActiveSupport::TestCase
@@ -31,11 +25,11 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
       setup do
         @study = create :study
         @expected_header = [['Institute Name:', 'WTSI', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-         ['Date:', '2010-5-7'],
-         ['Comments:', (@study.abbreviation).to_s],
-         ['Row', 'Institute Plate Label', 'Well', 'Is Control', 'Institute Sample Label', 'Species',
-          'Sex', 'Comments', 'Volume (ul)', 'Conc (ng/ul)', 'Extraction Method', 'WGA Method (if Applicable)',
-          'Mass of DNA used in WGA', 'Parent 1', 'Parent 2', 'Replicate(s)', 'Tissue Source']]
+                            ['Date:', '2010-5-7'],
+                            ['Comments:', (@study.abbreviation).to_s],
+                            ['Row', 'Institute Plate Label', 'Well', 'Is Control', 'Institute Sample Label', 'Species',
+                             'Sex', 'Comments', 'Volume (ul)', 'Conc (ng/ul)', 'Extraction Method', 'WGA Method (if Applicable)',
+                             'Mass of DNA used in WGA', 'Parent 1', 'Parent 2', 'Replicate(s)', 'Tissue Source']]
         @manifest_header = ManifestGenerator.create_header([], @study)
       end
       [0, 2, 3].each do |header_line_index|
@@ -155,7 +149,7 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
         end
         context 'with external value set' do
           setup do
-            @sample.update_attributes!(control: true)
+            @sample.update!(control: true)
           end
           should 'return external value' do
             control = ManifestGenerator.well_sample_is_control(@well)
@@ -198,7 +192,7 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
           }.each do |expected, genders|
             Array(genders).each do |gender|
               should "see #{gender.inspect} as #{expected.inspect}" do
-                @sample.sample_metadata.update_attributes!(gender: gender)
+                @sample.sample_metadata.update!(gender: gender)
                 assert_equal(expected, ManifestGenerator.well_sample_gender(@well))
               end
             end
@@ -208,7 +202,7 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
     end
 
     context '#well_sample_parent' do
-      ['mother', 'father'].each do |parent|
+      %w[mother father].each do |parent|
         context "for #{parent}" do
           setup do
             @well = create :well
@@ -234,7 +228,7 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
             end
             context 'with external value set' do
               setup do
-                @sample.sample_metadata.update_attributes!(parent => 2)
+                @sample.sample_metadata.update!(parent => 2)
               end
               should 'return external value' do
                 parent_value = ManifestGenerator.well_sample_parent(@well, parent)
@@ -247,7 +241,7 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
     end
 
     context '#well_map_description' do
-      [['A1', 'A01'], ['C2', 'C02'], ['H12', 'H12'], ['G9', 'G09']].each do |input_map, expected_map|
+      [%w[A1 A01], %w[C2 C02], %w[H12 H12], %w[G9 G09]].each do |input_map, expected_map|
         context "for #{input_map}" do
           setup do
             @well = create :well, map: Map.find_by(description: input_map, asset_size: 96)
@@ -295,8 +289,7 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
          ['WG0017831-DNA', 'F11', 0, '124184', 'WTCCCT480968', 'Homo sapiens', 'male', 30, 50,
           'WG0017831-DNA,F11,0,124184_F11_WTCCCT480968,Homo sapiens,M,,30,50,-,,0,,,,-'],
          ['WG0109327-DNA', 'D6', 0, '141863', 'MIG682626', 'Homo sapiens', 'female', 13, 50,
-          'WG0109327-DNA,D06,0,141863_D06_MIG682626,Homo sapiens,F,,13,50,-,,0,,,,-']
-          ].each do |plate_label, map_description, control, plate_barcode, sample_name, species, gender, volume, concentration, target_row|
+          'WG0109327-DNA,D06,0,141863_D06_MIG682626,Homo sapiens,F,,13,50,-,,0,,,,-']].each do |plate_label, map_description, control, plate_barcode, sample_name, species, gender, volume, concentration, target_row|
           context "for #{plate_label} #{map_description} #{sample_name}" do
             setup do
               @plate_barcode = plate_barcode
@@ -342,7 +335,9 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
 
         @study1.study_metadata.study_name_abbreviation = 'STUDY'
 
-        @plate1 = create(:plate, barcode: 11111, size: 96, name: 'Plate 1', plate_metadata_attributes: { infinium_barcode: '12345' })
+        @plate_1_barcode_number = 11111
+
+        @plate1 = create(:plate, barcode: 11111, size: 96, name: 'Plate 1', infinium_barcode: 'WG0012345-DNA')
 
         @well1 = create(:well).tap { |well| well.aliquots.create!(sample: @sample1) }
         @well2 = create(:well).tap { |well| well.aliquots.create!(sample: @sample2) }
@@ -370,9 +365,9 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
       end
 
       should 'Create a single manifest file' do
-        data =  "1,#{@plate1.infinium_barcode},A01,0,#{@plate1.barcode}_A01_#{@sample1.sanger_sample_id},Species 1,U,,15,50,-,,0,,,,-\n"
-        data += "2,#{@plate1.infinium_barcode},A02,0,#{@plate1.barcode}_A02_#{@sample2.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
-        data += "3,#{@plate1.infinium_barcode},B01,0,#{@plate1.barcode}_B01_#{@sample3.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
+        data =  "1,#{@plate1.infinium_barcode},A01,0,#{@plate_1_barcode_number}_A01_#{@sample1.sanger_sample_id},Species 1,U,,15,50,-,,0,,,,-\n"
+        data += "2,#{@plate1.infinium_barcode},A02,0,#{@plate_1_barcode_number}_A02_#{@sample2.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
+        data += "3,#{@plate1.infinium_barcode},B01,0,#{@plate_1_barcode_number}_B01_#{@sample3.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
 
         template = headers + data
 
@@ -381,7 +376,8 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
 
       context 'Several Plates and Single Study' do
         setup do
-          @plate2 = create(:plate, barcode: 22222, size: 96, name: 'Plate 2', plate_metadata_attributes: { infinium_barcode: '987654' })
+          @plate_2_barcode_number = 22222
+          @plate2 = create(:plate, barcode: @plate_2_barcode_number, size: 96, name: 'Plate 2', infinium_barcode: 'WG0012346-DNA')
 
           @sample4 = create :sample, name: 'Sample4', sanger_sample_id: 'STUDY_1_4'
           @study1.samples << @sample4
@@ -410,12 +406,12 @@ class ManifestGeneratorTest < ActiveSupport::TestCase
         end
 
         should 'Create a single manifest file' do
-          data =  "1,#{@plate1.infinium_barcode},A01,0,#{@plate1.barcode}_A01_#{@sample1.sanger_sample_id},Species 1,U,,15,50,-,,0,,,,-\n"
-          data += "2,#{@plate1.infinium_barcode},A02,0,#{@plate1.barcode}_A02_#{@sample2.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
-          data += "3,#{@plate1.infinium_barcode},B01,0,#{@plate1.barcode}_B01_#{@sample3.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
-          data += "4,#{@plate2.infinium_barcode},A01,0,#{@plate2.barcode}_A01_#{@sample4.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
-          data += "5,#{@plate2.infinium_barcode},A02,0,#{@plate2.barcode}_A02_#{@sample4.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
-          data += "6,#{@plate2.infinium_barcode},B01,0,#{@plate2.barcode}_B01_#{@sample4.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
+          data =  "1,#{@plate1.infinium_barcode},A01,0,#{@plate_1_barcode_number}_A01_#{@sample1.sanger_sample_id},Species 1,U,,15,50,-,,0,,,,-\n"
+          data += "2,#{@plate1.infinium_barcode},A02,0,#{@plate_1_barcode_number}_A02_#{@sample2.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
+          data += "3,#{@plate1.infinium_barcode},B01,0,#{@plate_1_barcode_number}_B01_#{@sample3.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
+          data += "4,#{@plate2.infinium_barcode},A01,0,#{@plate_2_barcode_number}_A01_#{@sample4.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
+          data += "5,#{@plate2.infinium_barcode},A02,0,#{@plate_2_barcode_number}_A02_#{@sample4.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
+          data += "6,#{@plate2.infinium_barcode},B01,0,#{@plate_2_barcode_number}_B01_#{@sample4.sanger_sample_id},Homo sapiens,U,,15,50,-,,0,,,,-\n"
 
           template = headers + data
           assert_equal template.split(/\n/), remove_date(@manifest).split(/\n/)

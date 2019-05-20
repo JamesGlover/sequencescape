@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 require 'lab_where_client'
 # A simple class to handle the behaviour from the labwhere reception controller
 class LabwhereReception
@@ -13,19 +7,14 @@ class LabwhereReception
   include ActiveModel::Conversion
   include ActiveModel::Validations
 
-  attr_reader :asset_barcodes, :user_code, :location_barcode, :location_id
+  attr_reader :asset_barcodes, :user_code, :location_barcode
 
-  validates :asset_barcodes, :user_code, :location, presence: true
+  validates :asset_barcodes, :user_code, presence: true
 
-  def initialize(user_code, location_barcode, location_id, asset_barcodes)
-    @asset_barcodes = asset_barcodes.map(&:strip) if asset_barcodes.present?
-    @location_id = location_id.to_i
+  def initialize(user_code, location_barcode, asset_barcodes)
+    @asset_barcodes = (asset_barcodes || []).map(&:strip)
     @location_barcode = location_barcode.try(:strip)
     @user_code = user_code.try(:strip)
-  end
-
-  def location
-     @location ||= Location.find_by(id: location_id)
   end
 
   def id; nil; end
@@ -44,7 +33,6 @@ class LabwhereReception
     return false unless valid?
 
     begin
-
       scan = LabWhereClient::Scan.create(
         location_barcode: location_barcode,
         user_code: user_code,
@@ -55,24 +43,28 @@ class LabwhereReception
         errors.add(:scan, scan.error)
         return false
       end
-
     rescue LabWhereClient::LabwhereException => exception
-      errors.add(:base, 'Could not connect to Labwhere. Sequencescape location has still been updated')
+      errors.add(:base, 'Could not connect to Labwhere.')
       return false
     end
 
     assets.each do |asset|
-      asset.location = location
-      asset.events.create_scanned_into_lab!(location)
-      BroadcastEvent::LabwareReceived.create!(seed: asset, user: user)
+      asset.events.create_scanned_into_lab!(location_barcode, user.login)
+      BroadcastEvent::LabwareReceived.create!(seed: asset, user: user, properties: { location_barcode: location_barcode })
     end
 
     valid?
   end
 
-  private
-
   def assets
-    @assets ||= Labware.with_machine_barcode(asset_barcodes)
+    @assets ||= Labware.with_barcode(asset_barcodes)
+  end
+
+  def missing_barcodes
+    machine_barcodes = assets.map(&:machine_barcode).to_set
+    human_barcodes = assets.map(&:human_barcode).to_set
+    asset_barcodes.delete_if do |barcode|
+      human_barcodes.include?(barcode) || machine_barcodes.include?(barcode)
+    end
   end
 end

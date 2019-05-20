@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 require 'test_helper'
 require 'timecop'
 require 'csv'
@@ -73,7 +67,7 @@ class QcReport::FileTest < ActiveSupport::TestCase
         end
         @asset_ids = []
         2.times do |i|
-          create :qc_metric, qc_report: @report, qc_decision: ['passed', 'failed'][i], asset: create(:well, id: i + 1)
+          create :qc_metric, qc_report: @report, qc_decision: %w[passed failed][i], asset: create(:well, id: i + 1)
         end
         @file = fixture_file_upload("#{Rails.root}/test/data/qc_report.csv", 'text/csv')
 
@@ -94,7 +88,7 @@ class QcReport::FileTest < ActiveSupport::TestCase
 
       should 'not adjust the qc_decision flag' do
         @qcr_file.process
-        assert_equal ['passed', 'failed'], @report.qc_metrics.order('asset_id ASC').map(&:qc_decision)
+        assert_equal %w[passed failed], @report.qc_metrics.order('asset_id ASC').map(&:qc_decision)
       end
 
       teardown do
@@ -104,9 +98,9 @@ class QcReport::FileTest < ActiveSupport::TestCase
 
     context 'On overriding' do
       setup do
-        @product = FactoryGirl.build :product, name: 'Demo Product'
-        @criteria = FactoryGirl.build :product_criteria, product: @product, version: 1
-        @study = FactoryGirl.build :study, name: 'Example study'
+        @product = FactoryBot.build :product, name: 'Demo Product'
+        @criteria = FactoryBot.build :product_criteria, product: @product, version: 1
+        @study = FactoryBot.build :study, name: 'Example study'
         Timecop.freeze(DateTime.parse('01/01/2015')) do
           @report = create :qc_report, study: @study,
                                        exclude_existing: false,
@@ -115,7 +109,7 @@ class QcReport::FileTest < ActiveSupport::TestCase
         end
         @asset_ids = []
         2.times do |i|
-          m = create :qc_metric, qc_report: @report, qc_decision: ['passed', 'failed'][i], asset: create(:well, id: i + 1)
+          m = create :qc_metric, qc_report: @report, qc_decision: %w[passed failed][i], asset: create(:well, id: i + 1)
           @asset_ids << m.asset_id
         end
         @file = fixture_file_upload("#{Rails.root}/test/data/qc_report.csv", 'text/csv')
@@ -125,7 +119,7 @@ class QcReport::FileTest < ActiveSupport::TestCase
 
       should 'adjust the qc_decision flag' do
         @qcr_file.process
-        assert_equal ['passed', 'manually_passed'], @report.qc_metrics.order(:asset_id).map(&:qc_decision)
+        assert_equal %w[passed manually_passed], @report.qc_metrics.order(:asset_id).map(&:qc_decision)
       end
 
       teardown do
@@ -135,9 +129,9 @@ class QcReport::FileTest < ActiveSupport::TestCase
 
     context 'With missing assets' do
       setup do
-        @product = FactoryGirl.build :product, name: 'Demo Product'
-        @criteria = FactoryGirl.build :product_criteria, product: @product, version: 1
-        @study = FactoryGirl.build :study, name: 'Example study'
+        @product = FactoryBot.build :product, name: 'Demo Product'
+        @criteria = FactoryBot.build :product_criteria, product: @product, version: 1
+        @study = FactoryBot.build :study, name: 'Example study'
         Timecop.freeze(DateTime.parse('01/01/2015')) do
           @report = create :qc_report, study: @study,
                                        exclude_existing: false,
@@ -146,7 +140,7 @@ class QcReport::FileTest < ActiveSupport::TestCase
         end
         @asset_ids = []
         2.times do |i|
-          create :qc_metric, qc_report: @report, qc_decision: ['passed', 'failed'][i]
+          create :qc_metric, qc_report: @report, qc_decision: %w[passed failed][i]
         end
         @file = fixture_file_upload("#{Rails.root}/test/data/qc_report.csv", 'text/csv')
 

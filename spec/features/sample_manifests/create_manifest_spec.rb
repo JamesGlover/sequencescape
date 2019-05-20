@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'rails_helper'
 
 feature 'SampleManifest controller' do
@@ -14,7 +15,9 @@ feature 'SampleManifest controller' do
   let!(:supplier) { create :supplier }
   let!(:study) { create :study }
   let(:barcode) { 1000 }
-  let(:created_plate) { Plate.find_by(barcode: barcode) }
+  let(:created_plate) do
+    Plate.with_barcode(SBCF::SangerBarcode.new(prefix: 'DN', number: barcode).human_barcode).first
+  end
 
   shared_examples 'a plate manifest' do
     scenario 'creating manifests' do

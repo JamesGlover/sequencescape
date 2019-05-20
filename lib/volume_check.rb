@@ -1,5 +1,9 @@
-# This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011 Genome Research Ltd.
-PlateVolume.process_all_volume_check_files
+require 'exception_notification'
+
+begin
+  PlateVolume.process_all_volume_check_files
+rescue StandardError => exception
+  ExceptionNotifier.notify_exception(exception,
+                                     :data => { :message => 'Process Volume Check Files Cron Failed' })
+  $stderr.puts exception.to_s
+end

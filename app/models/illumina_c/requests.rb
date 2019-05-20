@@ -1,12 +1,6 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2014,2015 Genome Research Ltd.
-
 module IlluminaC::Requests
   class LibraryRequest < Request::LibraryCreation
-    def role; "#{request_metadata.library_type} #{order.role}"; end
+    def role; "#{request_metadata.library_type} #{super}"; end
 
     # Pop the request type in the pool information
     def update_pool_information(pool_information)
@@ -44,7 +38,7 @@ module IlluminaC::Requests
     def update_request_types
       each_request_type do |params|
         key = params.delete(:key)
-        RequestType.find_by(key: key).update_attributes!(params)
+        RequestType.find_by(key: key).update!(params)
       end
     end
 
@@ -77,32 +71,33 @@ module IlluminaC::Requests
           for_multiplexing: false
         },
         {
-          name:               'Illumina-C Library Creation No PCR No Pooling',
-          key:                'illumina_c_no_pcr_no_pool',
+          name: 'Illumina-C Library Creation No PCR No Pooling',
+          key: 'illumina_c_no_pcr_no_pool',
           request_class_name: 'IlluminaC::Requests::NoPcrLibraryRequest',
-          for_multiplexing:   false
+          for_multiplexing: false
         },
         {
-          name:               'Illumina-C Chromium library creation',
-          key:                'illumina_c_chromium_library',
+          name: 'Illumina-C Chromium library creation',
+          key: 'illumina_c_chromium_library',
           request_class_name: 'IlluminaC::Requests::LibraryRequest', # See class deprecation notice above
-          for_multiplexing:   true,
-          target_purpose:     Purpose.find_by(name: 'ILC Lib Pool Norm')
+          for_multiplexing: true,
+          target_purpose: Purpose.find_by(name: 'ILC Lib Pool Norm')
         },
         {
-          name:               'Illumina-C Multiplexing',
-          key:                'illumina_c_multiplexing',
+          name: 'Illumina-C Multiplexing',
+          key: 'illumina_c_multiplexing',
           request_class_name: 'Request::AutoMultiplexing',
-          for_multiplexing:   true,
-          target_purpose:     Purpose.find_by(name: 'ILC Lib Pool Norm')
+          for_multiplexing: true,
+          target_purpose: Purpose.find_by(name: 'ILC Lib Pool Norm')
         }
       ].each do |params|
-         params.merge!(workflow: Submission::Workflow.find_by(name: 'Next-gen sequencing'),
-                       asset_type: 'Well',
-                       order: 1,
-                       initial_state: 'pending',
-                       billable: true,
-                       product_line: ProductLine.find_by(name: 'Illumina-C'))
+        params.merge!(
+          asset_type: 'Well',
+          order: 1,
+          initial_state: 'pending',
+          billable: true,
+          product_line: ProductLine.find_by(name: 'Illumina-C')
+        )
         yield(params)
       end
     end

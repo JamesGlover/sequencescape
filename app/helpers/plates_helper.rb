@@ -1,22 +1,18 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2015 Genome Research Ltd.
-
 module PlatesHelper
   class AliquotError < StandardError; end
 
   def padded_wells_by_row(plate, overide = nil)
     wells = wells_hash(plate)
     padded_well_name_with_index(plate) do |padded_name, index|
-        index = padded_name == overide ? :overide : index
-        yield(padded_name, *wells[index])
+      index = padded_name == overide ? :overide : index
+      yield(padded_name, *wells[index])
     end
   end
 
   private
 
+  # Remove deprecate use of Well.sample
+  # Github Issue https://github.com/sanger/sequencescape/issues/1908
   def well_properties(well)
     [
       well.sample.name,
@@ -40,6 +36,7 @@ module PlatesHelper
       wells[:overide] = ['', '', 'NTC']
       plate.wells.each do |well|
         raise AliquotError if well.aliquots.count > 1
+
         wells[well.map.row_order] = well_properties(well)
       end
     end

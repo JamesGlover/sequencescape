@@ -56,7 +56,6 @@ module Sequencescape
     config.autoload_paths += %W{#{Rails.root}/app/metal}
     config.autoload_paths += %W{#{Rails.root}/app}
     config.autoload_paths += %W{#{Rails.root}/lib}
-    config.autoload_paths += %W{#{Rails.root}/lib/sample_manifest_excel}
     config.autoload_paths += %W{#{Rails.root}/lib/accession}
 
     config.encoding = 'utf-8'
@@ -83,12 +82,29 @@ module Sequencescape
 
     config.cherrypickable_default_type = 'ABgene_0800'
 
-    # Jruby 1.7 seems to try and use the http.proxyX settings, but ignores the noProxyHost ENV.
-    if defined?(ENV_JAVA)
-      ENV_JAVA['http.proxyHost'] = nil
-      ENV_JAVA['http.proxyPort'] = nil
-      ENV_JAVA['https.proxyHost'] = nil
-      ENV_JAVA['https.proxyPort'] = nil
+    config.aker = config_for(:aker).with_indifferent_access
+
+    config.generators do |g|
+      g.test_framework :rspec,
+                       fixtures: true,
+                       view_specs: false,
+                       helper_specs: false,
+                       routing_specs: false,
+                       controller_specs: false,
+                       request_specs: true
+      g.fixture_replacement :factory_bot, dir: 'spec/factories'
+    end
+
+    config.ets_enabled = false
+    config.disable_animations = false
+
+    # Rails 5
+
+    config.middleware.insert_before 0, Rack::Cors do
+      allow do
+        origins '*'
+        resource '*', headers: :any, methods: [:get, :post, :options]
+      end
     end
   end
 end

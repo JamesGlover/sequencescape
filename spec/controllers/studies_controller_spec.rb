@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe StudiesController do
@@ -167,6 +168,8 @@ RSpec.describe StudiesController do
   let(:user) { create(:owner) }
   let(:program) { create(:program) }
   let(:study) { create :study }
+  let(:reference_genome) { create :reference_genome }
+  let(:data_release_study_type) { create :data_release_study_type, name: 'genomic sequencing' }
 
   setup do
     session[:user] = user.id
@@ -174,8 +177,10 @@ RSpec.describe StudiesController do
 
   describe '#new' do
     setup { get :new }
-    it { is_expected.to respond_with :success }
-    it { is_expected.to render_template :new }
+    it 'works', :aggregate_failures do
+      is_expected.to respond_with :success
+      is_expected.to render_template :new
+    end
   end
 
   describe '#create' do
@@ -188,22 +193,24 @@ RSpec.describe StudiesController do
       let(:params) do
         { 'study' => {
           'name' => 'hello',
-          'reference_genome_id' => ReferenceGenome.find_by(name: '').id,
+          'reference_genome_id' => reference_genome.id,
           'study_metadata_attributes' => {
-            'faculty_sponsor_id' => FacultySponsor.create!(name: 'Me'),
+            'faculty_sponsor_id' => create(:faculty_sponsor, name: 'Me'),
             'study_description' => 'some new study',
             'program_id' => program.id,
             'contains_human_dna' => 'No',
             'contaminated_human_dna' => 'No',
             'commercially_available' => 'No',
-            'data_release_study_type_id' => DataReleaseStudyType.find_by(name: 'genomic sequencing'),
+            'data_release_study_type_id' => data_release_study_type,
             'data_release_strategy' => 'open',
-            'study_type_id' => StudyType.find_by(name: 'Not specified').id
+            'study_type_id' => StudyType.find_or_create_by(name: 'Not specified').id
           }
         } }
       end
-      it { is_expected.to set_flash.to('Your study has been created') }
-      it { is_expected.to redirect_to('study path') { study_path(Study.last) } }
+      it 'works', :aggregate_failures do
+        is_expected.to set_flash.to('Your study has been created')
+        is_expected.to redirect_to('study path') { study_path(Study.last) }
+      end
       it 'changes Study.count by 1' do
         assert_equal 1, Study.count - @study_count
       end
@@ -239,7 +246,9 @@ RSpec.describe StudiesController do
       post :grant_role, params: { role: { user: user.id, authorizable_type: 'manager' }, id: study.id }, xhr: true
     end
 
-    it { is_expected.to respond_with :ok }
-    it { is_expected.to set_flash.now.to('Role added') }
+    it 'works', :aggregate_failures do
+      is_expected.to respond_with :ok
+      is_expected.to set_flash.now.to('Role added')
+    end
   end
 end

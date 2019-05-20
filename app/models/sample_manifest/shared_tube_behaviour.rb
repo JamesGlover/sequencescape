@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2015 Genome Research Ltd.
-
 module SampleManifest::SharedTubeBehaviour
   def generate_tubes(purpose)
     sanger_ids = generate_sanger_ids(count)
@@ -15,12 +9,12 @@ module SampleManifest::SharedTubeBehaviour
       sanger_sample_id = SangerSampleId.generate_sanger_sample_id!(study_abbreviation, sanger_ids.shift)
 
       tubes << tube
-      samples_data << [tube.barcode, sanger_sample_id, tube.prefix]
+      samples_data << [tube, sanger_sample_id]
     end
 
-    self.barcodes = tubes.map(&:sanger_human_barcode)
+    self.barcodes = tubes.map(&:human_barcode)
 
-    tube_sample_creation(samples_data, study.id)
+    tube_sample_creation(samples_data)
     delayed_generate_asset_requests(tubes.map(&:id), study.id)
     save!
     tubes
@@ -32,10 +26,9 @@ module SampleManifest::SharedTubeBehaviour
 
   private
 
-  def tube_sample_creation(samples_data, _study_id)
-    study.samples << samples_data.map do |barcode, sanger_sample_id, _prefix|
+  def tube_sample_creation(samples_data)
+    study.samples << samples_data.map do |tube, sanger_sample_id|
       create_sample(sanger_sample_id).tap do |sample|
-        tube = Tube.find_by(barcode: barcode) or raise ActiveRecord::RecordNotFound, "Cannot find sample tube with barcode #{barcode.inspect}"
         attributes = core_behaviour.assign_library? ? { sample: sample, library_id: tube.id, study: study } : { sample: sample, study: study }
         tube.aliquots.create!(attributes)
       end

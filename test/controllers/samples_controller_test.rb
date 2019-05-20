@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2013,2014,2015 Genome Research Ltd.
-
 require 'test_helper'
 require 'samples_controller'
 
@@ -25,21 +19,20 @@ class SamplesControllerTest < ActionController::TestCase
           cohort: 'Cohort',
           gender: 'Male',
           genotype: '',
-          phenotype: '',
-          reference_genome_id: FactoryGirl.create(:reference_genome).id
+          phenotype: ''
         }
       },
                 formats: ['html'],
                 ignore_actions: %w(show create destroy),
                 protect_on_update: [:name],
                 extra_on_update: { sample_metadata_attributes: { check: { genotype: 'false', phenotype: 'true' } } },
-                user: -> { FactoryGirl.create(:admin) }
+                user: -> { FactoryBot.create(:admin) }
     )
 
     # TODO: Test without admin
     context 'when logged in' do
       setup do
-        @user = FactoryGirl.create :user
+        @user = FactoryBot.create :user
         @controller.stubs(:logged_in?).returns(@user)
         session[:user] = @user.id
       end
@@ -47,8 +40,8 @@ class SamplesControllerTest < ActionController::TestCase
       context '#add_to_study' do
         setup do
           @initial_study_sample_count = StudySample.count
-          @sample = FactoryGirl.create :sample
-          @study = FactoryGirl.create :study
+          @sample = FactoryBot.create :sample
+          @study = FactoryBot.create :study
           put :add_to_study, params: { id: @sample.id, study: { id: @study.id } }
         end
         should 'change StudySample.count from  0 to 1' do

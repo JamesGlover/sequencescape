@@ -1,7 +1,3 @@
-# This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011 Genome Research Ltd.
 # Place to put Illumina QC code to be refactored
 module SequencingQcBatch
   # NOTE: Be careful that the length of these do not exceed 25 characters, otherwise you will have to alter the
@@ -53,6 +49,7 @@ module SequencingQcBatch
     define_method(:"qc_#{ direction }_state") do
       raise StandardError, "Current QC state appears to be invalid: '#{qc_state}'" unless qc_states.include?(qc_state.to_s)
       return nil if qc_state.to_s == qc_states.send(delimiter)
+
       return qc_states[qc_states.index(qc_state.to_s) + offset]
     end
   end
@@ -75,7 +72,7 @@ module SequencingQcBatch
   state_transition_helper(:complete)
 
   def processing_in_manual_qc?
-    ['qc_manual_in_progress', 'qc_manual'].include?(qc_state)
+    %w[qc_manual_in_progress qc_manual].include?(qc_state)
   end
 
   def qc_pipeline_workflow_id
@@ -86,7 +83,7 @@ module SequencingQcBatch
   def qc_ready_for_manual
     ActiveRecord::Base.transaction do
       p = Pipeline.find(qc_pipeline_id)
-      update_attributes!(qc_pipeline_id: p.next_pipeline_id, qc_state: 'qc_manual')
+      update!(qc_pipeline_id: p.next_pipeline_id, qc_state: 'qc_manual')
     end
   end
 
@@ -97,23 +94,23 @@ module SequencingQcBatch
 
   private
 
-    def qc_pipeline_update
-      self.qc_pipeline = Pipeline.find_by(name: 'quality control', automated: true)
-      self.qc_state    = 'qc_pending'
-    end
+  def qc_pipeline_update
+    self.qc_pipeline = Pipeline.find_by(name: 'quality control', automated: true)
+    self.qc_state    = 'qc_pending'
+  end
 
-    def assets_qc_tasks_results
-      auto_qc_pipeline = Pipeline.find_by!(name: 'quality control', automated: true)
-      qc_workflow = LabInterface::Workflow.find_by pipeline_id: auto_qc_pipeline.id
-      qc_tasks = qc_workflow.tasks
-      results = []
-      qc_tasks.each do |task|
-        requests.each do |request|
-          if request.asset && request.asset.resource.nil?
-            results << request.has_passed(self, task)
-          end
+  def assets_qc_tasks_results
+    auto_qc_pipeline = Pipeline.find_by!(name: 'quality control', automated: true)
+    qc_workflow = Workflow.find_by pipeline_id: auto_qc_pipeline.id
+    qc_tasks = qc_workflow.tasks
+    results = []
+    qc_tasks.each do |task|
+      requests.each do |request|
+        if request.asset && request.asset.resource.nil?
+          results << request.has_passed(self, task)
         end
       end
-      results
     end
+    results
+  end
 end

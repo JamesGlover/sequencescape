@@ -1,74 +1,65 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2015 Genome Research Ltd.
-
 require 'test_helper'
 require 'csv'
 class ImportFluidigmDataTest < ActiveSupport::TestCase
-    def create_fluidigm_file
-      @XY = 'M'
-      @XX = 'F'
-      @YY = 'F'
-      @NC = 'Unknown'
+  def create_fluidigm_file
+    @XY = 'M'
+    @XX = 'F'
+    @YY = 'F'
+    @NC = 'Unknown'
 
-      @file = File.open("#{Rails.root}/test/data/fluidigm.csv")
-      @fluidigm = FluidigmFile.new(@file.read)
-      @well_maps = {
-        'S06' => {
-          markers: [@XY, @XY, @XY],
-          count: 94
-        },
-        'S04' => {
-          markers: [@NC, @XX, @XX],
-          count: 92
-        },
-        'S43' => {
-          markers: [@XX, @XX, @XX],
-          count: 94
-        }
+    @file = File.open("#{Rails.root}/test/data/fluidigm.csv")
+    @fluidigm = FluidigmFile.new(@file.read)
+    @well_maps = {
+      'S06' => {
+        markers: [@XY, @XY, @XY],
+        count: 94
+      },
+      'S04' => {
+        markers: [@NC, @XX, @XX],
+        count: 92
+      },
+      'S43' => {
+        markers: [@XX, @XX, @XX],
+        count: 94
       }
-      @fluidigm
-    end
+    }
+    @fluidigm
+  end
 
-    def create_stock_plate(barcode)
-      plate_source = create :plate, name: "Stock plate #{barcode}",
-                                    size: 192,
-                                    purpose: Purpose.find_by(name: 'Stock Plate'),
-                                    barcode: barcode
-      @sample = create :sample, name: 'abc'
-            well_source = Well.create!.tap { |well| well.aliquots.create!(sample: @sample) }
-      plate_source.add_and_save_well(well_source)
-      plate_source
-    end
+  def create_stock_plate(barcode)
+    create :plate, name: "Stock plate #{barcode}",
+                   well_count: 1,
+                   well_factory: :untagged_well,
+                   purpose: Purpose.find_by(name: 'Stock Plate'),
+                   barcode: barcode
+  end
 
-    def create_plate_with_fluidigm(barcode, fluidigm_barcode, stock_plate)
-      plate_target = create :plate,         name: "Cherrypicked #{barcode}",
-                                            size: 192,
-                                            barcode: barcode,
-                                            plate_metadata_attributes: {
-          fluidigm_barcode: fluidigm_barcode
-        }
+  def create_plate_with_fluidigm(_barcode, fluidigm_barcode, stock_plate)
+    fgp = create(:plate_purpose, asset_shape: AssetShape.find_by(name: 'Fluidigm96'))
+    plate_target = create :plate,
+                          size: 96,
+                          purpose: fgp,
+                          well_count: 1,
+                          well_factory: :empty_well,
+                          fluidigm_barcode: fluidigm_barcode
 
-      well_target = Well.new
-      plate_target.add_and_save_well(well_target)
+    well_target = plate_target.wells.first
 
-      RequestType.find_by!(key: 'pick_to_fluidigm').create!(state: 'passed',
-                                                            asset: stock_plate.wells.first,
-                                                            target_asset: well_target,
-                                                            request_metadata_attributes: {
-            target_purpose_id: PlatePurpose.find_by!(name: 'Fluidigm 192-24').id
-          })
-      plate_target
-    end
+    RequestType.find_by!(key: 'pick_to_fluidigm').create!(state: 'passed',
+                                                          asset: stock_plate.wells.first,
+                                                          target_asset: well_target,
+                                                          request_metadata_attributes: {
+                                                            target_purpose_id: fgp.id
+                                                          })
+    plate_target
+  end
 
   context 'With a fluidigm file' do
     setup do
       @fluidigm_file = create_fluidigm_file
-      @stock_plate = create_stock_plate('87654321')
-      @plate1 = create_plate_with_fluidigm('12345671', '1381832088', @stock_plate)
-      @plate2 = create_plate_with_fluidigm('12345672', '1234567891', @stock_plate)
+      @stock_plate = create_stock_plate('8765432')
+      @plate1 = create_plate_with_fluidigm('1234567', '1381832088', @stock_plate)
+      @plate2 = create_plate_with_fluidigm('1234568', '1234567891', @stock_plate)
     end
 
     context 'before uploading the fluidigm file to a corresponding plate' do
@@ -87,6 +78,15 @@ class ImportFluidigmDataTest < ActiveSupport::TestCase
         @plates_requiring_fluidigm = Plate.requiring_fluidigm_data
         assert_equal false, @plates_requiring_fluidigm.include?(@plate1)
         assert_equal true, @plates_requiring_fluidigm.include?(@plate2)
+      end
+
+      should 'update the plate fluidigm data' do
+        well = @stock_plate.wells.located_at('A1').first
+        assert_equal %w[M M M], well.get_gender_markers
+        assert_equal 89, well.get_sequenom_count
+        assert_equal 2, well.qc_results.count
+        assert_includes well.qc_results.map(&:key), 'gender_markers'
+        assert_includes well.qc_results.map(&:key), 'loci_passed'
       end
     end
   end

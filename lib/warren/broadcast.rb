@@ -22,19 +22,22 @@ class Warren::Broadcast
 
     def exchange
       raise StandardError, 'No exchange configured' if @exchange_name.nil?
+
       @exchange ||= @bun_channel.topic(@exchange_name, auto_delete: false, durable: true)
     end
   end
   #
   # Creates a warren but does not connect.
   #
-  # @param [_] *_args Configuration arguments are ignored.
+  # @param [Hash] server: {} Server config options passes straight to Bunny
+  # @param [String] exchange: The name of the exchange to connect to
+  # @param [Integer] pool_size: The connection pool size
+  # @param [Void] subscriptions: Not used by warren. Used by consumers
   #
-  def initialize(url:, frame_max:, heartbeat:, exchange:)
-    @url = url
-    @frame_max = frame_max
-    @heartbeat = heartbeat
+  def initialize(server: {}, exchange:, pool_size: 14)
+    @server = server
     @exchange_name = exchange
+    @pool_size = pool_size
   end
 
   #
@@ -44,8 +47,7 @@ class Warren::Broadcast
   #
   def connect
     reset_pool
-    session.start
-    true
+    start_session
   end
 
   #
@@ -85,13 +87,18 @@ class Warren::Broadcast
   private
 
   def session
-    @session ||= Bunny.new(@url, frame_max: @frame_max, heartbeat: @heartbeat)
+    @session ||= Bunny.new(@server)
   end
 
   def connection_pool
-    @connection_pool ||= connect && ConnectionPool.new(size: 5, timeout: 5) do
+    @connection_pool ||= start_session && ConnectionPool.new(size: @pool_size, timeout: 5) do
       Channel.new(session.create_channel, exchange: @exchange_name)
     end
+  end
+
+  def start_session
+    session.start
+    true
   end
 
   def close_session

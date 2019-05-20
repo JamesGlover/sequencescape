@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 require 'timeout'
 require 'tecan_file_generation'
 require 'aasm'
@@ -30,17 +24,17 @@ class Batch < ApplicationRecord
 
   has_many :failures, as: :failable
   has_many :messengers, as: :target, inverse_of: :target
-  has_many :batch_requests, ->() { includes(:request).order(:position, :request_id) }, inverse_of: :batch
-  has_many :requests, ->() { distinct }, through: :batch_requests, inverse_of: :batch
+  has_many :batch_requests, -> { includes(:request).order(:position, :request_id) }, inverse_of: :batch
+  has_many :requests, -> { distinct }, through: :batch_requests, inverse_of: :batch
   has_many :assets, through: :requests, source: :target_asset
   has_many :target_assets, through: :requests
-  has_many :source_assets, ->() { distinct }, through: :requests, source: :asset
-  has_many :submissions, ->() { distinct }, through: :requests
-  has_many :orders, ->() { distinct }, through: :requests
-  has_many :studies, ->() { distinct }, through: :orders
-  has_many :projects,  ->() { distinct }, through: :orders
-  has_many :aliquots,  ->() { distinct }, through: :source_assets
-  has_many :samples, ->() { distinct }, through: :assets
+  has_many :source_assets, -> { distinct }, through: :requests, source: :asset
+  has_many :submissions, -> { distinct }, through: :requests
+  has_many :orders, -> { distinct }, through: :requests
+  has_many :studies, -> { distinct }, through: :orders
+  has_many :projects, -> { distinct }, through: :orders
+  has_many :aliquots, -> { distinct }, through: :source_assets
+  has_many :samples, -> { distinct }, through: :source_assets, source: :samples
 
   has_many_events
   has_many_lab_events
@@ -54,13 +48,16 @@ class Batch < ApplicationRecord
   after_save :rebroadcast
 
   # Named scope for search by query string behavior
-  scope :for_search_query, ->(query, _with_includes) {
-    conditions = { id: query }
-    if user = User.find_by(login: query)
-      conditions = { user_id: user }
+  scope :for_search_query, ->(query) {
+    user = User.find_by(login: query)
+    if user
+      where(user_id: user)
+    else
+      with_safe_id(query) # Ensures extra long input (most likely barcodes) doesn't throw an exception
     end
-    where(conditions)
   }
+
+  scope :for_lab_searches_display, -> {}
 
   scope :includes_for_ui,    -> { limit(5).includes(:user, :assignee, :pipeline) }
   scope :pending_for_ui,     -> { where(state: 'pending',   production_state: nil).latest_first }
@@ -74,8 +71,8 @@ class Batch < ApplicationRecord
     includes(requests: [
       :uuid_object, :request_metadata, :request_type,
       { submission: :uuid_object },
-      { asset: [:uuid_object, :barcode_prefix, { aliquots: [:sample, :tag] }] },
-      { target_asset: [:uuid_object, :barcode_prefix, { aliquots: [:sample, :tag] }] }
+      { asset: [:uuid_object, { aliquots: [:sample, :tag] }] },
+      { target_asset: [:uuid_object, { aliquots: [:sample, :tag] }] }
     ])
   }
 
@@ -84,6 +81,8 @@ class Batch < ApplicationRecord
 
   delegate :size, to: :requests
   delegate :sequencing?, to: :pipeline
+
+  alias friendly_name id
 
   def study
     studies.first
@@ -95,6 +94,18 @@ class Batch < ApplicationRecord
     unless requests.all?(&:ready?)
       errors.add :base, 'All requests must be ready to be added to a batch'
     end
+  end
+
+  def subject_type
+    sequencing? ? 'flowcell' : 'batch'
+  end
+
+  def eventful_studies
+    requests.reduce([]) { |studies, request| studies.concat(request.eventful_studies) }.uniq
+  end
+
+  def flowcell
+    self if sequencing?
   end
 
   def cluster_formation_requests_must_be_over_minimum
@@ -114,6 +125,7 @@ class Batch < ApplicationRecord
     # We've deprecated the ability to fail a batch but not its requests.
     # Keep this check here until we're sure we haven't missed anything.
     raise StandardError, 'Can not fail batch without failing requests' if ignore_requests
+
     # create failures
     failures.create(reason: reason, comment: comment, notify_remote: false)
 
@@ -196,10 +208,12 @@ class Batch < ApplicationRecord
 
   def shift_item_positions(position, number)
     return unless number
+
     BatchRequest.transaction do
       batch_requests.each do |batch_request|
         next unless batch_request.position >= position
         next if batch_request.request.asset.try(:resource?)
+
         batch_request.move_to_position!(batch_request.position + number)
       end
     end
@@ -247,8 +261,6 @@ class Batch < ApplicationRecord
     Plate.output_by_batch(self).with_wells_and_requests.first
   end
 
-  ## WARNING! This method is used in the sanger barcode gem. Do not remove it without
-  ## refactoring the sanger barcode gem.
   def output_plate_purpose
     output_plates[0].plate_purpose unless output_plates[0].nil?
   end
@@ -257,25 +269,14 @@ class Batch < ApplicationRecord
     requests.first.try(:role)
   end
 
-  def output_plate_in_batch?(barcode)
-    return false if barcode.nil?
-    return false if Plate.find_by(barcode: barcode).nil?
-    output_plates.any? { |plate| plate.barcode == barcode }
-  end
-
   def plate_group_barcodes
     return nil unless pipeline.group_by_parent || requests.first.target_asset.is_a?(Well)
-    latest_plate_group = output_plate_group
-    return latest_plate_group unless latest_plate_group.empty?
-    input_plate_group
+
+    output_plate_group.presence || input_plate_group
   end
 
   def plate_barcode(barcode)
-    if barcode
-      barcode
-    else
-      requests.first.target_asset.plate.barcode
-    end
+    barcode.presence || requests.first.target_asset.plate.human_barcode
   end
 
   def mpx_library_name
@@ -315,8 +316,8 @@ class Batch < ApplicationRecord
   def verify_tube_layout(barcodes, user = nil)
     requests.each do |request|
       barcode = barcodes[request.position - 1]
-      unless barcode == request.asset.barcode.to_i
-        expected_barcode = request.asset.sanger_human_barcode
+      unless barcode == request.asset.machine_barcode
+        expected_barcode = request.asset.human_barcode
         errors.add(:base, "The tube at position #{request.position} is incorrect: expected #{expected_barcode}.")
       end
     end
@@ -342,6 +343,7 @@ class Batch < ApplicationRecord
       request_ids.each do |request_id|
         request = Request.find(request_id)
         next if request.nil?
+
         request.failures.create(reason: reason, comment: comment, notify_remote: true)
         detach_request(request)
       end
@@ -382,8 +384,8 @@ class Batch < ApplicationRecord
       if requests.last.submission_id.present?
         Request.where(submission_id: requests.last.submission_id, state: 'pending')
                .where.not(request_type_id: pipeline.request_type_ids).find_each do |request|
-            request.asset_id = nil
-            request.save!
+          request.asset_id = nil
+          request.save!
         end
       end
     end
@@ -391,9 +393,10 @@ class Batch < ApplicationRecord
 
   def parent_of_purpose(name)
     return nil if requests.empty?
+
     requests.first.asset.ancestors.joins(
       'INNER JOIN plate_purposes ON assets.plate_purpose_id = plate_purposes.id'
-)
+    )
             .find_by(plate_purposes: { name: name })
   end
 
@@ -407,14 +410,14 @@ class Batch < ApplicationRecord
 
     ActiveRecord::Base.transaction do
       # Update the lab events for the request so that they reference the batch that the request is moving to
-      batch_request_left.request.lab_events.each  { |event| event.update_attributes!(batch_id: batch_request_right.batch_id) if event.batch_id == batch_request_left.batch_id  }
-      batch_request_right.request.lab_events.each { |event| event.update_attributes!(batch_id: batch_request_left.batch_id)  if event.batch_id == batch_request_right.batch_id }
+      batch_request_left.request.lab_events.each  { |event| event.update!(batch_id: batch_request_right.batch_id) if event.batch_id == batch_request_left.batch_id  }
+      batch_request_right.request.lab_events.each { |event| event.update!(batch_id: batch_request_left.batch_id)  if event.batch_id == batch_request_right.batch_id }
 
       # Swap the two batch requests so that they are correct.  This involves swapping both the batch and the lane but ensuring that the
       # two requests don't clash on position by removing one of them.
       original_left_batch_id, original_left_position, original_right_request_id = batch_request_left.batch_id, batch_request_left.position, batch_request_right.request_id
       batch_request_right.destroy
-      batch_request_left.update_attributes!(batch_id: batch_request_right.batch_id, position: batch_request_right.position)
+      batch_request_left.update!(batch_id: batch_request_right.batch_id, position: batch_request_right.position)
       batch_request_right = BatchRequest.create!(batch_id: original_left_batch_id, position: original_left_position, request_id: original_right_request_id)
 
       # Finally record the fact that the batch was swapped
@@ -456,11 +459,13 @@ class Batch < ApplicationRecord
     request = requests.first
     return DEFAULT_VOLUME unless request.asset.is_a?(Well)
     return DEFAULT_VOLUME unless request.target_asset.is_a?(Well)
+
     request.target_asset.get_requested_volume
   end
 
   def robot_verified!(user_id)
     return if has_event('robot verified')
+
     pipeline.robot_verified!(self)
     lab_events.create(description: 'Robot verified', message: 'Robot verification completed and source volumes updated.', user_id: user_id)
   end
@@ -483,12 +488,15 @@ class Batch < ApplicationRecord
     true
   end
 
-  def self.find_from_barcode(code)
-    human_batch_barcode = Barcode.number_to_human(code)
-    batch = Batch.find_by(barcode: human_batch_barcode)
-    batch ||= Batch.find_by(id: human_batch_barcode)
+  class << self
+    def find_by_barcode(code)
+      human_batch_barcode = Barcode.number_to_human(code)
+      batch = Batch.find_by(barcode: human_batch_barcode)
+      batch ||= Batch.find_by(id: human_batch_barcode)
 
-    batch
+      batch
+    end
+    alias_method :find_from_barcode, :find_by_barcode
   end
 
   def request_count
@@ -513,12 +521,12 @@ class Batch < ApplicationRecord
   end
 
   def downstream_requests_needing_asset(request)
-    next_requests_needing_asset = request.next_requests(pipeline).select { |r| r.asset_id.blank? }
+    next_requests_needing_asset = request.next_requests.select { |r| r.asset_id.blank? }
     yield(next_requests_needing_asset) unless next_requests_needing_asset.blank?
   end
 
   def rebroadcast
-    messengers.each(&:resend)
+    messengers.each(&:queue_for_broadcast)
   end
 
   private
@@ -538,7 +546,7 @@ class Batch < ApplicationRecord
       # we need to call downstream request before setting the target_asset
       # otherwise, the request use the target asset to find the next request
       target_asset = asset_type.create! do |asset|
-        asset.barcode = AssetBarcode.new_barcode unless [Lane, Well].include?(asset_type)
+        asset.generate_barcode
         asset.generate_name(request.asset.name)
       end
 
@@ -546,7 +554,7 @@ class Batch < ApplicationRecord
         requests_to_update.concat(downstream_requests.map { |r| [r.id, target_asset.id] })
       end
 
-      request.update_attributes!(target_asset: target_asset)
+      request.update!(target_asset: target_asset)
 
       # All links between the two assets as new, so we can bulk create them!
       asset_links << [request.asset.id, request.target_asset.id]
@@ -555,7 +563,7 @@ class Batch < ApplicationRecord
     AssetLink::BuilderJob.create(asset_links)
 
     requests_to_update.each do |request_details|
-      Request.find(request_details.first).update_attributes!(asset_id: request_details.last)
+      Request.find(request_details.first).update!(asset_id: request_details.last)
     end
   end
 

@@ -1,10 +1,4 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
-class Receptacle < ActiveRecord::Base
+class Receptacle < Asset
   include Transfer::State
   include Aliquot::Remover
   include Tag::Associations
@@ -23,9 +17,10 @@ class Receptacle < ActiveRecord::Base
   # We should try and move away from this model.
   belongs_to :labware, required: false
 
-  has_many :transfer_requests, class_name: 'TransferRequest', foreign_key: :target_asset_id
   has_many :transfer_requests_as_source, class_name: 'TransferRequest', foreign_key: :asset_id
   has_many :transfer_requests_as_target, class_name: 'TransferRequest', foreign_key: :target_asset_id
+  has_many :upstream_assets, through: :transfer_requests_as_target, source: :asset
+  has_many :downstream_assets, through: :transfer_requests_as_source, source: :target_asset
 
   has_many :requests, inverse_of: :asset, foreign_key: :asset_id
   has_one  :source_request, ->() { includes(:request_metadata) }, class_name: 'Request', foreign_key: :target_asset_id
@@ -49,8 +44,7 @@ class Receptacle < ActiveRecord::Base
 
   has_many :tags, through: :aliquots
 
-  # Nice!
-  has_many :stock_well_links, ->() { where(type: 'stock') }, class_name: 'Well::Link', foreign_key: :target_well_id
+  has_many :stock_well_links, ->() { stock }, class_name: 'Well::Link', foreign_key: :target_well_id
 
   has_many :stock_wells, through: :stock_well_links, source: :source_well do
     def attach!(wells)
@@ -63,6 +57,8 @@ class Receptacle < ActiveRecord::Base
       proxy_association.owner.stock_well_links.build(wells.map { |well| { type: 'stock', source_well: well } })
     end
   end
+
+  has_many :submissions, ->() { distinct }, through: :transfer_requests_as_target
 
   # Our receptacle needs to report its tagging status based on the most highly tagged aliquot. This retrieves it
   has_one :most_tagged_aliquot, ->() { order(tag2_id: :desc, tag_id: :desc).readonly }, class_name: 'Aliquot', foreign_key: :receptacle_id
@@ -91,10 +87,11 @@ class Receptacle < ActiveRecord::Base
 
   # Named scopes for the future
   scope :include_aliquots, ->() { includes(aliquots: %i(sample tag bait_library)) }
-  scope :include_aliquots_for_api, ->() { includes(aliquots: [{ sample: [:uuid_object, :study_reference_genome, { sample_metadata: :reference_genome }] }, { tag: :tag_group }, :bait_library]) }
+  scope :include_aliquots_for_api, ->() { includes(aliquots: Io::Aliquot::PRELOADS) }
   scope :for_summary, ->() { includes(:map, :samples, :studies, :projects) }
   scope :include_creation_batches, ->() { includes(:creation_batches) }
   scope :include_source_batches, ->() { includes(:source_batches) }
+  scope :with_required_aliquots, ->(aliquots_ids) { joins(:aliquots).where(aliquots: { id: aliquots_ids }) }
 
   scope :for_study_and_request_type, ->(study, request_type) { joins(:aliquots, :requests).where(aliquots: { study_id: study }).where(requests: { request_type_id: request_type }) }
 
@@ -216,6 +213,10 @@ class Receptacle < ActiveRecord::Base
       aliquot.tag2 = tag
       aliquot.save!
     end
+  end
+
+  def created_with_request_options
+    aliquots.first&.created_with_request_options || {}
   end
 
   # Library types are still just a string on aliquot.

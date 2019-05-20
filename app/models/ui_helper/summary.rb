@@ -1,8 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015,2016 Genome Research Ltd.
 # Ideally we'd convert this into a scope/association, but its complicated by the need to associate across
 # two models, one of which we're trying to deprecate.
 require 'will_paginate/array'
@@ -18,8 +13,8 @@ module UiHelper
       @item_per_page = options[:per_page].to_i || 10
     end
 
-    def load(study, workflow)
-      study.submissions_for_workflow(workflow).each do |submission|
+    def load(study)
+      study.submissions.each do |submission|
         submission.events.where('message LIKE "Run%"').find_each do |event|
           load_event(event)
         end
@@ -36,25 +31,31 @@ module UiHelper
       end
     end
 
+    def load_request(request)
+      request.run_events.each do |event|
+        load_event(event)
+      end
+    end
+
     def load_event(event)
       add(SummaryItem.new(
-        message: event.message,
-        object: event.eventful,
-        timestamp: event.created_at,
-        external_message: "Run #{event.identifier}",
-        external_link: "#{configatron.run_information_url}#{event.identifier}"
-      ))
+            message: event.message,
+            object: event.eventful,
+            timestamp: event.created_at,
+            external_message: "Run #{event.identifier}",
+            external_link: "#{configatron.run_information_url}#{event.identifier}"
+          ))
     end
 
     def load_study(study)
       study.events.find_each do |event|
         add(SummaryItem.new(
-          message: event.message,
-          object: study,
-          timestamp: event.created_at,
-          external_message: "Study #{study.id}",
-          external_link: ''
-        ))
+              message: event.message,
+              object: study,
+              timestamp: event.created_at,
+              external_message: "Study #{study.id}",
+              external_link: ''
+            ))
       end
     end
 

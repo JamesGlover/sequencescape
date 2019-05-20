@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2014,2015 Genome Research Ltd.
-
 module IlluminaC::Helper
   require 'hiseq_2500_helper'
 
@@ -55,6 +49,7 @@ module IlluminaC::Helper
         raise "Must provide a #{value}" if send(value).nil?
       end
       raise "Request Type should be #{ACCEPTABLE_REQUEST_TYPES.join(', ')}" unless ACCEPTABLE_REQUEST_TYPES.include?(type)
+
       true
     end
 
@@ -110,16 +105,16 @@ module IlluminaC::Helper
     def submission_parameters(cherrypick, sequencing)
       {
         request_type_ids_list: request_type_ids(cherrypick, sequencing),
-        workflow_id: Submission::Workflow.find_by(key: 'short_read_sequencing').id,
         order_role_id: OrderRole.find_or_create_by(role: role).id,
-        info_differential: Submission::Workflow.find_by(key: 'short_read_sequencing').id
+        info_differential: 1
       }
     end
 
     def update!
       each_submission_template do |options|
         next if options[:submission_parameters][:input_field_infos].nil?
-        SubmissionTemplate.find_by!(name: options[:name]).update_attributes!(submission_parameters: options[:submission_parameters])
+
+        SubmissionTemplate.find_by!(name: options[:name]).update!(submission_parameters: options[:submission_parameters])
       end
     end
 

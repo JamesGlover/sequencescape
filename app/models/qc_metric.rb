@@ -1,18 +1,12 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 class QcMetric < ApplicationRecord
   extend QcMetric::QcState
 
   InvalidValue = Class.new(StandardError)
 
   QC_DECISION_TRANSITIONS = {
-    'passed'          => 'manually_passed',
+    'passed' => 'manually_passed',
     'manually_passed' => 'manually_passed',
-    'failed'          => 'manually_failed',
+    'failed' => 'manually_failed',
     'manually_failed' => 'manually_failed'
   }
 
@@ -38,8 +32,8 @@ class QcMetric < ApplicationRecord
   scope :with_asset_ids, ->(ids) { where(asset_id: ids) }
 
   scope :for_product, ->(product) {
-      joins(qc_report: :product_criteria)
-        .where(product_criteria: { product_id: product })
+    joins(qc_report: :product_criteria)
+      .where(product_criteria: { product_id: product })
   }
 
   scope :stock_metric, ->() {
@@ -61,6 +55,7 @@ class QcMetric < ApplicationRecord
     return if qc_decision == decision
     return self.qc_decision = decision_to_manual_state(decision) if qc_automatic?
     return self.qc_decision = decision if original_qc_decision == decision
+
     self.qc_decision = decision_to_manual_state(decision)
   end
 
@@ -70,6 +65,7 @@ class QcMetric < ApplicationRecord
 
   def human_proceed=(h_proceed)
     return self.proceed = nil if h_proceed.blank?
+
     self.proceed = proceedable? && human_to_bool(PROCEED_TRANSLATION, h_proceed.upcase)
   end
 
@@ -119,7 +115,7 @@ class QcMetric < ApplicationRecord
   end
 
   def value_error_message(decision, accepted_list)
-    accepted = accepted_list.keys.to_sentence(last_word_connector: ', or ', two_words_connector: ' or ')
+    accepted = accepted_list.to_sentence(last_word_connector: ', or ', two_words_connector: ' or ')
     "#{decision} is not an acceptable decision. Should be #{accepted}."
   end
 

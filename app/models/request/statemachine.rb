@@ -1,18 +1,13 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 # This is a module containing the standard statemachine for a request that needs it.
 # It provides various callbacks that can be hooked in to by the derived classes.
 require 'aasm'
 
 module Request::Statemachine
-  COMPLETED_STATE = ['passed', 'failed']
-  OPENED_STATE    = ['pending', 'blocked', 'started']
-  ACTIVE = QUOTA_COUNTED = %w(passed pending blocked started)
-  INACTIVE = QUOTA_EXEMPTED = ['failed', 'cancelled']
+  COMPLETED_STATE = %w[passed failed]
+  OPENED_STATE    = %w[pending blocked started]
+  ACTIVE = %w(passed pending blocked started)
+  INACTIVE = %w[failed cancelled]
+  SORT_ORDER = %w[pending blocked hold started passed failed cancelled]
 
   module ClassMethods
     def redefine_aasm(options = {}, &block)
@@ -36,18 +31,6 @@ module Request::Statemachine
       # Wipe out the inherited state machine. Can't use unregister
       # as we still need the state machine on the parent class.
       AASM::StateMachineStore.register(self, true)
-    end
-
-    # Determines the most likely event that should be fired when transitioning between the two states.  If there is
-    # only one option then that is what is returned, otherwise an exception is raised.
-    def suggested_transition_between(current, target)
-      aasm.state_machine.events.select do |_name, event|
-        event.transitions_from_state(current.to_sym).any? do |transition|
-          transition.to == target.to_sym
-        end
-      end.tap do |events|
-        raise StandardError, "No obvious transition from #{current.inspect} to #{target.inspect}" unless events.size == 1
-      end.first.first
     end
   end
 
@@ -118,7 +101,7 @@ module Request::Statemachine
           transitions to: :cancelled, from: [:failed, :passed]
         end
 
-        event :cancel_from_upstream do
+        event :cancel_from_upstream, manual_only?: true do
           transitions to: :cancelled, from: [:pending]
         end
 
@@ -126,29 +109,29 @@ module Request::Statemachine
           transitions to: :cancelled, from: [:pending, :hold]
         end
 
-        event :submission_cancelled do
+        event :submission_cancelled, manual_only?: true do
           transitions to: :cancelled, from: [:pending, :cancelled]
         end
 
-        event :fail_from_upstream do
+        event :fail_from_upstream, manual_only?: true do
           transitions to: :cancelled, from: [:pending]
           transitions to: :failed,    from: [:started]
           transitions to: :failed,    from: [:passed]
         end
       end
 
-     scope :for_state, ->(state) { where(state: state) }
+      scope :for_state, ->(state) { where(state: state) }
 
-     scope :completed,        -> { where(state: COMPLETED_STATE) }
+      scope :completed,        -> { where(state: COMPLETED_STATE) }
 
-     scope :pipeline_pending, -> { where(state: 'pending') } #  we don't want the blocked one here }
-     scope :pending,          -> { where(state: ['pending', 'blocked']) } # block is a kind of substate of pending }
+      scope :pipeline_pending, -> { where(state: 'pending') } #  we don't want the blocked one here }
+      scope :pending,          -> { where(state: %w[pending blocked]) } # block is a kind of substate of pending }
 
-     scope :started,          -> { where(state: 'started') }
-     scope :cancelled,        -> { where(state: 'cancelled') }
+      scope :started,          -> { where(state: 'started') }
+      scope :cancelled,        -> { where(state: 'cancelled') }
 
-     scope :opened,           -> { where(state: OPENED_STATE) }
-     scope :closed,           -> { where(state: ['passed', 'failed', 'cancelled']) }
+      scope :opened,           -> { where(state: OPENED_STATE) }
+      scope :closed,           -> { where(state: %w[passed failed cancelled]) }
     end
   end
 
@@ -183,6 +166,7 @@ module Request::Statemachine
   def change_decision!
     return retrospective_fail! if passed?
     return retrospective_pass! if failed?
+
     raise StandardError, 'Can only use change decision on passed or failed requests'
   end
   deprecate change_decision!: 'Change decision is being deprecated in favour of retrospective_pass and retrospective_fail!'
@@ -231,6 +215,17 @@ module Request::Statemachine
   end
 
   def transition_to(target_state)
-    send("#{self.class.suggested_transition_between(state, target_state)}!")
+    aasm.fire!(suggested_transition_to(target_state))
+  end
+
+  private
+
+  # Determines the most likely event that should be fired when transitioning between the two states.  If there is
+  # only one option then that is what is returned, otherwise an exception is raised.
+  def suggested_transition_to(target)
+    valid_events = aasm.events(permitted: true).select { |e| !e.options[:manual_only?] && e.transitions_to_state?(target.to_sym) }
+    raise StandardError, "No obvious transition from #{state.inspect} to #{target.inspect}" unless valid_events.size == 1
+
+    valid_events.first.name
   end
 end

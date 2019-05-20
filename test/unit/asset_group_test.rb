@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class AssetGroupTest < ActiveSupport::TestCase
@@ -62,11 +56,11 @@ class AssetGroupTest < ActiveSupport::TestCase
     end
 
     should 'report its asset types' do
-      assert_equal ['Tube', 'Well'], @asset_group.asset_types
+      assert_equal %w[Tube Well], @asset_group.asset_types
     end
 
     should 'not support automatic_move?' do
-      assert !@asset_group.automatic_move?
+      assert_not @asset_group.automatic_move?
     end
   end
 
@@ -87,7 +81,7 @@ class AssetGroupTest < ActiveSupport::TestCase
     end
 
     should 'not support automatic_move?' do
-      assert !@asset_group.automatic_move?
+      assert_not @asset_group.automatic_move?
     end
   end
 
@@ -128,25 +122,25 @@ class AssetGroupTest < ActiveSupport::TestCase
         setup do
           5.times do |_i|
             asset = create(:sample_tube)
-            asset.primary_aliquot.sample.update_attributes!(sample_metadata_attributes: { sample_ebi_accession_number: 'ERS00001' })
+            asset.primary_aliquot.sample.update!(sample_metadata_attributes: { sample_ebi_accession_number: 'ERS00001' })
             @asset_group.assets << asset
           end
         end
         context 'have accession nubmers' do
           should 'return true' do
             assert_equal 5, @asset_group.assets.size
-            assert !@asset_group.assets.first.primary_aliquot.sample.nil?
+            assert_not @asset_group.assets.first.primary_aliquot.sample.nil?
             assert @asset_group.all_samples_have_accession_numbers?
           end
         end
         context 'except 1 have accession numbers' do
           setup do
             asset = create(:sample_tube)
-            asset.primary_aliquot.sample.update_attributes!(sample_metadata_attributes: { sample_ebi_accession_number: '' })
+            asset.primary_aliquot.sample.update!(sample_metadata_attributes: { sample_ebi_accession_number: '' })
             @asset_group.assets << asset
           end
           should 'return false' do
-            assert !@asset_group.all_samples_have_accession_numbers?
+            assert_not @asset_group.all_samples_have_accession_numbers?
           end
         end
       end
@@ -154,7 +148,7 @@ class AssetGroupTest < ActiveSupport::TestCase
         setup do
           5.times do |_i|
             asset = create(:sample_tube)
-            asset.primary_aliquot.sample.update_attributes!(sample_metadata_attributes: { sample_ebi_accession_number: '' })
+            asset.primary_aliquot.sample.update!(sample_metadata_attributes: { sample_ebi_accession_number: '' })
             @asset_group.assets << asset
           end
         end

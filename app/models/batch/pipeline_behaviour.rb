@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 module Batch::PipelineBehaviour
   def self.included(base)
     base.class_eval do
@@ -32,6 +26,7 @@ module Batch::PipelineBehaviour
 
   def show_actions?
     return true if pipeline.is_a?(PulldownMultiplexLibraryPreparationPipeline) || pipeline.is_a?(CherrypickForPulldownPipeline)
+
     !released?
   end
 
@@ -39,6 +34,16 @@ module Batch::PipelineBehaviour
     item_limit.present?
   end
   alias_method(:has_limit?, :has_item_limit?)
+
+  def last_completed_task
+    pipeline.workflow.tasks.order(:sorted).where(id: completed_task_ids).last unless complete_events.empty?
+  end
+
+  def task_for_event(event)
+    tasks.detect { |task| task.name == event.description }
+  end
+
+  private
 
   def complete_events
     @efct ||= if lab_events.loaded
@@ -49,18 +54,8 @@ module Batch::PipelineBehaviour
   end
 
   def completed_task_ids
-    complete_events.map do |event|
-      event.descriptor_value_allow_nil('task_id')
+    complete_events.map do |lab_event|
+      lab_event.descriptor_hash['task_id']
     end.compact
-  end
-
-  def last_completed_task
-    unless complete_events.empty?
-      pipeline.workflow.tasks.order(:sorted).where(id: completed_task_ids).last
-    end
-  end
-
-  def task_for_event(event)
-    tasks.detect { |task| task.name == event.description }
   end
 end

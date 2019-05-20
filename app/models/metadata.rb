@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 require_dependency 'attributable'
 
 module Metadata
@@ -28,21 +22,23 @@ module Metadata
     default_options = { class_name: class_name, dependent: :destroy, validate: true, autosave: true, inverse_of: :owner, foreign_key: "#{as_name}_id" }
     has_one association_name, default_options.merge(options)
     accepts_nested_attributes_for(association_name, update_only: true)
-    scope :"include_#{ association_name }", -> { includes(association_name) }
+
+    scope :"include_#{ association_name }", -> { includes(association_name) } unless respond_to?(:"include_#{ association_name }")
 
     # We now ensure that, if the metadata is not already created, that a blank instance is built.  We cannot
     # do this through the initialization of our model because we use the ActiveRecord::Base#becomes method in
     # our code, which would create a new default instance.
+    # If lazy metadata is true we do NOT generate metadata upfront. This is the case for internal requests,
+    # where metadata is unused anyway.
     line = __LINE__ + 1
     class_eval("
+      class_attribute :lazy_metadata
+      self.lazy_metadata = false
 
-      def #{association_name}_with_initialization
-        #{association_name}_without_initialization ||
+      def #{association_name}
+        super ||
         build_#{association_name}
       end
-
-      alias_method(:#{association_name}_without_initialization, :#{association_name})
-      alias_method(:#{association_name}, :#{association_name}_with_initialization)
 
       def validating_ena_required_fields=(state)
         @validating_ena_required_fields = !!state
@@ -50,7 +46,7 @@ module Metadata
       end
 
       def validating_ena_required_fields?
-        @validating_ena_required_fields
+        instance_variable_defined?(:@validating_ena_required_fields) && @validating_ena_required_fields
       end
 
       def tags
@@ -65,7 +61,7 @@ module Metadata
         @tags ||= []
       end
 
-      before_validation :#{association_name}, on: :create
+      before_validation :#{association_name}, on: :create, unless: :lazy_metadata?
 
     ", __FILE__, line)
 
@@ -99,18 +95,16 @@ module Metadata
   end
 
   def construct_metadata_class(table_name, as_class, &block)
-    metadata = Class.new(self == as_class ? Base : as_class::Metadata)
-    metadata.instance_eval(&block) if block_given?
+    parent_class = self == as_class ? Metadata::Base : as_class::Metadata
+    metadata = Class.new(parent_class, &block)
 
     as_name = as_class.name.demodulize.underscore
 
     # Ensure that it is correctly associated back to the owner model and that the table name
     # is correctly set.
-    metadata.instance_eval "
-      self.table_name =('#{table_name}')
-      belongs_to :#{as_name}, :class_name => #{name.inspect}, :validate => false, :autosave => false
-      belongs_to :owner, :foreign_key => :#{as_name}_id, :class_name => #{name.inspect}, :validate => false, :autosave => false, :inverse_of => :#{as_name}_metadata
-    "
+    metadata.table_name = table_name
+    metadata.belongs_to :"#{as_name}", class_name: name, validate: false, autosave: false
+    metadata.belongs_to :owner, foreign_key: :"#{as_name}_id", class_name: name, validate: false, autosave: false, inverse_of: :"#{as_name}_metadata"
 
     # Finally give it a name!
     const_set(:Metadata, metadata)
@@ -135,6 +129,7 @@ module Metadata
       # Replace attributes with the default if the value is nil
       instance_defaults.each do |attribute, value|
         next unless send(attribute).nil?
+
         send(:"#{attribute}=", value)
       end
     end

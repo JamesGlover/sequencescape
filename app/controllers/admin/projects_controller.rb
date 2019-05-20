@@ -1,16 +1,11 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015 Genome Research Ltd.
 require 'event_factory'
 class Admin::ProjectsController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
   before_action :evil_parameter_hack!
-# WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
-# It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
-before_action :evil_parameter_hack!
+  # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
+  # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
+  before_action :evil_parameter_hack!
 
   before_action :admin_login_required
 
@@ -31,9 +26,9 @@ before_action :evil_parameter_hack!
   end
 
   def update
-   @project = Project.find(params[:id])
-   flash[:notice] = 'Your project has been updated'
-   render partial: 'manage_single_project'
+    @project = Project.find(params[:id])
+    flash[:notice] = 'Your project has been updated'
+    render partial: 'manage_single_project'
   end
 
   def edit
@@ -77,7 +72,7 @@ before_action :evil_parameter_hack!
 
     pre_approved = @project.approved?
 
-    if @project.update_attributes(params[:project])
+    if @project.update(params[:project])
       if pre_approved == false && @project.approved == true
         EventFactory.project_approved(@project, current_user)
       end

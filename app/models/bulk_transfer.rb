@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2014,2015 Genome Research Ltd.
-
 class BulkTransfer < ApplicationRecord
   include Uuid::Uuidable
 
@@ -41,6 +35,7 @@ class BulkTransfer < ApplicationRecord
       errors.add(:source, 'is not a plate') unless source.is_a?(Plate)
       errors.add(:destination, 'is not a plate') unless destination.is_a?(Plate)
       raise ActiveRecord::RecordInvalid, self if errors.count > 0
+
       yield(source, destination, transfers)
     end
   end

@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 class Map < ApplicationRecord
   validates_presence_of :description, :asset_size, :location_id, :row_order, :column_order, :asset_shape
   validates_numericality_of :asset_size, :row_order, :column_order
@@ -13,7 +7,7 @@ class Map < ApplicationRecord
     # (even if its not strictly appropriate) They could do with refactoring/removing.
 
     PLATE_DIMENSIONS = Hash.new { |_h, _k| [] }.merge(
-      96  => [12, 8],
+      96 => [12, 8],
       384 => [24, 16]
     )
 
@@ -23,31 +17,39 @@ class Map < ApplicationRecord
 
     def self.description_to_horizontal_plate_position(well_description, plate_size)
       return nil unless Map.valid_well_description_and_plate_size?(well_description, plate_size)
+
       split_well = Map.split_well_description(well_description)
       width = plate_width(plate_size)
       return nil if width.nil?
+
       (width * split_well[:row]) + split_well[:col]
     end
 
     def self.description_to_vertical_plate_position(well_description, plate_size)
       return nil unless Map.valid_well_description_and_plate_size?(well_description, plate_size)
+
       split_well = Map.split_well_description(well_description)
       length = plate_length(plate_size)
       return nil if length.nil?
+
       (length * (split_well[:col] - 1)) + split_well[:row] + 1
     end
 
     def self.horizontal_plate_position_to_description(well_position, plate_size)
       return nil unless Map.valid_plate_position_and_plate_size?(well_position, plate_size)
+
       width = plate_width(plate_size)
       return nil if width.nil?
+
       horizontal_position_to_description(well_position, width)
     end
 
     def self.vertical_plate_position_to_description(well_position, plate_size)
       return nil unless Map.valid_plate_position_and_plate_size?(well_position, plate_size)
+
       length = plate_length(plate_size)
       return nil if length.nil?
+
       vertical_position_to_description(well_position, length)
     end
 
@@ -88,28 +90,31 @@ class Map < ApplicationRecord
     end
 
     def self.location_from_index(index, size)
-      horizontal_plate_position_to_description(index - 1, size)
+      horizontal_plate_position_to_description(index + 1, size)
     end
 
-  class << self
-    # Given the well position described in terms of a direction (vertical or horizontal) this function
-    # will map it to the alternate positional representation, i.e. a vertical position will be mapped
-    # to a horizontal one.  It does this with the divisor and multiplier, which will be reversed for
-    # the alternate.
-    #
-    # NOTE: I don't like this, it just makes things clearer than it was!
-    # NOTE: I hate the nil returns but external code would take too long to change this time round
-    def alternate_position(well_position, size, *dimensions)
-      return nil unless Map.valid_well_position?(well_position)
-      divisor, multiplier = dimensions.map { |n| send("plate_#{n}", size) }
-      return nil if divisor.nil? or multiplier.nil?
-      column, row = (well_position - 1).divmod(divisor)
-      return nil unless (0...multiplier).cover?(column)
-      return nil unless (0...divisor).cover?(row)
-      alternate = (row * multiplier) + column + 1
+    class << self
+      # Given the well position described in terms of a direction (vertical or horizontal) this function
+      # will map it to the alternate positional representation, i.e. a vertical position will be mapped
+      # to a horizontal one.  It does this with the divisor and multiplier, which will be reversed for
+      # the alternate.
+      #
+      # NOTE: I don't like this, it just makes things clearer than it was!
+      # NOTE: I hate the nil returns but external code would take too long to change this time round
+      def alternate_position(well_position, size, *dimensions)
+        return nil unless Map.valid_well_position?(well_position)
+
+        divisor, multiplier = dimensions.map { |n| send("plate_#{n}", size) }
+        return nil if divisor.nil? or multiplier.nil?
+
+        column, row = (well_position - 1).divmod(divisor)
+        return nil unless (0...multiplier).cover?(column)
+        return nil unless (0...divisor).cover?(row)
+
+        (row * multiplier) + column + 1
+      end
+      private :alternate_position
     end
-    private :alternate_position
-  end
   end
 
   module Sequential
@@ -124,18 +129,19 @@ class Map < ApplicationRecord
     end
   end
 
- scope :for_position_on_plate, ->(position, plate_size, asset_shape) {
-    where(
-        row_order: position - 1,
-        asset_size: plate_size,
-        asset_shape_id: asset_shape.id
-    )
-                               }
+  scope :for_position_on_plate, ->(position, plate_size, asset_shape) {
+                                  where(
+                                    row_order: position - 1,
+                                    asset_size: plate_size,
+                                    asset_shape_id: asset_shape.id
+                                  )
+                                }
 
   scope :where_description, ->(*descriptions) { where(description: descriptions.flatten) }
   scope :where_plate_size,  ->(size) { where(asset_size: size) }
   scope :where_plate_shape, ->(asset_shape) { where(asset_shape_id: asset_shape) }
   scope :where_vertical_plate_position, ->(*positions) { where(column_order: positions.map { |v| v - 1 }) }
+  scope :for_plate, ->(plate) { where_plate_size(plate.size).where_plate_shape(plate.asset_shape) }
 
   belongs_to :asset_shape, class_name: 'AssetShape'
   delegate :standard?, to: :asset_shape
@@ -148,12 +154,14 @@ class Map < ApplicationRecord
     return false unless valid_well_position?(well_position)
     return false unless valid_plate_size?(plate_size)
     return false if well_position > plate_size
+
     true
   end
 
   def self.valid_well_description_and_plate_size?(well_description, plate_size)
     return false if well_description.blank?
     return false unless valid_plate_size?(plate_size)
+
     true
   end
 
@@ -191,6 +199,7 @@ class Map < ApplicationRecord
 
   def snp_id
     raise StandardError, 'Only standard maps can be converted to SNP' unless map.standard?
+
     horizontal_plate_position
   end
 
@@ -257,7 +266,13 @@ class Map < ApplicationRecord
   end
 
   def self.find_for_cell_location(cell_location, asset_size)
-    find_by(description: cell_location.sub(/0(\d)$/, '\1'), asset_size: asset_size)
+    find_by(description: strip_description(cell_location), asset_size: asset_size)
+  end
+
+  # Stip any leading zeros from the well name
+  # eg. A01 => A1
+  def self.strip_description(description)
+    description.sub(/0(\d)$/, '\1')
   end
 
   def self.pad_description(map)
@@ -267,21 +282,12 @@ class Map < ApplicationRecord
     map.description
   end
 
-   scope :in_row_major_order,            -> { order('row_order ASC') }
-   scope :in_reverse_row_major_order,    -> { order('row_order DESC') }
-   scope :in_column_major_order,         -> { order('column_order ASC') }
-   scope :in_reverse_column_major_order, -> { order('column_order DESC') }
+  scope :in_row_major_order,            -> { order('row_order ASC') }
+  scope :in_reverse_row_major_order,    -> { order('row_order DESC') }
+  scope :in_column_major_order,         -> { order('column_order ASC') }
+  scope :in_reverse_column_major_order, -> { order('column_order DESC') }
 
   class << self
-    # Caution! Only use for seeds. Not valid elsewhere
-    def plate_dimensions(plate_size)
-      case plate_size
-      when 96  then yield(12, 8)
-      when 384 then yield(24, 16)
-      else raise StandardError, "Cannot determine plate dimensions for #{plate_size}"
-      end
-    end
-
     # Walking in column major order goes by the columns: A1, B1, C1, ... A2, B2, ...
     def walk_plate_in_column_major_order(size, asset_shape = nil)
       asset_shape ||= AssetShape.default_id

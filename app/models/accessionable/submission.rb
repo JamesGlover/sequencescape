@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015,2016 Genome Research Ltd.
-
 class Accessionable::Submission < Accessionable::Base
   attr_reader :broker, :alias, :date, :accessionables, :contact
 
@@ -28,10 +22,10 @@ class Accessionable::Submission < Accessionable::Base
     xml = Builder::XmlMarkup.new
     xml.instruct!
     xml.SUBMISSION(
-      'xmlns:xsi'      => 'http://www.w3.org/2001/XMLSchema-instance',
-      :center_name     => center_name,
-      :broker_name     => broker,
-      :alias           => self.alias,
+      'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+      :center_name => center_name,
+      :broker_name => broker,
+      :alias => self.alias,
       :submission_date => date
     ) {
       xml.CONTACTS { contact.build(xml) }

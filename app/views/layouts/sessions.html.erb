@@ -1,8 +1,3 @@
-<%# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015 Genome Research Ltd.%>
 
 <!DOCTYPE html>
 
@@ -10,24 +5,26 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <%= stylesheet_link_tag "sessions", media: "all" %>
-
+  <%= stylesheet_link_tag "application", media: "all" %>
   <title>Sequencescape : <%= I18n.t('global_links.login') %></title>
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon-precomposed" href="/apple-icon.png" type="image/png" />
+  <% if Rails.application.config.disable_animations %>
+    <%= stylesheet_link_tag 'disable_animations' %>
 
+    <!-- Turn off animations in jQuery -->
+    <script>$.fx.off = true;</script>
+  <% end %>
 </head>
 
 <body>
-  <div class="container">
-
-  <div class="jumbotron">
-    <div>
-      <%= image_tag "scape-large-dark.jpg", size: "600x229" %>
-    </div>
-    <div>
+  <div class="container d-flex justify-content-center">
+    <div id="login-panel">
+      <%= image_tag "scape-large-dark.jpg", size: "600x229", class: "card-img-top",  alt: "Two white lines twirl round each other, separating blue and green fields." %>
       <%= yield %>
     </div>
   </div>
-  </div>
-
+  <footer id="main-footer"><%= render partial: 'shared/footer' %></footer>
 </body>
 </html>

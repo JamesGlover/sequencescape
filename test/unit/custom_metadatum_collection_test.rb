@@ -2,11 +2,11 @@ require 'test_helper'
 
 class CustomMetadatumCollectionTest < ActiveSupport::TestCase
   test 'should not be valid without an asset' do
-    refute build(:custom_metadatum_collection, asset: nil).valid?
+    assert_not build(:custom_metadatum_collection, asset: nil).valid?
   end
 
   test 'should not be valid without a user' do
-    refute build(:custom_metadatum_collection, user: nil).valid?
+    assert_not build(:custom_metadatum_collection, user: nil).valid?
   end
 
   test 'should be able to create metadata' do
@@ -17,7 +17,7 @@ class CustomMetadatumCollectionTest < ActiveSupport::TestCase
 
   test 'should be able to create metadata and check if it is valid' do
     custom_metadatum_collection = build(:custom_metadatum_collection, metadata: ({ 'Key1' => 'Value1', 'Key2' => '' }))
-    refute custom_metadatum_collection.valid?
+    assert_not custom_metadatum_collection.valid?
   end
 
   test '#metadata should return all of the metadata as a beautiful hash' do
@@ -28,7 +28,7 @@ class CustomMetadatumCollectionTest < ActiveSupport::TestCase
 
   test 'should update metadata' do
     custom_metadatum_collection = create(:custom_metadatum_collection, metadata: ({ 'Key1' => 'Value1', 'Key2' => 'Value2' }))
-    custom_metadatum_collection.update_attributes(metadata: { 'Key1' => 'New value', 'Key3' => 'Value3' })
+    custom_metadatum_collection.update(metadata: { 'Key1' => 'New value', 'Key3' => 'Value3' })
     assert_equal 2, custom_metadatum_collection.custom_metadata.length
     assert_equal 'New value', custom_metadatum_collection.custom_metadata.first.value
     assert_equal 'Value3', custom_metadatum_collection.custom_metadata.last.value

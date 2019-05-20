@@ -1,19 +1,15 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2014,2015 Genome Research Ltd.
-
 module StudyReport::WellDetails
   def self.included(base)
     base.class_eval do
-      scope :for_study_report, -> { includes([
-        :map,
-        :well_attribute,
-        :events,
-        { plate: [:plate_purpose, :events], primary_aliquot: { sample: [:sample_metadata, { sample_manifest: :supplier }, :external_properties] } },
-        { latest_child_well: [:map, { plate: [:plate_purpose, :plate_metadata] }] }
-      ])}
+      scope :for_study_report, -> {
+        includes([
+          :map,
+          :well_attribute,
+          :events,
+          { plate: [:plate_purpose, :events, :barcodes], primary_aliquot: { sample: [:sample_metadata, { sample_manifest: :supplier }, :external_properties] } },
+          { latest_child_well: [:map, { plate: [:plate_purpose, :plate_metadata] }] }
+        ])
+      }
     end
   end
 
@@ -34,7 +30,7 @@ module StudyReport::WellDetails
                    pico: well_attribute.pico_pass,
                    is_in_fluidigm: fluidigm_stamp_date,
                    gel: well_attribute.gel_pass,
-                   plate_barcode: plate.barcode,
+                   plate_barcode: plate.barcode_number,
                    measured_volume: well_attribute.measured_volume,
                    current_volume: well_attribute.current_volume,
                    gel_qc_date: gel_qc_date,
@@ -52,8 +48,8 @@ module StudyReport::WellDetails
       if latest_plate && latest_plate.plate_purpose
         qc_data[:genotyping_plate_purpose] = latest_plate.plate_purpose.name
         qc_data[:genotyping_infinium_barcode] = latest_plate.infinium_barcode
-        qc_data[:genotyping_barcode] = latest_plate.barcode if latest_plate.barcode
-        qc_data[:genotyping_well] = latest_child_well.map_description if latest_plate.barcode
+        qc_data[:genotyping_barcode] = latest_plate.barcode_number if latest_plate.barcode_number
+        qc_data[:genotyping_well] = latest_child_well.map_description if latest_plate.barcode_number
       end
     end
 

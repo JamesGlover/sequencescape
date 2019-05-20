@@ -22,8 +22,15 @@ table.table-dense-information tbody {
 .main-row { margin-bottom:10px; }
 
 
-.loading-bar { width: 100% !important; }
-.loading-bar-container { display: none; }
+.loading-bar-container {
+  @extend .progress;
+  .loading-bar {
+    width: 100%;
+    @extend .progress-bar;
+    @extend .progress-bar-striped;
+    @extend .progress-bar-animated;
+  }
+}
 .loading-bar-placeholder {  margin: 11px 0;}
 
 .formtastic label.ft-label { width: 25%; }
@@ -34,17 +41,39 @@ table.table-dense-information tbody {
 .formtastic .boolean label.ft-label { width: auto; }
 .formtastic input.btn { padding: 6px 12px; }
 
+.card-style-feature {
+  @extend .bg-primary;
+  @extend .text-white;
+}
+
+.card-style-filters {
+  @extend .bg-light;
+}
+
+
+// Apply basic button formatting to all buttons
+input[type=submit] {
+  @extend .btn;
+}
+
+.link-panel {
+  @extend .list-group;
+  @extend .list-group-flush;
+  a { @extend .list-group-item; }
+}
+
+
 /* A collapsible info panel, which may contain tabulated data
  * A more semantic representation of bootstrap panels */
 section.info-panel {
-  @extend .panel;
-  @extend .panel-default;
+  @extend .card;
+//  @extend .card-default;
 
   header {
-    @extend .panel-heading;
+    @extend .card-header;
 
     h3 {
-      @extend .panel-title;
+      @extend .card-title;
     }
 
     .counter {
@@ -56,23 +85,79 @@ section.info-panel {
 
   table {
     @extend .table;
-    @extend .table-condensed;
+    @extend .table-sm;
     @extend .table-striped;
 
     caption {
-      @extend .panel-body;
+      @extend .card-body;
     }
   }
 }
 
-navigation.toc {
-  @extend .panel;
-  @extend .panel-default;
-  @extend .col-md-6;
+nav.toc {
+  @extend .card;
+  @extend .col-md-2;
 
   ul {
-    @extend .nav;
-    @extend .nav-pills;
-    @extend .nav-stacked;
+    @extend .link-list;
+  }
+}
+
+.pagination {
+  li {
+    @extend .page-item;
+    a { @extend .page-link; }
+    span { @extend .page-link; }
+  }
+}
+
+dl.order-summary {
+  @extend .row;
+  dt { @extend .col-2; text-align: right }
+  dd { @extend .col-10; }
+}
+
+// State-colour extensions
+// These extend the bootstrap classes to cover our states
+.badge-building { @extend .badge-info; }
+.badge-cancelled { @extend .badge-secondary; }
+.badge-failed { @extend .badge-danger; }
+.badge-pending { @extend .badge-warning; }
+.badge-processing { @extend .badge-primary; }
+.badge-ready { @extend .badge-success; }
+.badge-active { @extend .badge-success; }
+.badge-inactive { @extend .badge-danger; }
+.badge-completed { @extend .badge-info; }
+.badge-discarded { @extend .badge-secondary; }
+.badge-released { @extend .badge-success; }
+.badge-started { @extend .badge-primary; }
+.badge-passed { @extend .badge-success; }
+
+// Request progress bars
+.request_progress {
+  .request_progress_header {
+    @extend .row;
+    @extend .align-items-center;
+
+    .request_type_name, .request_progress_totals { @extend .col-2; @extend .h6; }
+    .request_type_name { text-align: right; }
+    .key { @extend .col-8; }
+  }
+  .request_progress_section {
+    @extend .row;
+    margin-bottom: 0.2em;
+
+    .request_type_name, .request_progress_totals { @extend .col-2; @extend .align-self-center; }
+    .bar-container { @extend .col-8; @extend .align-self-center; }
+    .request_type_name { text-align: right; }
+  }
+  .progress-state-cancelled { @extend .bg-warning }
+  .progress-state-failed { @extend .bg-danger }
+  .progress-state-started { @extend .bg-info }
+  .progress-state-passed { @extend .bg-success }
+  .progress-state-other { @extend .bg-primary }
+
+  .key {
+    span { @extend .badge; @extend .text-white; }
   }
 }

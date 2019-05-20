@@ -1,10 +1,5 @@
-<%# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.%>
 
-<h1>Reception</h1>
+<div class="page-header"><h1>Reception</h1></div>
   <div class="content">
     <div id='accept'>
       <table>
@@ -12,18 +7,16 @@
       <% @assets.each do |asset| %>
       <tr>
         <td><%= link_to asset.name, asset_path(asset)   %></td>
-        <td><%= asset.sanger_human_barcode %></td>
+        <td><%= asset.human_barcode %></td>
         <td><%= asset.sti_type %></td>
       </tr>
       <% end %>
       </table>
       <br />
-      <strong>I have placed the above barcoded Samples in the reception fridge in the following lab:</strong>
+      <strong>I have placed the above barcoded labware in the appropriate reception fridge</strong>
       <br /><br />
       <%# This is a pretty grim abuse of the rails form generation. %>
       <%= form_tag confirm_reception_receptions_path do %>
-        <%= label_tag :location_id, 'Freezers', style: "display:none" %>
-        <%= select_tag :location_id, options_for_select(Location.pluck(:name,:id)) %>
         <% @assets.each_with_index do |asset,index| %>
           <%= hidden_field_tag "asset_id[#{index}]", asset.id %>
         <% end %>

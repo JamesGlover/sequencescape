@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015,2016 Genome Research Ltd.
-
 class AccessionService
   # We overide this in testing to do a bit of evesdropping
   class_attribute :rest_client_class
@@ -48,14 +42,14 @@ class AccessionService
       files = [] # maybe not necessary, but just to be sure that the tempfile still exists when they are sent
       begin
         xml_result = post_files(submission.all_accessionables.map do |acc|
-            file = Tempfile.open("#{acc.schema_type}_file")
-            files << file
-            file.puts(acc.xml)
-            file.open # reopen for read
+                                  file = Tempfile.open("#{acc.schema_type}_file")
+                                  files << file
+                                  file.puts(acc.xml)
+                                  file.open # reopen for read
 
-            Rails::logger.debug { file.each_line.to_a.join("\n") }
+                                  Rails::logger.debug { file.each_line.to_a.join("\n") }
 
-            { name: acc.schema_type.upcase, local_name: file.path, remote_name: acc.file_name }
+                                  { name: acc.schema_type.upcase, local_name: file.path, remote_name: acc.file_name }
                                 end)
         Rails::logger.debug { xml_result }
         raise AccessionServiceError, "EBI Server Error. Couldnt get accession number: #{xml_result}" if xml_result.match?(/(Server error|Auth required|Login failed)/)
@@ -162,63 +156,14 @@ class AccessionService
 
   private
 
-  def accession_study_set_xml_quarantine(study, studydata)
-    xml = Builder::XmlMarkup.new
-    xml.instruct!
-    xml.STUDY_SET('xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance') {
-      xml.STUDY(alias: studydata[:alias], accession: study.study_metadata.study_ebi_accession_number) {
-        xml.DESCRIPTOR {
-          xml.STUDY_TITLE         studydata[:study_title]
-          xml.STUDY_DESCRIPTION   studydata[:description]
-          xml.CENTER_PROJECT_NAME studydata[:center_study_name]
-          xml.CENTER_NAME         studydata[:center_name]
-          xml.STUDY_ABSTRACT      studydata[:study_abstract]
-
-          xml.PROJECT_ID(studydata[:study_id] || '0')
-          study_type = studydata[:existing_study_type]
-          if StudyType.include?(study_type)
-            xml.STUDY_TYPE(existing_study_type: study_type)
-          else
-            xml.STUDY_TYPE(existing_study_type: Study::Other_type, new_study_type: study_type)
-          end
-        }
-      }
-    }
-    xml.target!
-  end
-
-  def accession_sample_set_xml_quarantine(sample, sampledata)
-    xml = Builder::XmlMarkup.new
-    xml.instruct!
-    xml.SAMPLE_SET('xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance') {
-      xml.SAMPLE(alias: sampledata[:alias], accession: sample.sample_metadata.sample_ebi_accession_number) {
-        xml.SAMPLE_NAME {
-          xml.COMMON_NAME  sampledata[:sample_common_name]
-          xml.TAXON_ID     sampledata[:taxon_id]
-        }
-        xml.SAMPLE_ATTRIBUTES {
-          sampledata[:tags].each do |tagpair|
-            xml.SAMPLE_ATTRIBUTE {
-              xml.TAG   tagpair[:tag]
-              xml.VALUE tagpair[:value]
-            }
-          end
-        } unless sampledata[:tags].blank?
-
-        xml.SAMPLE_LINKS {} unless sampledata[:links].blank?
-      }
-    }
-    xml.target!
-  end
-
   def accession_submission_xml(submission, accession_number)
     xml = Builder::XmlMarkup.new
     xml.instruct!
     xml.SUBMISSION(
-      'xmlns:xsi'      => 'http://www.w3.org/2001/XMLSchema-instance',
-      :center_name     => submission[:center_name],
-      :broker_name     => submission[:broker],
-      :alias           => submission[:submission_id],
+      'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+      :center_name => submission[:center_name],
+      :broker_name => submission[:broker],
+      :alias => submission[:submission_id],
       :submission_date => submission[:submission_date]
     ) {
       xml.CONTACTS {
@@ -286,7 +231,7 @@ class AccessionService
       $! = nil
       raise AccessionServiceError
     else
-    return ''
+      return ''
     end
   rescue StandardError => exception
     raise AccessionServiceError, "Could not get accession number. EBI may be down or invalid data submitted: #{$!}"

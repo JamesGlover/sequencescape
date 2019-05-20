@@ -17,28 +17,52 @@
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
-require 'factory_girl'
+require 'simplecov'
+
+require 'factory_bot'
 require 'capybara/rspec'
-require 'capybara/poltergeist'
+require 'selenium/webdriver'
 require 'webmock/rspec'
 require 'support/user_login'
 require 'jsonapi/resources/matchers'
+require 'aasm/rspec'
+
+require './lib/plate_map_generation'
 
 require 'pry'
 
-Capybara.register_driver :poltergeist do |app|
-  Capybara::Poltergeist::Driver.new(app, timeout: 1.minute)
+Capybara.register_driver :chrome do |app|
+  Capybara::Selenium::Driver.new(app, browser: :chrome)
 end
 
-Capybara.javascript_driver = :poltergeist
+Capybara.register_driver :headless_chrome do |app|
+  options = Selenium::WebDriver::Chrome::Options.new
 
-Capybara.register_driver :poltergeist do |app|
-  Capybara::Poltergeist::Driver.new(app, timeout: 2.minutes)
+  options.add_argument('--headless')
+  options.add_argument('--disable_gpu')
+  # options.add_argument('--disable-popup-blocking')
+  options.add_argument('--window-size=1600,3200')
+  driver = Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+  enable_chrome_headless_downloads(driver, DownloadHelpers::PATH.to_s)
 end
+
+def enable_chrome_headless_downloads(driver, directory)
+  bridge = driver.browser.send(:bridge)
+  path = "/session/#{bridge.session_id}/chromium/send_command"
+  bridge.http.call(:post, path, cmd: 'Page.setDownloadBehavior',
+                                params: {
+                                  behavior: 'allow',
+                                  downloadPath: directory
+                                })
+  driver
+end
+
+Capybara.javascript_driver = ENV.fetch('JS_DRIVER', 'headless_chrome').to_sym
 
 WebMock.disable_net_connect!(allow_localhost: true)
 
 RSpec.configure do |config|
+  config.bisect_runner = :shell # Forking doesn't seem to work
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
   # assertions if you prefer.
@@ -69,10 +93,11 @@ RSpec.configure do |config|
   # triggering implicit auto-inclusion in groups with matching metadata.
   config.shared_context_metadata_behavior = :apply_to_host_groups
 
-  config.include FactoryGirl::Syntax::Methods
+  config.include FactoryBot::Syntax::Methods
 
   config.before(:suite) do
-    FactoryGirl.find_definitions
+    PlateMapGeneration.generate!
+    FactoryBot.find_definitions
   end
 
   # The settings below are suggested to provide a good initial experience

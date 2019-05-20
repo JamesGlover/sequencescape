@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015,2016 Genome Research Ltd.
-
 # require './app/api/core/service'
 module Api
   class EndpointHandler < ::Core::Service
@@ -28,10 +22,10 @@ module Api
       def file_addition(action, http_method)
         send(http_method, %r{/([\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12})(?:/([^/]+(?:/[^/]+)*))?}, file_attatched: true) do
           raise Core::Service::ContentFiltering::InvalidRequestedContentTypeOnFile if request.acceptable_media_types.prioritize(registered_mimetypes).present?
+
           report('file') do
             filename = /filename="([^"]*)"/.match(request.env['HTTP_CONTENT_DISPOSITION']).try(:[], 1) || 'unnamed_file'
             begin
-
               file = Tempfile.new(filename)
               file.binmode
               file.unlink
@@ -57,6 +51,7 @@ module Api
       def file_model_addition(action, http_method)
         send(http_method, %r{/([^\d/][^/]+(?:/[^/]+){0,2})}, file_attatched: true) do
           raise Core::Service::ContentFiltering::InvalidRequestedContentType if request.acceptable_media_types.prioritize(registered_mimetypes).present?
+
           report('model') do
             filename = /filename="([^"]*)"/.match(request.env['HTTP_CONTENT_DISPOSITION']).try(:[], 1) || 'unnamed_file'
             begin
@@ -158,7 +153,7 @@ module Api
 
     # Not ideal but at least this allows us to pick up the appropriate model from the URL.
     def determine_model_from_parts(*parts)
-      (1..parts.length).to_a.reverse.each do |n|
+      parts.length.downto(1) do |n|
         model_name, remainder = parts.slice(0, n), parts.slice(n, parts.length)
         model_constant = model_name.join('/').classify
         begin
@@ -168,6 +163,7 @@ module Api
           constant = nil
         end
         next unless constant
+
         return yield(constant, remainder)
       end
       raise StandardError, "Cannot route #{parts.join('/').inspect}"
@@ -187,6 +183,7 @@ module Api
           request.service = self
           request.path    = parts
           request.json    = @json
+          Rails.logger.info("API[payload]: #{@json}")
           yield(request)
         end
 
@@ -207,6 +204,7 @@ module Api
       endpoint = endpoint_for_object(request.target)
       file_through = request.instance(action, endpoint).handled_by.file_through(request_accepted)
       raise Core::Service::ContentFiltering::InvalidRequestedContentType if file_through.nil?
+
       Rails.logger.info("API[endpoint]: File: #{requested_url} handled by #{endpoint.inspect}")
       file_through
     end

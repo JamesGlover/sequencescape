@@ -1,23 +1,17 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2013,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class UserTest < ActiveSupport::TestCase
   context 'A User' do
     context 'authenticate' do
       setup do
-          @user = create :admin, login: 'xyz987', api_key: 'my_key', crypted_password: '1'
-          @ldap = mock('LDAP')
-          @ldap.stubs(:bind).returns(true)
-          Net::LDAP.stubs(:new).returns(@ldap)
+        @user = create :admin, login: 'xyz987', api_key: 'my_key', crypted_password: '1'
+        @ldap = mock('LDAP')
+        @ldap.stubs(:bind).returns(true)
+        Net::LDAP.stubs(:new).returns(@ldap)
 
-          @response = mock('Response')
-          @response.stubs(:body).returns('{"valid":1,"username":"xyz987"}')
-          Net::HTTP.stubs(:post_form).returns(@response)
+        @response = mock('Response')
+        @response.stubs(:body).returns('{"valid":1,"username":"xyz987"}')
+        Net::HTTP.stubs(:post_form).returns(@response)
       end
 
       should 'login_in_user' do
@@ -49,7 +43,7 @@ class UserTest < ActiveSupport::TestCase
       end
 
       should 'not be able to access admin functions' do
-        assert !@user.administrator?
+        assert_not @user.administrator?
       end
 
       should 'be able to access manager functions' do
@@ -71,15 +65,15 @@ class UserTest < ActiveSupport::TestCase
       end
 
       should 'not be able to access admin functions' do
-        assert !@user.administrator?
+        assert_not @user.administrator?
       end
 
       should 'not be able to access manager functions' do
-        assert !@user.manager_or_administrator?
+        assert_not @user.manager_or_administrator?
       end
 
       should 'not have access to privileged functions generally' do
-        assert !@user.privileged?
+        assert_not @user.privileged?
       end
     end
 
@@ -123,25 +117,14 @@ class UserTest < ActiveSupport::TestCase
 
     context '#new_api_key' do
       setup do
-         @user = create :user, first_name: 'Alan', last_name: 'Brown'
-         @old_api_key = @user.api_key
-         @user.new_api_key
-         @user.save
+        @user = create :user, first_name: 'Alan', last_name: 'Brown'
+        @old_api_key = @user.api_key
+        @user.new_api_key
+        @user.save
       end
       should 'have an api key' do
         assert_not_nil User.find(@user.id).api_key
         assert_not_equal User.find(@user.id).api_key, @old_api_key
-      end
-    end
-
-    context 'workflow' do
-      should 'have "Next-gen sequencing" workflow set' do
-        assert_not_nil(User.create!(login: 'foo').workflow, 'workflow has not been defaulted')
-      end
-
-      should 'not override the user choice' do
-        workflow = create(:submission_workflow)
-        assert_equal(workflow, User.create!(login: 'foo', workflow: workflow).workflow, 'workflow differs from what was requested')
       end
     end
 

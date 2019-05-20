@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2014,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class IlluminaHtp::FinalPlatePurposeTest < ActiveSupport::TestCase
@@ -23,7 +17,7 @@ class IlluminaHtp::FinalPlatePurposeTest < ActiveSupport::TestCase
         @child.stubs(:wells).returns(@child_wells)
       end
 
-      ['passed', 'cancelled'].each do |state|
+      %w[passed cancelled].each do |state|
         should "not alter pre-pcr plate when transitioning entire plate to #{state}" do
           @purpose.expects(:transition_state_requests).with(@child_wells, state)
           @purpose.transition_to(@child, state, @user, nil)

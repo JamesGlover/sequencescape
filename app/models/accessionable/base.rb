@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015 Genome Research Ltd.
-
 class Accessionable::Base
   InvalidData = Class.new(AccessionService::AccessionServiceError)
   attr_reader :accession_number, :name, :date, :date_short
@@ -41,13 +35,13 @@ class Accessionable::Base
   end
 
   def extract_accession_number(xmldoc)
-          element = xmldoc.root.elements["/RECEIPT/#{schema_type.upcase}"]
-          accession_number = element && element.attributes['accession']
+    element = xmldoc.root.elements["/RECEIPT/#{schema_type.upcase}"]
+    accession_number = element && element.attributes['accession']
   end
 
   def extract_array_express_accession_number(xmldoc)
-          element = xmldoc.root.elements["/RECEIPT/#{schema_type.upcase}/EXT_ID[@type='ArrayExpress']"]
-          accession_number = element && element.attributes['accession']
+    element = xmldoc.root.elements["/RECEIPT/#{schema_type.upcase}/EXT_ID[@type='ArrayExpress']"]
+    accession_number = element && element.attributes['accession']
   end
 
   def update_accession_number!(_user, _accession_number)
@@ -67,16 +61,16 @@ class Accessionable::Base
   end
 
   def add_updated_event(user, classname, eventable)
-        eventable.events.create(
-          created_by: user.login,
-          message: "#{classname} #{eventable.id} accession data has been updated by user #{user.login}",
-          content: 'accession number regenerated',
-          of_interest_to: 'administrators'
-        )
+    eventable.events.create(
+      created_by: user.login,
+      message: "#{classname} #{eventable.id} accession data has been updated by user #{user.login}",
+      content: 'accession number regenerated',
+      of_interest_to: 'administrators'
+    )
   end
 
   def label_scope
-      @label_scope ||= "metadata.#{self.class.name.split("::").last.downcase}.metadata"
+    @label_scope ||= "metadata.#{self.class.name.split("::").last.downcase}.metadata"
   end
 
   class Tag

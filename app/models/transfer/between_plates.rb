@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2014,2015 Genome Research Ltd.
-
 # Picks the specified wells from one plate into the wells of another.  In this case transfers
 # is a hash from source to destination well location and destination is the target plate for
 # the transfers.
@@ -14,7 +8,6 @@ class Transfer::BetweenPlates < Transfer
 
   include TransfersBySchema
   include TransfersToKnownDestination
-  include BuildsStockWellLinks
 
   include Asset::Ownership::ChangesOwner
   set_target_for_owner(:destination)
@@ -124,10 +117,5 @@ class Transfer::BetweenPlates < Transfer
       end
       dest_sources
     end
-  end
-
-  # Request type for transfers is based on the plates, not the wells we're transferring
-  def request_type_between(_ignored_a, _ignored_b)
-    @request_type_between ||= destination.transfer_request_type_from(source)
   end
 end

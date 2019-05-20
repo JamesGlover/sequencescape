@@ -1,6 +1,3 @@
-//This file is part of SEQUENCESCAPE; it is distributed under the terms of GNU General Public License version 1 or later;
-//Please refer to the LICENSE and README files for information on licensing and authorship of this file.
-//Copyright (C) 2015,2016 Genome Research Ltd.
 
 (function(window,$,undefined) {
   'use strict';
@@ -22,6 +19,19 @@
   $( document ).ready(function() {
 
     var barcode_list = $('#barcode_list')[0]
+
+    // The swipecard scanners send a return.
+    // This stops it from submitting the form.
+    $('#labwhere_reception_user_code').bind("keydown", function(e) {
+      /* We don't take tab index into account here */
+      var ENTER = 13, TAB = 9, code;
+      code=e.charCode || e.keyCode;
+      if (code==ENTER || code==TAB) {
+        e.preventDefault();
+        $('#asset_scan').focus();
+        return false;
+      }
+    });
 
     // Update the query string automatically on changing the location field
     // Allows the user to bookmark a particular location

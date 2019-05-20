@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 # Re-raise errors caught by the controller.
@@ -130,7 +124,7 @@ class AuthenticationControllerTest < ActionController::TestCase
         end
         context 'with valid api_key will not require login to restricted content' do
           setup do
-            @user = FactoryGirl.create :user
+            @user = FactoryBot.create :user
             get :restricted, params: { api_key: @user.api_key }
           end
           should respond_with :success
@@ -167,7 +161,7 @@ class AuthenticationControllerTest < ActionController::TestCase
         end
         context 'with valid api_key will not require login to restricted content' do
           setup do
-            @user = FactoryGirl.create :user
+            @user = FactoryBot.create :user
             get :restricted, params: { api_key: @user.api_key }
           end
           should respond_with :success
@@ -209,7 +203,7 @@ class AuthenticationControllerTest < ActionController::TestCase
         end
         context 'with valid api_key will not require login to restricted content' do
           setup do
-            @user = FactoryGirl.create :user
+            @user = FactoryBot.create :user
             get :restricted, params: { api_key: @user.api_key }
           end
           should respond_with :success

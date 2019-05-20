@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2013,2015 Genome Research Ltd.
-
 class IlluminaC::LibPcrPurpose < PlatePurpose
   include PlatePurpose::Library
 
@@ -15,7 +9,7 @@ class IlluminaC::LibPcrPurpose < PlatePurpose
   end
 
   def nudge_parent_plate(plate, state, user, contents)
-    plate.parent.transition_to(state, user, contents) if ['started', 'passed'].include?(state)
+    plate.parent.transition_to(state, user, contents) if %w[started passed].include?(state)
   end
   private :nudge_parent_plate
 end

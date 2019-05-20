@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015,2016 Genome Research Ltd.
-
 module Accessionable
   class Sample < Base
     attr_reader :common_name, :taxon_id, :links, :tags
@@ -12,7 +6,7 @@ module Accessionable
       super(sample.ebi_accession_number)
 
       sampname = sample.sample_metadata.sample_public_name
-      @name = sampname.blank? ? sample.name : sampname
+      @name = sampname.presence || sample.name
       @name = @name.gsub(/[^a-z\d]/i, '_') unless @name.blank?
 
       @common_name = sample.sample_metadata.sample_common_name
@@ -31,16 +25,17 @@ module Accessionable
         ::Sample::ArrayExpressFields.each do |datum|
           value = sample.sample_metadata.send(datum)
           next unless value.present?
+
           @tags << ArrayExpressTag.new(label_scope, datum, value)
         end
       end
 
       sample_hold = sample.sample_metadata.sample_sra_hold
-      @hold = sample_hold.blank? ? 'hold' : sample_hold
+      @hold = sample_hold.presence || 'hold'
     end
 
     def accessionable_id
-     @sample.id
+      @sample.id
     end
 
     def alias

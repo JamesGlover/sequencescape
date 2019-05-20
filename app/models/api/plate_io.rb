@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2015 Genome Research Ltd.
-
 class Api::PlateIO < Api::Base
   module Extensions
     module ClassMethods
@@ -16,12 +10,11 @@ class Api::PlateIO < Api::Base
       base.class_eval do
         extend ClassMethods
 
-        scope :including_associations_for_json, -> { includes([:uuid_object, :plate_metadata, :barcode_prefix, :location, { plate_purpose: :uuid_object }]) }
-        alias_method(:json_root, :url_name)
+        scope :including_associations_for_json, -> { includes([:uuid_object, :plate_metadata, :barcodes, { plate_purpose: :uuid_object }]) }
       end
     end
 
-    def url_name
+    def json_root
       'plate'
     end
   end
@@ -30,19 +23,16 @@ class Api::PlateIO < Api::Base
   map_attribute_to_json_attribute(:uuid)
   map_attribute_to_json_attribute(:id)
   map_attribute_to_json_attribute(:name)
-  map_attribute_to_json_attribute(:barcode)
+  with_association(:sanger_barcode) do
+    map_attribute_to_json_attribute(:number_as_string, 'barcode')
+    map_attribute_to_json_attribute(:barcode_prefix, 'barcode_prefix')
+  end
   map_attribute_to_json_attribute(:size)
   map_attribute_to_json_attribute(:created_at)
   map_attribute_to_json_attribute(:updated_at)
 
-  with_association(:plate_metadata) do
-    map_attribute_to_json_attribute(:infinium_barcode)
-    map_attribute_to_json_attribute(:fluidigm_barcode)
-  end
-
-  with_association(:location) do
-    map_attribute_to_json_attribute(:name, 'location')
-  end
+  map_attribute_to_json_attribute(:infinium_barcode)
+  map_attribute_to_json_attribute(:fluidigm_barcode)
 
   with_association(:plate_purpose, if_nil_use: :stock_plate_purpose) do
     map_attribute_to_json_attribute(:name, 'plate_purpose_name')
@@ -52,9 +42,5 @@ class Api::PlateIO < Api::Base
     def self.stock_plate_purpose
       PlatePurpose.find_by(name: 'Stock Plate')
     end
-  end
-
-  with_association(:barcode_prefix) do
-    map_attribute_to_json_attribute(:prefix, 'barcode_prefix')
   end
 end

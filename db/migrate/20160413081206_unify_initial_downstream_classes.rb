@@ -1,9 +1,5 @@
-# This file is part of SEQUENCESCAPE is distributed under the terms of GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2016 Genome Research Ltd.
 class UnifyInitialDownstreamClasses < ActiveRecord::Migration
-  class Request < ActiveRecord::Base
+  class Request < ApplicationRecord
     self.table_name = 'requests'
   end
 
@@ -19,7 +15,7 @@ class UnifyInitialDownstreamClasses < ActiveRecord::Migration
       OLD_CLASSES.each do |old|
         RequestType.where(request_class_name: old).find_each do |rt|
           say "Updating: #{rt.name}"
-          rt.update_attributes!(request_class_name: NEW_CLASS)
+          rt.update!(request_class_name: NEW_CLASS)
           upd = Request.where(request_type_id: rt.id, sti_type: old).update_all(sti_type: NEW_CLASS)
           say "Updated #{upd} requests", true
           STATE_MIGRATIONS.fetch(old, []).each do |old_state, new_state|

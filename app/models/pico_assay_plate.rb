@@ -1,19 +1,12 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2014,2015 Genome Research Ltd.
-
 class PicoAssayPlate < Plate
-  self.prefix = 'PA'
-
   class WellDetail
-    attr_accessor :map, :parent_plate
+    attr_accessor :map, :parent_plate, :qc_assay
 
-    def initialize(details, parent_plate)
+    def initialize(details, parent_plate, qc_assay)
       @map = details[:map]
       @concentration = details[:concentration]
       @parent_plate = parent_plate
+      @qc_assay = qc_assay
     end
 
     def target_map
@@ -36,7 +29,7 @@ class PicoAssayPlate < Plate
       when 'failed' then grade_as_failed
       end
 
-      update_well_concentraion!
+      update_well_concentration!
     end
 
     def grade_as_passed
@@ -49,19 +42,20 @@ class PicoAssayPlate < Plate
       target_well.well_attribute.fail_pico_test
     end
 
-    def update_well_concentraion!
-      target_well.set_concentration(concentration)
+    def update_well_concentration!
+      QcResult.create!(asset: target_well, qc_assay: qc_assay, key: 'concentration', value: concentration, units: 'ng/ul', assay_type: 'PicoGreen', assay_version: 'v0.1')
     end
   end
 
   def upload_pico_results(state, failure_reason, well_details)
+    qc_assay = QcAssay.new
     return false if state.nil? || well_details.blank? || stock_plate.nil?
 
     ActiveRecord::Base.transaction do
       event = stock_plate.events.create_pico!(state)
       # Adds a failure reason if it is available.
-      event.update_attributes(descriptor_key: failure_reason) unless failure_reason.nil?
-      well_details.each { |details| WellDetail.new(details[:well], self).grade_as!(state) }
+      event.update(descriptor_key: failure_reason) unless failure_reason.nil?
+      well_details.each { |details| WellDetail.new(details[:well], self, qc_assay).grade_as!(state) }
     end
   end
 end

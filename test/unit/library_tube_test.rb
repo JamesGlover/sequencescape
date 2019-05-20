@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 require 'test_helper'
 
 class LibraryTubeTest < ActiveSupport::TestCase
@@ -20,7 +14,7 @@ class LibraryTubeTest < ActiveSupport::TestCase
       end
 
       should "return false if it doesn't have a stock asset" do
-        assert !@library_tube.has_stock_asset?
+        assert_not @library_tube.has_stock_asset?
       end
 
       should 'return true if it does have a stock asset' do
@@ -43,7 +37,7 @@ class LibraryTubeTest < ActiveSupport::TestCase
         end
 
         should 'have a different barcode' do
-          assert_not_equal(@library_tube.barcode, @stock.barcode)
+          assert_not_equal(@library_tube.human_barcode, @stock.human_barcode)
         end
       end
 
@@ -57,7 +51,7 @@ class LibraryTubeTest < ActiveSupport::TestCase
         end
 
         should 'set the barcode' do
-          assert_equal '1111', @stock.barcode
+          assert_equal '1111', @stock.barcode_number
         end
       end
     end

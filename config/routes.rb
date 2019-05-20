@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 Sequencescape::Application.routes.draw do
   root to: 'homes#show'
   resource :health, only: [:show]
@@ -13,14 +7,31 @@ Sequencescape::Application.routes.draw do
 
   namespace :api do
     namespace :v2 do
+      jsonapi_resources :pre_capture_pools
+      jsonapi_resources :primer_panels
+      jsonapi_resources :request_types
+      jsonapi_resources :purposes
+      jsonapi_resources :submissions
+      jsonapi_resources :orders
+      jsonapi_resources :aliquots
+      jsonapi_resources :requests
+      jsonapi_resources :users
       jsonapi_resources :tubes
       jsonapi_resources :lanes
       jsonapi_resources :wells
+      jsonapi_resources :plates
       jsonapi_resources :receptacles
       jsonapi_resources :samples
       jsonapi_resources :work_orders
       jsonapi_resources :studies
       jsonapi_resources :projects
+      jsonapi_resources :qc_results
+      jsonapi_resources :assets
+      jsonapi_resources :qc_assays
+
+      namespace :aker do
+        resources :jobs, only: [:create]
+      end
     end
   end
 
@@ -101,7 +112,6 @@ Sequencescape::Application.routes.draw do
       post :swap
       get :gwl_file
       post :fail_items
-      post :create_training_batch
       post :reset_batch
       get :download_spreadsheet
       get :edit_volume_and_concentration
@@ -141,7 +151,7 @@ Sequencescape::Application.routes.draw do
   match '/taxon_lookup_by_term/:term' => 'samples#taxon_lookup', :via => :get
   match '/taxon_lookup_by_id/:id' => 'samples#taxon_lookup', :via => :get
 
-  match '/studies/:study_id/workflows/:workflow_id/summary_detailed/:id' => 'studies/workflows#summary_detailed', :via => :post
+  match '/studies/:study_id/information/summary_detailed/:id' => 'studies/information#summary_detailed', :via => :post
 
   match 'studies/accession/:id' => 'studies#accession', :via => :get
   match 'studies/policy_accession/:id' => 'studies#policy_accession', :via => :get
@@ -230,7 +240,7 @@ Sequencescape::Application.routes.draw do
       resources :wells, expect: [:destroy, :edit]
     end
 
-    resources :workflows, controller: 'studies/workflows' do
+    resource :information, controller: 'studies/information' do
       member do
         get :summary
         get :show_summary
@@ -247,6 +257,7 @@ Sequencescape::Application.routes.draw do
   end
 
   resources :bulk_submissions, only: [:index, :new, :create]
+  resources :bulk_submission_excel_downloads, only: [:create, :new], controller: 'bulk_submission_excel/downloads'
 
   resources :submissions do
     collection do
@@ -257,7 +268,7 @@ Sequencescape::Application.routes.draw do
     end
     member do
       post :change_priority
-      get :cancel
+      post :cancel
     end
   end
 
@@ -277,27 +288,14 @@ Sequencescape::Application.routes.draw do
       get :print
       delete 'reset_qc_information/:event_id', action: :reset_qc_information
     end
-
-    collection do
-      get :incomplete_requests_for_family
-      get :pending
-      get :get_children_requests
-    end
   end
-
-  get 'studies/:study_id/workflows/:id' => 'study_workflows#show', :as => :study_workflow_status
 
   resources :searches
 
   namespace :admin do
     resources :custom_texts
 
-    resources :settings do
-      collection do
-        get :reset
-        get :apply
-      end
-    end
+    resources :primer_panels, except: :destroy
 
     resources :studies, except: [:destroy] do
       collection do
@@ -368,28 +366,7 @@ Sequencescape::Application.routes.draw do
     end
   end
 
-  resources :verifications do
-    collection do
-      get :input
-      post :verify
-    end
-  end
-
   resources :plate_templates
-
-  get 'implements/print_labels' => 'implements#print_labels'
-
-  resources :implements
-  resources :pico_sets do
-    collection do
-      get :create_from_stock
-    end
-    member do
-      get :analyze
-      post :score
-      get :normalise_plate
-    end
-  end
 
   resources :gels do
     collection do
@@ -402,8 +379,7 @@ Sequencescape::Application.routes.draw do
     end
   end
 
-  resources :locations
-  resources :request_information_types
+  resources :machine_barcodes, only: [:show]
 
   match 'pipelines/assets/new/:id' => 'pipelines/assets#new', :via => 'get'
 
@@ -418,7 +394,6 @@ Sequencescape::Application.routes.draw do
       get :show_comments
       get :batches
       get :summary
-      get :training_batch
       get :setup_inbox
       get :set_inbox
     end
@@ -436,10 +411,9 @@ Sequencescape::Application.routes.draw do
   end
 
   resources :lab_searches
-  resources :errors
   resources :events
 
-  resources :workflows, except: :delete do
+  resources :workflows, only: [:index, :show] do
     member do
       # Yes, this is every bit as horrible as it looks.
       # HTTP Verbs! Gotta catch em all!
@@ -448,8 +422,6 @@ Sequencescape::Application.routes.draw do
       patch 'stage/:id' => 'workflows#stage'
       get   'stage/:id' => 'workflows#stage'
       post 'stage/:id' => 'workflows#stage'
-      get :duplicate
-      get :reorder_tasks
       get :auto
     end
     collection do
@@ -458,7 +430,6 @@ Sequencescape::Application.routes.draw do
     end
   end
 
-  resources :tasks
   resources :asset_audits
 
   resources :qc_reports, except: [:delete, :update] do
@@ -467,7 +438,6 @@ Sequencescape::Application.routes.draw do
     end
   end
 
-  get 'assets/snp_import' => 'assets#snp_import'
   get 'assets/lookup' => 'assets#lookup', :as => :assets_lookup
   get 'assets/receive_barcode' => 'assets#receive_barcode'
   get 'assets/import_from_snp' => 'assets#import_from_snp'
@@ -475,11 +445,11 @@ Sequencescape::Application.routes.draw do
   get 'lab_view' => 'assets#lab_view', :as => :lab_view
   post 'assets/lab_view'
 
-  resources :families
-
   resources :tag_groups, except: [:destroy] do
     resources :tags, except: [:destroy, :index, :create, :new, :edit]
   end
+
+  resources :tag_layout_templates, only: [:index, :new, :create, :show]
 
   resources :assets do
     collection do
@@ -487,6 +457,8 @@ Sequencescape::Application.routes.draw do
       get :reception
       post :print_labels
     end
+
+    resources :tag_substitutions, only: :new
 
     member do
       get :parent_assets
@@ -525,117 +497,21 @@ Sequencescape::Application.routes.draw do
   resources :receptions, only: [:index] do
     collection do
       post :confirm_reception
-      get :snp_register
       get :reception
-      get :snp_import
-      get :receive_snp_barcode
       post :receive_barcode
-      get :import_from_snp
     end
   end
-
-  match 'sequenom/index' => 'sequenom#index', :as => :sequenom_root, :via => 'get'
-  match 'sequenom/search' => 'sequenom#search', :as => :sequenom_search, :via => 'post'
-  match 'sequenom/:id' => 'sequenom#show', :as => :sequenom_plate, :via => 'get'
-  match 'sequenom/:id' => 'sequenom#update', :as => :sequenom_update, :via => 'put'
-  match 'sequenom/quick' => 'sequenom#quick_update', :as => :sequenom_quick_update, :via => 'post'
 
   resources :sequenom_qc_plates
   resources :pico_dilutions
   resources :study_reports
 
+  resources :tag_substitutions, only: :create
+
   resources :sample_logistics do
     collection do
       get :lab
       get :qc_overview
-    end
-  end
-
-  scope '0_5', module: 'api' do
-    resources 'asset_audits', only: [:index, :show]
-    resources 'asset_links', only: [:index, :show]
-    resources 'batch_requests', only: [:index, :show]
-    resources 'batches', only: [:index, :show] do
-      member do
-        get :children
-        get :parents
-      end
-    end
-    resources 'billing_events', only: [:index, :show]
-    resources 'events', only: [:index, :show]
-    resources 'lanes', only: [:index, :show] do
-      member do
-        get :children
-        get :parents
-      end
-    end
-    resources 'library_tubes', only: [:index, :show] do
-      member do
-        get :children
-        get :parents
-      end
-
-      resources 'lanes', only: [:index, :show]
-      resources 'requests', only: [:index, :show]
-    end
-    resources 'multiplexed_library_tubes', only: [:index, :show] do
-      member do
-        get :children
-        get :parents
-      end
-    end
-    resources 'pulldown_multiplexed_library_tubes', only: [:index, :show]
-    resources 'plate_purposes', only: [:index, :show]
-
-    resources 'plates', only: [:index, :show] do
-      member do
-        get :children
-        get :parents
-      end
-    end
-
-    resources 'sample_tubes', only: [:index, :show] do
-      resources 'library_tubes', only: [:index, :show]
-      resources 'requests', only: [:index, :show]
-      member do
-        get :children
-        get :parents
-      end
-    end
-
-    resources 'study_samples', only: [:index, :show]
-    resources 'submissions', only: [:index, :show] do
-      resources 'orders', only: [:index, :show]
-    end
-    resources 'orders', only: [:index, :show]
-    resources 'tags', only: [:index, :show]
-    resources 'wells', only: [:index, :show] do
-      member do
-        get :children
-        get :parents
-      end
-    end
-    resources 'aliquots', only: [:index, :show]
-
-    resources 'projects', except: :destroy do
-      resources 'studies', except: :destroy
-    end
-    resources 'requests', except: :destroy
-    resources 'samples', except: :destroy do
-      member do
-        get :children
-        get :parents
-      end
-      resources 'sample_tubes', only: [:index, :show] do
-        member do
-          get :children
-          get :parents
-        end
-      end
-    end
-    resources 'studies', except: :destroy do
-      resources 'samples', except: :destroy
-      resources 'projects', except: :destroy
     end
   end
 
@@ -672,8 +548,25 @@ Sequencescape::Application.routes.draw do
   post 'get_your_qc_completed_tubes_here' => 'get_your_qc_completed_tubes_here#create', as: :get_your_qc_completed_tubes_here
   resources :sample_manifest_upload_with_tag_sequences, only: [:new, :create]
 
+  namespace :aker do
+    resources :jobs, only: [:index, :show] do
+      member do
+        put 'start'
+        put 'complete'
+        put 'cancel'
+      end
+    end
+  end
+
+  resources :billing_reports, only: [:new, :create]
+
+  resources :location_reports, only: [:index, :show, :create]
+
   # this is for test only test/functional/authentication_controller_test.rb
   # to be removed?
   get 'authentication/open'
   get 'authentication/restricted'
+
+  # We removed workflows, which broke study links. Some customers may have their own studies bookmarked
+  get 'studies/:study_id/workflows/:id', to: redirect('studies/%{study_id}/information')
 end

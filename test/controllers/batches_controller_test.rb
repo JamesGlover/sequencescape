@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 require 'test_helper'
 require 'batches_controller'
 
@@ -159,15 +153,15 @@ class BatchesControllerTest < ActionController::TestCase
 
           @ws = @pipeline.workflow # :name => 'A New workflow', :item_limit => 2
           @ws_two = @pipeline_qc.workflow # :name => 'Another workflow', :item_limit => 2
-          @ws_two.update_attributes!(locale: 'External')
+          @ws_two.update!(locale: 'External')
 
           @batch_one = create(:batch, pipeline: @pipeline)
           @batch_two = create(:batch, pipeline: @pipeline_qc)
 
           @sample   = create :sample_tube
-          @library1 = create :empty_library_tube, location: @pipeline.location
+          @library1 = create :empty_library_tube
           @library1.parents << @sample
-          @library2 = create :empty_library_tube, location: @pipeline.location
+          @library2 = create :empty_library_tube
           @library2.parents << @sample
 
           @target_one = create(:sample_tube)
@@ -184,14 +178,11 @@ class BatchesControllerTest < ActionController::TestCase
         context '#edit' do
           context 'with control' do
             setup do
-              @cn = FactoryGirl.create :control, name: 'Control 1', item_id: 2, pipeline: @pipeline
+              @cn = FactoryBot.create :control, name: 'Control 1', item_id: 2, pipeline: @pipeline
               @pipeline.controls << @cn
             end
             should '#add control' do
               get :add_control, params: { id: @batch_one, control: { id: @cn.id } }
-            end
-            should '#create_training_batchl' do
-              get :create_training_batch, params: { id: @batch_one, control: { id: @cn.id } }
             end
           end
         end
@@ -213,8 +204,8 @@ class BatchesControllerTest < ActionController::TestCase
           setup do
             @old_count = Batch.count
 
-            @request_three = @pipeline.request_types.first.create!(asset: @library1, project: FactoryGirl.create(:project))
-            @request_four  = @pipeline.request_types.first.create!(asset: @library2, project: FactoryGirl.create(:project))
+            @request_three = @pipeline.request_types.first.create!(asset: @library1, project: FactoryBot.create(:project))
+            @request_four  = @pipeline.request_types.first.create!(asset: @library2, project: FactoryBot.create(:project))
           end
 
           context 'redirect to #show new batch' do
@@ -228,9 +219,43 @@ class BatchesControllerTest < ActionController::TestCase
             end
           end
 
+          context 'hide_requests' do
+            setup do
+              post :create, params: {
+                id: @pipeline.id,
+                request: { @request_three.id => '0', @request_four.id => '1' },
+                action_on_requests: 'hide_from_inbox'
+              }
+            end
+
+            should 'hide the requests from the inbox' do
+              assert_redirected_to pipeline_path(@pipeline)
+              assert_equal 'Requests hidden from inbox', flash[:notice]
+              assert_not @request_three.reload.hold?
+              assert @request_four.reload.hold?
+            end
+          end
+
+          context 'cancel_requests' do
+            setup do
+              post :create, params: {
+                id: @pipeline.id,
+                request: { @request_three.id => '0', @request_four.id => '1' },
+                action_on_requests: 'cancel_requests'
+              }
+            end
+
+            should 'cancel the requests' do
+              assert_redirected_to pipeline_path(@pipeline)
+              assert_equal 'Requests cancelled', flash[:notice]
+              assert_not @request_three.reload.cancelled?
+              assert @request_four.reload.cancelled?
+            end
+          end
+
           context 'redirect to action #control' do
             setup do
-              @cn = FactoryGirl.create :control, name: 'Control 1', item_id: 2, pipeline: @pipeline
+              @cn = FactoryBot.create :control, name: 'Control 1', item_id: 2, pipeline: @pipeline
               @pipeline.controls << @cn
               post :create, params: { id: @pipeline.id, request: { @request_three.id => '0', @request_four.id => '1' } }
             end
@@ -275,7 +300,7 @@ class BatchesControllerTest < ActionController::TestCase
 
           should 'render fail reasons when external' do
             get :fail, params: { id: @batch_two.id }
-            assert !@batch_two.workflow.source_is_internal?
+            assert_not @batch_two.workflow.source_is_internal?
             assert_response :success
             assert assigns(:fail_reasons)
           end
@@ -324,8 +349,8 @@ class BatchesControllerTest < ActionController::TestCase
     context 'Find by barcode (found)' do
       setup do
         @controller.stubs(:current_user).returns(@admin)
-        @batch = FactoryGirl.create :batch
-        request = FactoryGirl.create :request
+        @batch = FactoryBot.create :batch
+        request = FactoryBot.create :request
         @batch.requests << request
         r = @batch.requests.first
         @e = r.lab_events.create(description: 'Cluster generation')
@@ -377,7 +402,7 @@ class BatchesControllerTest < ActionController::TestCase
 
         RestClient.expects(:post)
 
-        post :print_plate_barcodes, params: { printer: barcode_printer.name, count: '3', printable: { @batch.output_plates.first.barcode.to_s => 'on' }, batch_id: @batch.id.to_s }
+        post :print_plate_barcodes, params: { printer: barcode_printer.name, count: '3', printable: { @batch.output_plates.first.human_barcode => 'on' }, batch_id: @batch.id.to_s }
       end
 
       should '#print_barcodes should send print request' do
@@ -394,7 +419,7 @@ class BatchesControllerTest < ActionController::TestCase
       should '#print_multiplex_barcodes should send print request' do
         pipeline = create :pipeline,
                           name: 'Test pipeline',
-                          workflow: LabInterface::Workflow.create!(item_limit: 8),
+                          workflow: Workflow.create!(item_limit: 8),
                           multiplexed: true
         batch = pipeline.batches.create!
         library_tube = create :library_tube, barcode: '111'

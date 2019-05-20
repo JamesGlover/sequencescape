@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2013,2014,2015 Genome Research Ltd.
-
 # The classes within this namespace are responsible for defining the abilities of the user and the application
 # that are accessing the API.
 #
@@ -166,8 +160,8 @@ module Core::Abilities
 
     # State changes only
     tag_plates do
-       can(:create, [Endpoints::StateChanges::Model])
-       can(:authenticate, :all)
+      can(:create, [Endpoints::StateChanges::Model])
+      can(:authenticate, :all)
     end
 
     def registered?

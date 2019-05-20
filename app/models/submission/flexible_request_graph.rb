@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 module Submission::FlexibleRequestGraph
   # A doublet couples a source asset to a particular qc metric.
   # This allows us to pass the qc_metric downstream, without relying
@@ -35,9 +29,11 @@ module Submission::FlexibleRequestGraph
     def build!
       raise RequestChainError, 'Request chains can only be built once' if built?
       raise StandardError, 'No request types specified!' if request_types.empty?
+
       request_types.inject(source_assets_qc_metrics) do |source_assets_qc_metrics_memo, request_type|
         link = ChainLink.build!(request_type, multiplier_for(request_type), source_assets_qc_metrics_memo, self)
         break if preplexed && link.multiplexed?
+
         link.target_assets_qc_metrics
       end
       @built = true
@@ -151,7 +147,7 @@ module Submission::FlexibleRequestGraph
     def create_target_asset(source_asset = nil)
       request_type.create_target_asset! do |asset|
         asset.generate_barcode
-        asset.generate_name(source_asset.try(:name) || asset.barcode.to_s)
+        asset.generate_name(source_asset.try(:name) || asset.try(:human_barcode)&.to_s)
       end
     end
   end
@@ -162,6 +158,7 @@ module Submission::FlexibleRequestGraph
     def initialize(request_type, multiplier, assets, chain)
       raise RequestChainError unless request_type.for_multiplexing?
       raise RequestChainError, 'Cannot multiply multiplexed requests' if multiplier > 1
+
       super
     end
 
@@ -186,8 +183,8 @@ module Submission::FlexibleRequestGraph
 
     def associate_built_requests!
       downstream_requests.each do |request|
-        request.update_attributes!(initial_study: nil) if request.initial_study != study
-        request.update_attributes!(initial_project: nil) if request.initial_project != project
+        request.update!(initial_study: nil) if request.initial_study != study
+        request.update!(initial_project: nil) if request.initial_project != project
         comments.each do |comment|
           request.comments.create!(user: user, description: comment)
         end if comments.present?
@@ -204,6 +201,7 @@ module Submission::FlexibleRequestGraph
 
     def initialize(request_type, multiplier, assets, chain)
       raise RequestChainError if request_type.for_multiplexing?
+
       super
     end
 

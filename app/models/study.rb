@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015,2016 Genome Research Ltd.
-
 require 'aasm'
 
 class Study < ApplicationRecord
@@ -23,7 +17,6 @@ class Study < ApplicationRecord
   include SharedBehaviour::Named
   include ReferenceGenome::Associations
   include SampleManifest::Associations
-  include Request::Statistics::DeprecatedMethods
   include Role::Authorized
   include StudyRelation::Associations
 
@@ -37,7 +30,7 @@ class Study < ApplicationRecord
   YES_OR_NO = [YES, NO]
   Other_type = 'Other'
 
-  STUDY_SRA_HOLDS = ['Hold', 'Public']
+  STUDY_SRA_HOLDS = %w[Hold Public]
 
   DATA_RELEASE_STRATEGY_OPEN = 'open'
   DATA_RELEASE_STRATEGY_MANAGED = 'managed'
@@ -107,7 +100,8 @@ class Study < ApplicationRecord
   has_many :initial_requests, class_name: 'Request', foreign_key: :initial_study_id
   has_many :assets_through_aliquots,  ->() { distinct }, class_name: 'Asset', through: :aliquots, source: :receptacle
   has_many :assets_through_requests,  ->() { distinct }, class_name: 'Asset', through: :initial_requests, source: :asset
-  has_many :requests, through: :assets_through_aliquots, source: :requests_as_source
+  has_many :requests, through: :assets_through_aliquots, source: :requests
+  has_many :request_types, ->() { distinct }, through: :requests
   has_many :items, ->() { distinct }, through: :requests
   has_many :projects, ->() { distinct }, through: :orders
   has_many :comments, as: :commentable
@@ -249,8 +243,8 @@ class Study < ApplicationRecord
   # See app/models/study/metadata.rb for further customization
 
   # Scopes
-  scope :for_search_query, ->(query, _with_includes) {
-    joins(:study_metadata).where(['name LIKE ? OR studies.id=? OR prelim_id=?', "%#{query}%", query, query])
+  scope :for_search_query, ->(query) {
+                             joins(:study_metadata).where(['name LIKE ? OR studies.id=? OR prelim_id=?', "%#{query}%", query, query])
                            }
 
   scope :with_no_ethical_approval, -> { where(ethically_approved: false) }
@@ -271,40 +265,44 @@ class Study < ApplicationRecord
   }
 
   scope :for_sample_accessioning, ->() {
-        joins(:study_metadata)
-          .where("study_metadata.study_ebi_accession_number <> ''")
-          .where(study_metadata: { data_release_strategy: [Study::DATA_RELEASE_STRATEGY_OPEN, Study::DATA_RELEASE_STRATEGY_MANAGED], data_release_timing: Study::DATA_RELEASE_TIMINGS })
+    joins(:study_metadata)
+      .where("study_metadata.study_ebi_accession_number <> ''")
+      .where(study_metadata: { data_release_strategy: [Study::DATA_RELEASE_STRATEGY_OPEN, Study::DATA_RELEASE_STRATEGY_MANAGED], data_release_timing: Study::DATA_RELEASE_TIMINGS })
   }
 
   scope :awaiting_ethical_approval, ->() {
     joins(:study_metadata)
       .where(
-      ethically_approved: false,
-      study_metadata: {
-        contains_human_dna: Study::YES,
-        contaminated_human_dna: Study::NO,
-        commercially_available: Study::NO
-      }
-    )
+        ethically_approved: false,
+        study_metadata: {
+          contains_human_dna: Study::YES,
+          contaminated_human_dna: Study::NO,
+          commercially_available: Study::NO
+        }
+      )
   }
 
   scope :contaminated_with_human_dna, ->() {
     joins(:study_metadata)
       .where(
-      study_metadata: {
-        contaminated_human_dna: Study::YES
-      }
-    )
+        study_metadata: {
+          contaminated_human_dna: Study::YES
+        }
+      )
   }
 
   scope :with_remove_x_and_autosomes, ->() {
     joins(:study_metadata)
       .where(
-      study_metadata: {
-        remove_x_and_autosomes: Study::YES
-      }
-    )
+        study_metadata: {
+          remove_x_and_autosomes: Study::YES
+        }
+      )
   }
+
+  scope :by_state, ->(state) { where(state: state) }
+
+  scope :by_user, ->(login) { joins(:roles, :users).where(roles: { name: %w[follower manager owner], users: { login: [login] } }) }
 
   # Delegations
   alias_attribute :friendly_name, :name
@@ -317,6 +315,7 @@ class Study < ApplicationRecord
 
   def validate_ethically_approved
     return true if valid_ethically_approved?
+
     message = ethical_approval_required? ? 'should be either true or false for this study.' : 'should be not applicable (null) not false.'
     errors.add(:ethically_approved, message)
     false
@@ -359,29 +358,25 @@ class Study < ApplicationRecord
   end
 
   def text_comments
-    comments.collect { |c| c.description unless c.description.blank? }.compact.join(', ')
+    comments.each_with_object([]) { |c, array| array << c.description unless c.description.blank? }.join(', ')
   end
 
-  def completed(workflow = nil)
-    rts = workflow.present? ? workflow.request_types.map(&:id) : RequestType.all.map(&:id)
-    total = requests.request_type(rts).count
-    failed = requests.failed.request_type(rts).count
-    cancelled = requests.cancelled.request_type(rts).count
+  def completed
+    counts = requests.standard.group('state').count
+    total = counts.values.sum
+    failed = counts['failed'] || 0
+    cancelled = counts['cancelled'] || 0
     if (total - failed - cancelled) > 0
-      completed_percent = ((requests.passed.request_type(rts).count.to_f / (total - failed - cancelled).to_f) * 100)
-      completed_percent.to_i
+      (counts.fetch('passed', 0) * 100) / (total - failed - cancelled)
     else
       return 0
     end
   end
 
-  def submissions_for_workflow(workflow)
-    orders.for_workflow(workflow).include_for_study_view.map(&:submission).compact.uniq
-  end
-
   # Yields information on the state of all request types in a convenient fashion for displaying in a table.
+  # Used initial requests, which won't capture cross study sequencing requests.
   def request_progress
-    yield(initial_requests.progress_statistics)
+    yield(@stats_cache ||= initial_requests.progress_statistics) if block_given?
   end
 
   # Yields information on the state of all assets in a convenient fashion for displaying in a table.
@@ -457,7 +452,7 @@ class Study < ApplicationRecord
 
   def abbreviation
     abbreviation = study_metadata.study_name_abbreviation
-    abbreviation.blank? ? "#{id}STDY" : abbreviation
+    abbreviation.presence || "#{id}STDY"
   end
 
   def dehumanise_abbreviated_name
@@ -508,7 +503,7 @@ class Study < ApplicationRecord
   end
 
   def rebroadcast
-    ActiveRecord::Base.transaction { AmqpObserver.instance << self }
+    broadcast
   end
 
   private

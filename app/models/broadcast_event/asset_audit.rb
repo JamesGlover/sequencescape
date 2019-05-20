@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015 Genome Research Ltd.
-
 class BroadcastEvent::AssetAudit < BroadcastEvent
   seed_class AssetAudit
 
@@ -13,7 +7,8 @@ class BroadcastEvent::AssetAudit < BroadcastEvent
 
   def user_identifier
     return seed.created_by if user.nil?
-    user.email.blank? ? user.login : user.email
+
+    user.email.presence || user.login
   end
 
   has_subject(:labware, :asset)

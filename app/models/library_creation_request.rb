@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 class LibraryCreationRequest < CustomerRequest
   # NOTE: Do not alter the order here:
   #
@@ -37,7 +31,20 @@ class LibraryCreationRequest < CustomerRequest
     end
   end
 
-  def request_options_for_creation
-    Hash[[:fragment_size_required_from, :fragment_size_required_to, :library_type, :pcr_cycles].map { |f| [f, request_metadata[f]] }]
+  #
+  # Passed into cloned aliquots at the beginning of a pipeline to set
+  # appropriate options
+  #
+  #
+  # @return [Hash] A hash of aliquot attributes
+  #
+  def aliquot_attributes
+    {
+      study_id: initial_study_id,
+      project_id: initial_project_id,
+      library_type: library_type,
+      insert_size: insert_size,
+      request_id: id
+    }
   end
 end

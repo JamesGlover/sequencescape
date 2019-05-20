@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2013,2014,2015 Genome Research Ltd.
-
 require 'aasm'
 
 module Submission::StateMachine
@@ -22,18 +16,9 @@ module Submission::StateMachine
   end
 
   module InstanceMethods
-    # TODO[xxx]: This should be a guard but what the heck ...
-    def left_building_state?
-      not building? or !!@leaving_building_state
-    end
-
     def valid_for_leaving_building_state
-      @leaving_building_state = true
       raise ActiveRecord::RecordInvalid, self unless valid?
-    ensure
-      @leaving_building_state = false
     end
-    # TODO[xxx]: ... to here
 
     def complete_building
       orders.reload.each(&:complete_building)
@@ -108,10 +93,10 @@ module Submission::StateMachine
   end
   private :configure_state_machine
 
-  UnprocessedStates = ['building', 'pending', 'processing']
+  UnprocessedStates = %w[building pending processing]
   def configure_named_scopes
-   scope :unprocessed, -> { where(state: UnprocessedStates) }
-   scope :processed, -> { where(state: ['ready', 'failed']) }
+    scope :unprocessed, -> { where(state: UnprocessedStates) }
+    scope :processed, -> { where(state: %w[ready failed]) }
   end
 
   private :configure_named_scopes

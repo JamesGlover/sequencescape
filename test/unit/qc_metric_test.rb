@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
-
 require_relative '../test_helper'
 
 class QcMetricTest < ActiveSupport::TestCase
@@ -30,10 +24,10 @@ class QcMetricTest < ActiveSupport::TestCase
       ['manually_failed', nil,   false],
       ['manually_passed', nil,   false],
     ].each do |qc_state, proceed_state, poor_quality_proceed|
-        should "return #{poor_quality_proceed} when the qc_state is #{qc_state} and proceed is #{proceed_state}" do
-          qc = create :qc_metric, qc_decision: qc_state, proceed: proceed_state
-          assert_equal poor_quality_proceed, qc.poor_quality_proceed
-        end
+      should "return #{poor_quality_proceed} when the qc_state is #{qc_state} and proceed is #{proceed_state}" do
+        qc = create :qc_metric, qc_decision: qc_state, proceed: proceed_state
+        assert_equal poor_quality_proceed, qc.poor_quality_proceed
+      end
     end
   end
 

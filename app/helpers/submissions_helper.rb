@@ -1,69 +1,33 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2011,2012,2013,2014,2015,2016 Genome Research Ltd.
+# frozen_string_literal: true
 
+# Helper methods for presenting submission related information
 module SubmissionsHelper
-  # Returns an array (or anything else) as an escaped string for
-  # embedding in javascript
-  def stringify_array(projects_array)
-    projects_array.inspect
-  end
-
   # <label for="submission_order_params_field_info_key">field_info.display_name/label>
   def order_input_label(field_info)
-    label('submission[order_params]', field_info.key, field_info.display_name, class: 'control-label col-sm-6')
+    label('submission[order_params]', field_info.key, field_info.display_name, class: 'form-label')
   end
 
   # Returns a either a text input or a selection tag based on the 'kind'
   # of the order parameter passed in.
   # field_info is expected to be FieldInfo [sic]
   def order_input_tag(order, field_info)
-    content_tag(:div, class: 'col-sm-6') do
-      case field_info.kind
-      when 'Selection' then order_selection_tag(order, field_info)
-      when 'Text'      then order_text_tag(order, field_info)
-      when 'Numeric'   then order_number_tag(order, field_info)
-      # Fall back to a text field
-      else order_text_tag(order, field_info)
-      end
+    request_options = order&.request_options || {}
+    field_input_tag(
+      field_info,
+      values: request_options,
+      name_format: 'submission[order_params][%s]'
+    )
+  end
+
+  def field_input_tag(field_info, values: {}, name_format: '%s', enforce_required: true)
+    case field_info.kind
+    when 'Selection' then field_selection_tag(values, field_info, name_format, enforce_required)
+    when 'Text'      then field_text_tag(values, field_info, name_format, enforce_required)
+    when 'Numeric'   then field_number_tag(values, field_info, name_format, enforce_required)
+    # Fall back to a text field
+    else field_text_tag(values, field_info, name_format, enforce_required)
     end
   end
-
-  def order_selection_tag(order, field_info)
-    select_tag(
-      "submission[order_params][#{field_info.key}]",
-      options_for_select(
-        field_info.selection.map(&:to_s),
-        order.request_options.try(:[], field_info.key)
-      ),
-      class: 'required form-control',
-      required: true,
-      disabled: (field_info.selection.size == 1)
-    )
-  end
-  private :order_selection_tag
-
-  def order_text_tag(order, field_info)
-    text_field_tag(
-      "submission[order_params][#{field_info.key}]",
-      order.request_options.try(:[], field_info.key) || field_info.default_value,
-      class: 'required form-control',
-      required: true
-    )
-  end
-  private :order_text_tag
-
-  def order_number_tag(order, field_info)
-    number_field_tag(
-      "submission[order_params][#{field_info.key}]",
-      order.request_options.try(:[], field_info.key) || field_info.default_value,
-      class: 'required form-control',
-      required: true
-    )
-  end
-  private :order_text_tag
 
   def studies_select(form, studies)
     prompt = case studies.count
@@ -75,7 +39,7 @@ module SubmissionsHelper
       :study_id,
       studies, :id, :name,
       { prompt: prompt },
-      disabled: true, class: 'study_id form-control'
+      disabled: true, class: 'study_id custom-select'
     )
   end
 
@@ -84,16 +48,11 @@ module SubmissionsHelper
              when 0 then 'There are no valid projects available'
              else 'Please select a Project for this Submission...'
              end
-    # form.text_field :project_name,
-    #       :class       => 'submission_project_name form-control form-control',
-    #       :placeholder => "enter the first few characters of the financial project name",
-    #       :disabled    => true
-
     form.collection_select(
       :project_name,
       projects, :name, :name,
       { prompt: prompt },
-      disabled: true, class: 'submission_project_name form-control'
+      disabled: true, class: 'submission_project_name custom-select'
     )
   end
 
@@ -108,8 +67,8 @@ module SubmissionsHelper
       :asset_group_id,
       asset_groups, :id, :name,
       { prompt: prompt },
-              class: 'submission_asset_group_id required form-control',
-              disabled: (asset_groups.size == 0)
+      class: 'submission_asset_group_id required form-control',
+      disabled: asset_groups.empty?
     )
   end
 
@@ -150,7 +109,40 @@ module SubmissionsHelper
 
   def submission_link(submission, options)
     link_text = content_tag(:strong, submission.name) << ' ' <<
-                content_tag(:span, submission.state, class: "batch-state label label-#{bootstrapify_submission_state(submission.state)}")
+                content_tag(:span, submission.state, class: "batch-state badge badge-#{submission.state}")
     link_to(link_text, submission_path(submission), options)
+  end
+
+  private
+
+  def field_selection_tag(request_options, field_info, name_format, enforce_required)
+    select_tag(
+      name_format % field_info.key,
+      options_for_select(
+        field_info.selection.map(&:to_s),
+        request_options[field_info.key]
+      ),
+      class: 'custom-select',
+      required: enforce_required && field_info.required,
+      read_only: field_info.selection.size == 1
+    )
+  end
+
+  def field_text_tag(request_options, field_info, name_format, enforce_required)
+    text_field_tag(
+      name_format % field_info.key,
+      request_options[field_info.key] || field_info.default_value,
+      class: 'required form-control',
+      required: enforce_required && field_info.required
+    )
+  end
+
+  def field_number_tag(request_options, field_info, name_format, enforce_required)
+    number_field_tag(
+      name_format % field_info.key,
+      request_options[field_info.key] || field_info.default_value,
+      class: 'required form-control',
+      required: enforce_required && field_info.required
+    )
   end
 end

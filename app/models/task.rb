@@ -1,15 +1,7 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015 Genome Research Ltd.
-
 class Task < ApplicationRecord
-  belongs_to :workflow, class_name: 'LabInterface::Workflow', foreign_key: :pipeline_workflow_id
+  belongs_to :workflow, class_name: 'Workflow', foreign_key: :pipeline_workflow_id
   has_many :families
-  has_many :descriptors, class_name: 'Descriptor', dependent: :destroy
-
-  acts_as_descriptable :active
+  has_many :descriptors, -> { order('sorter') }, dependent: :destroy
 
   self.inheritance_column = 'sti_type'
 
@@ -63,6 +55,7 @@ class Task < ApplicationRecord
 
   def self.init_class
     return if @init_done
+
     @init_done = true
     @subclass_attributes = {}
     @subclass_attributes_ordered_names = []
@@ -147,6 +140,7 @@ class Task < ApplicationRecord
 
   def subassets_for_asset(asset)
     return [] unless asset
+
     sub_assets = []
     family_map = families.index_by(&:name)
     asset.children.select { |a| family_map[a.sti_type] }

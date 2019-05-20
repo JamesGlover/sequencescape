@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2012,2015 Genome Research Ltd.
-
 Then /^the bait library index page should look like:$/ do |expected_results_table|
   expected_results_table.diff!(table(fetch_table('table#bait_library_list')))
 end
@@ -22,7 +16,7 @@ Given /^I have a bait library called "([^\"]*)"$/ do |name|
     bait_library_type: BaitLibraryType.find_by(visible: true),
     bait_library_supplier: BaitLibrary::Supplier.find_by(visible: true),
     target_species: 'Dragon'
-    )
+  )
 end
 
 Then /^the supplier_identifier for "([^\"]*)" should be nil$/ do |name|
@@ -30,7 +24,7 @@ Then /^the supplier_identifier for "([^\"]*)" should be nil$/ do |name|
 end
 
 Given /^I have a bait library type called "([^\"]*)"$/ do |name|
-  BaitLibraryType.create!(name: name)
+  BaitLibraryType.create!(name: name, category: 'standard')
 end
 
 Given /^I have a supplier called "([^\"]*)"$/ do |name|
@@ -43,19 +37,19 @@ Then /^the "([^\"]*)" called "([^\"]*)" should exist$/ do |class_name, name|
 end
 
 Given /^the last bait library has type "([^\"]*)"$/ do |name|
-  BaitLibrary.last.update_attributes(
-    bait_library_type: BaitLibraryType.create!(name: name)
+  BaitLibrary.last.update(
+    bait_library_type: BaitLibraryType.create!(name: name, category: 'standard')
   )
 end
 
 Given /^the last bait library has supplier "([^\"]*)"$/ do |name|
-  BaitLibrary.last.update_attributes(
+  BaitLibrary.last.update(
     bait_library_supplier: BaitLibrary::Supplier.create!(name: name)
   )
 end
 
 Given /^the last bait library is hidden$/ do
-  BaitLibrary.last.update_attributes(visible: false)
+  BaitLibrary.last.update(visible: false)
 end
 
 Then /^the submission with UUID "([^\"]*)" should not be ready$/ do |uuid|

@@ -1,8 +1,4 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2015,2016 Genome Research Ltd.
+# frozen_string_literal: true
 
 class QcReport::File
   ACCEPTED_MIMETYPE = 'text/csv'
@@ -31,6 +27,7 @@ class QcReport::File
   def process
     @valid = true
     return false unless valid?
+
     ActiveRecord::Base.transaction do
       begin
         each_group_of_decisions do |group|
@@ -49,6 +46,7 @@ class QcReport::File
     return invalid("#{filename} was not a csv file") unless is_a_csv?
     return invalid("#{filename} does not appear to be a qc report file. Make sure the #{FILE_VERSION_KEY} line has not been removed.") unless is_a_report?
     return invalid("Couldn't find the report #{report_identifier}. Check that the report identifier has not been modified.") unless qc_report
+
     true
   end
 
@@ -86,6 +84,7 @@ class QcReport::File
       GROUP_SIZE.times do
         line = body_csv.gets
         break if line.nil?
+
         asset_id = line[:asset_id].strip.to_i
         asset_collection[asset_id] = process_line(line)
       end
@@ -96,6 +95,7 @@ class QcReport::File
     asset_ids = group.keys
     assets = qc_report.qc_metrics.with_asset_ids(asset_ids)
     raise DataError, "Could not find assets #{(asset_ids - assets.map(&:id)).to_sentence}" if asset_ids.count != assets.length
+
     assets.each do |metric|
       metric.human_proceed = group[metric.asset_id][:proceed]
       metric.manual_qc_decision = group[metric.asset_id][:qc_decision] if @set_decision

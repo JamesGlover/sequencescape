@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2015 Genome Research Ltd.
-
 class Admin::RobotPropertiesController < ApplicationController
   # WARNING! This filter bypasses security mechanisms in rails 4 and mimics rails 2 behviour.
   # It should be removed wherever possible and the correct Strong  Parameter options applied in its place.
@@ -47,7 +41,7 @@ class Admin::RobotPropertiesController < ApplicationController
 
   def update
     @robot_property = RobotProperty.find(params[:id])
-    if @robot_property.update_attributes(params[:robot_property])
+    if @robot_property.update(params[:robot_property])
       redirect_to [:admin, @robot, @robot_property]
     else
       render action: 'edit'

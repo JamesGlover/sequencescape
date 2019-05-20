@@ -1,9 +1,3 @@
-# This file is part of SEQUENCESCAPE; it is distributed under the terms of
-# GNU General Public License version 1 or later;
-# Please refer to the LICENSE and README files for information on licensing and
-# authorship of this file.
-# Copyright (C) 2007-2011,2012,2015,2016 Genome Research Ltd.
-
 class Metadata::FormBuilder < Metadata::BuilderBase
   def initialize(*args, &block)
     super
@@ -28,7 +22,8 @@ class Metadata::FormBuilder < Metadata::BuilderBase
   end
 
   def select_by_association(association, options = {}, html_options = {})
-    association_target, options = association.to_s.classify.constantize, {}
+    html_options[:class] ||= 'select2'
+    association_target = association.to_s.classify.constantize
     options[:selected] = association_target.default.for_select_dropdown.last if @object.send(association).nil? and association_target.default.present?
     select(:"#{association}_id", association_target.for_select_association, options, html_options)
   end
@@ -51,13 +46,11 @@ class Metadata::FormBuilder < Metadata::BuilderBase
     alias_method(field, "#{field}_with_bootstrap")
   end
 
-  def select_with_bootstrap(method, choices, options = {}, html_options = {}, &block)
+  def select(method, choices, options = {}, html_options = {}, &block)
     html_options[:class] ||= ''
-    html_options[:class] << ' form-control'
-    select_without_bootstrap(method, choices, options, html_options, &block)
+    html_options[:class] << ' custom-select'
+    super(method, choices, options, html_options, &block)
   end
-  alias select_without_bootstrap select
-  alias select select_with_bootstrap
 
   # We wrap each of the following field types (text_field, select, etc) within a special
   # layout for our properties
@@ -119,13 +112,13 @@ class Metadata::FormBuilder < Metadata::BuilderBase
   def finalize_related_fields
     related = @related_fields.compact.uniq.map(&:to_s)
     concat(render(
-      partial: 'shared/metadata/related_fields',
-      locals: {
-        root: sanitized_object_name,
-        related: related,
-        changing_fields: @changing
-      }
-    )) unless related.empty?
+             partial: 'shared/metadata/related_fields',
+             locals: {
+               root: sanitized_object_name,
+               related: related,
+               changing_fields: @changing
+             }
+           )) unless related.empty?
   end
 
   private
