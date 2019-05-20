@@ -208,7 +208,7 @@ class Sample < ApplicationRecord
   has_many :requests, through: :assets
   has_many :submissions, through: :requests
 
-  belongs_to :sample_manifest
+  belongs_to :sample_manifest, inverse_of: :samples
 
   has_many_lab_events
   acts_as_authorizable
@@ -391,7 +391,8 @@ class Sample < ApplicationRecord
     if configatron.accession_samples
       accessionable = Accession::Sample.new(Accession.configuration.tags, self)
       if accessionable.valid?
-        Delayed::Job.enqueue SampleAccessioningJob.new(accessionable)
+        # Accessioning jobs are lower priority (higher number) than submissions and reports
+        Delayed::Job.enqueue SampleAccessioningJob.new(accessionable), priority: 200
       end
     end
   end
@@ -422,11 +423,11 @@ class Sample < ApplicationRecord
     # Do not alter the order of this line, otherwise @ena_study won't be set correctly!
     @ena_study, self.validating_ena_required_fields = studies.first, true
     valid? or raise ActiveRecord::RecordInvalid, self
-  rescue ActiveRecord::RecordInvalid => exception
+  rescue ActiveRecord::RecordInvalid => e
     @ena_study.errors.full_messages.each do |message|
       errors.add(:base, "#{message} on study")
     end unless @ena_study.nil?
-    raise exception
+    raise e
   ensure
     # Do not alter the order of this line, otherwise the @ena_study won't be reset!
     self.validating_ena_required_fields, @ena_study = false, nil

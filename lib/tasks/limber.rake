@@ -10,9 +10,10 @@ namespace :limber do
 
   desc 'Create Barcode Printer Types'
   task create_barcode_printer_types: :environment do
-    BarcodePrinterType384DoublePlate.find_or_create_by!(name: '384 Well Plate Double',
-                                                        printer_type_id: 10,
-                                                        label_template_name: 'plate_6mm_double')
+    BarcodePrinterType384DoublePlate.create_with(
+      printer_type_id: 10,
+      label_template_name: 'plate_6mm_double_code39'
+    ).find_or_create_by!(name: '384 Well Plate Double')
   end
 
   desc 'Create the Limber cherrypick plates'
@@ -23,11 +24,12 @@ namespace :limber do
                   size: 96 },
                 { name: 'LBR Cherrypick',
                   size: 96 },
+                { name: 'LBB Cherrypick',
+                  size: 96 },
                 { name: 'scRNA-384 Stock',
                   size: 384 },
                 { name: 'GBS Stock',
                   size: 384 },
-                # GnT Pipeline requires UAT
                 { name: 'GnT Stock',
                   size: 96 }
                 ]
@@ -85,6 +87,7 @@ namespace :limber do
       end
       Limber::Helper::RequestTypeConstructor.new(
         'PCR Free',
+        library_types: ['HiSeqX PCR free', 'PCR Free 384', 'Chromium single cell CNV', 'DAFT-seq'],
         default_purposes: ['PF Cherrypicked']
       ).build!
 
@@ -158,6 +161,44 @@ namespace :limber do
         default_purposes: ['GnT Stock']              # It requires default_purpose to accept an array.
       ).build!
 
+      Limber::Helper::RequestTypeConstructor.new(
+        'PCR Bespoke',
+        library_types: [
+          'Manual Standard WGS (Plate)',
+          'ChIP-Seq Auto',
+          'TruSeq mRNA (RNA Seq)',
+          'Small RNA (miRNA)',
+          'RNA-seq dUTP eukaryotic',
+          'RNA-seq dUTP prokaryotic',
+          'Standard',
+          'Ribozero RNA depletion',
+          'Ribozero RNA-seq (Bacterial)',
+          'Ribozero RNA-seq (HMR)',
+          'TraDIS'
+        ],
+        product_line: 'Bespoke',
+        default_purposes: ['LBB Cherrypick'] # It requires default_purpose to accept an array.
+      ).build!
+
+      Limber::Helper::RequestTypeConstructor.new(
+        'Chromium Bespoke',
+        library_types: ['Chromium genome', 'Chromium exome', 'Chromium single cell', 'Chromium single cell CNV'],
+        product_line: 'Bespoke',
+        default_purposes: ['LBB Cherrypick'] # It requires default_purpose to accept an array.
+      ).build!
+
+      Limber::Helper::RequestTypeConstructor.new(
+        'PCR Free Bespoke',
+        library_types:  [
+          'No PCR (Plate)',
+          'HiSeqX PCR free',
+          'DAFT-seq',
+          'TruSeq Custom Amplicon'
+        ],
+        product_line: 'Bespoke',
+        default_purposes: ['LBB Cherrypick']              # It requires default_purpose to accept an array.
+      ).build!
+
       unless RequestType.where(key: 'limber_multiplexing').exists?
         RequestType.create!(
           name: 'Limber Multiplexing',
@@ -197,6 +238,24 @@ namespace :limber do
     LotType.find_or_create_by!(name: 'Pre Stamped Tags - 384', template_class: 'TagLayoutTemplate', target_purpose: btp)
   end
 
+  desc 'Create tag layout templates'
+  task create_tag_layout_templates: :environment do
+    i7_group = TagGroup.find_by(name: 'IDT for Illumina i7 UDI v1')
+    i5_group = TagGroup.find_by(name: 'IDT for Illumina i5 UDI v1')
+
+    if i7_group.nil? || i5_group.nil?
+      puts "Could not find tag groups to create templates. Skipping."
+    else
+      puts "Creating tag Group - IDT for Illumina v1 - 384 Quadrant"
+      TagLayoutTemplate.create_with(
+                          tag_group: i7_group,
+                          tag2_group: i5_group,
+                          walking_algorithm: 'TagLayout::Quadrants',
+                          direction_algorithm: 'TagLayout::InColumns')
+                       .find_or_create_by!(name: 'IDT for Illumina v1 - 384 Quadrant')
+    end
+  end
+
   desc 'Create the limber submission templates'
   task create_submission_templates: [:environment,
                                      :create_request_types,
@@ -205,16 +264,28 @@ namespace :limber do
                                      'sequencing:gbs_miseq:setup'] do
     puts 'Creating submission templates....'
 
-    base_list = Limber::Helper::ACCEPTABLE_SEQUENCING_REQUESTS
-    base_with_novaseq = base_list + ['illumina_htp_novaseq_6000_paired_end_sequencing']
+    base_list = %w(
+      illumina_b_hiseq_2500_paired_end_sequencing
+      illumina_b_hiseq_2500_single_end_sequencing
+      illumina_b_miseq_sequencing
+      illumina_b_hiseq_v4_paired_end_sequencing
+      illumina_b_hiseq_x_paired_end_sequencing
+      illumina_htp_hiseq_4000_paired_end_sequencing
+      illumina_htp_hiseq_4000_single_end_sequencing
+      illumina_htp_novaseq_6000_paired_end_sequencing
+    )
+    full_list = base_list + %w(
+      illumina_c_hiseq_v4_single_end_sequencing
+    )
+    # HiSeqX is filtered out for non-WGS library types due to specific restrictions
+    # that limit the use of the technology to WGS.
     base_without_hiseq = base_list - ['illumina_b_hiseq_x_paired_end_sequencing']
-    base_with_novaseq_no_hiseq = base_without_hiseq + ['illumina_htp_novaseq_6000_paired_end_sequencing']
     st_params = {
       'WGS' => {
-        sequencing_list: base_with_novaseq
+        sequencing_list: base_list
       },
       'ISC' => {
-        sequencing_list: base_with_novaseq
+        sequencing_list: base_list
       },
       'ReISC' => {
         sequencing_list: base_list
@@ -226,7 +297,7 @@ namespace :limber do
         sequencing_list: base_without_hiseq
       },
       'RNAA' => {
-        sequencing_list: base_with_novaseq_no_hiseq
+        sequencing_list: base_without_hiseq
       },
       'RNAR' => {
         sequencing_list: base_without_hiseq
@@ -238,10 +309,9 @@ namespace :limber do
         sequencing_list: base_without_hiseq
       },
       'PCR Free' => {
-        sequencing_list: base_with_novaseq,
+        sequencing_list: base_list,
         catalogue_name: 'PFHSqX'
       },
-      # GnT pipeline requires UAT
       'GnT Picoplex' => {
         sequencing_list: base_without_hiseq
       }
@@ -254,7 +324,7 @@ namespace :limber do
                                     .find_or_create_by!(name: catalogue_name)
         Limber::Helper::TemplateConstructor.new(prefix: prefix,
                                                 catalogue: catalogue,
-                                                sequencing: params[:sequencing_list]).build!
+                                                sequencing_keys: params[:sequencing_list]).build!
       end
 
       lcbm_catalogue = ProductCatalogue.create_with(selection_behaviour: 'SingleProduct').find_or_create_by!(name: 'LCMB')
@@ -264,7 +334,17 @@ namespace :limber do
       gbs_catalogue = ProductCatalogue.create_with(selection_behaviour: 'SingleProduct').find_or_create_by!(name: 'GBS')
       Limber::Helper::LibraryOnlyTemplateConstructor.new(prefix: 'GBS', catalogue: gbs_catalogue).build!
       catalogue = ProductCatalogue.create_with(selection_behaviour: 'SingleProduct').find_or_create_by!(name: 'Generic')
-      Limber::Helper::TemplateConstructor.new(prefix: 'Multiplexing', catalogue: catalogue).build!
+      Limber::Helper::TemplateConstructor.new(prefix: 'Multiplexing', catalogue: catalogue, sequencing_keys: base_list).build!
+
+      generic_pcr = ProductCatalogue.create_with(selection_behaviour: 'LibraryDriven').find_or_create_by!(name: 'GenericPCR')
+      generic_no_pcr = ProductCatalogue.create_with(selection_behaviour: 'LibraryDriven').find_or_create_by!(name: 'GenericNoPCR')
+      chromium = ProductCatalogue.create_with(selection_behaviour: 'SingleProduct').find_or_create_by!(name: 'Chromium')
+      Limber::Helper::TemplateConstructor.new(prefix: 'PCR Bespoke', name: 'PCR', pipeline: 'Limber-Bespoke', product_line: 'Bespoke', catalogue: generic_pcr, sequencing_keys: full_list).build!
+      Limber::Helper::TemplateConstructor.new(prefix: 'PCR Free Bespoke', name: 'PCR Free', pipeline: 'Limber-Bespoke', product_line: 'Bespoke', catalogue: generic_no_pcr, sequencing_keys: full_list).build!
+      Limber::Helper::TemplateConstructor.new(prefix: 'Chromium Bespoke', name: 'Chromium', pipeline: 'Limber-Bespoke', product_line: 'Bespoke', catalogue: chromium, sequencing_keys: full_list, role: 'Chromium').build!
+
+      Limber::Helper::LibraryOnlyTemplateConstructor.new(prefix: 'PCR Bespoke', name: 'PCR', pipeline: 'Limber-Bespoke', product_line: 'Bespoke', catalogue: generic_pcr).build!
+      Limber::Helper::LibraryOnlyTemplateConstructor.new(prefix: 'PCR Free Bespoke', name: 'PCR Free', pipeline: 'Limber-Bespoke', product_line: 'Bespoke', catalogue: generic_no_pcr).build!
 
       unless SubmissionTemplate.find_by(name: 'MiSeq for GBS')
         SubmissionTemplate.create!(

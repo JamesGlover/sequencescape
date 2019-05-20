@@ -10,7 +10,7 @@
 #   inflect.uncountable %w( fish sheep )
 # end
 
-ActiveSupport::Inflector.inflections do |inflect|
+ActiveSupport::Inflector.inflections(:en)  do |inflect|
   inflect.irregular 'labware', 'labware'
-  inflect.uncountable %w(health)
+  inflect.uncountable %w(health sample_metadata)
 end

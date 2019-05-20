@@ -10,10 +10,24 @@ module SampleManifest::InputBehaviour
         sanger_sample_id = SampleManifest.read_column_by_name(csv, n, 'SANGER SAMPLE ID', column_map)
         next if sanger_sample_id.blank?
 
-        sample = Sample.find_by(sanger_sample_id: sanger_sample_id) or next
+        sample = SampleManifest.find_or_create_sample(sanger_sample_id) or next
         return sample.sample_manifest
       end
       nil
+    end
+
+    def find_or_create_sample(sanger_sample_id)
+      sample = Sample.find_by(sanger_sample_id: sanger_sample_id)
+      sample.presence || create_sample(sanger_sample_id)
+    end
+
+    def create_sample(sanger_sample_id)
+      manifest_asset = SampleManifestAsset.find_by(sanger_sample_id: sanger_sample_id)
+      if manifest_asset.present?
+        manifest_asset.sample_manifest.create_sample_and_aliquot(sanger_sample_id, manifest_asset.asset)
+      else
+        raise StandardError, "Cannot find sample manifest for Sanger ID: #{sanger_sample_id}"
+      end
     end
 
     def read_column_by_name(csv, row, name, column_map, default_value = nil)
@@ -106,8 +120,8 @@ module SampleManifest::InputBehaviour
     spreadsheet_offset.upto(csv.size - 1) do |row|
       yield(Hash[headers.each_with_index.map { |header, column| [header, csv[row][column]] }])
     end
-  rescue CSV::MalformedCSVError => exception
-    raise InvalidManifest, "Invalid CSV file, did you upload an Excel file by accident? - #{exception.message}"
+  rescue CSV::MalformedCSVError => e
+    raise InvalidManifest, "Invalid CSV file, did you upload an Excel file by accident? - #{e.message}"
   end
   private :each_csv_row
 
@@ -186,10 +200,10 @@ module SampleManifest::InputBehaviour
 
     self.last_errors = nil
     finished!
-  rescue ActiveRecord::RecordInvalid => exception
-    errors.add(:base, exception.message)
+  rescue ActiveRecord::RecordInvalid => e
+    errors.add(:base, e.message)
     fail_with_errors!(errors.full_messages)
-  rescue ActiveRecord::StatementInvalid => exception
+  rescue ActiveRecord::StatementInvalid => e
     # This tends to get raised in cases of character encoding issues. If we don't
     # handle it here, then the delayed job tires to handle it, but just ends up
     # generating its own invalid SQL. This results in the delayed job dying,
@@ -197,10 +211,10 @@ module SampleManifest::InputBehaviour
     # for the delayed job worker death, and not the underlying issue.
     # https://github.com/collectiveidea/delayed_job/issues/774
     # It is possible to monkey patch with the solution suggested by philister
-    scrubbed_message = exception.message.encode('ISO-8859-1', invalid: :replace)
+    scrubbed_message = e.message.encode('ISO-8859-1', invalid: :replace)
     fail_with_errors!(["Failed to update information in database: #{scrubbed_message}"])
-  rescue InvalidManifest => exception
-    fail_with_errors!(Array(exception.message).flatten)
+  rescue InvalidManifest => e
+    fail_with_errors!(Array(e.message).flatten)
   end
 
   def fail_with_errors!(errors)

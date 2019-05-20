@@ -126,8 +126,10 @@ class Well < Receptacle
                                       })
   }
 
+
   # For compatibility
   belongs_to :plate, foreign_key: :labware_id
+  scope :located_at_position, ->(position) { joins(:map).readonly(false).where(maps: { description: position }) }
 
   delegate :location, :location_id, :location_id=, :printable_target, to: :plate, allow_nil: true
   self.per_page = 500

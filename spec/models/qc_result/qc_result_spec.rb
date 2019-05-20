@@ -4,19 +4,19 @@ require 'rails_helper'
 
 RSpec.describe QcResult, type: :model, qc_result: true do
   it 'is not valid without a key' do
-    expect(build(:qc_result, key: nil)).to_not be_valid
+    expect(build(:qc_result, key: nil)).not_to be_valid
   end
 
   it 'is not valid without a value' do
-    expect(build(:qc_result, value: nil)).to_not be_valid
+    expect(build(:qc_result, value: nil)).not_to be_valid
   end
 
   it 'is not valid without units' do
-    expect(build(:qc_result, units: nil)).to_not be_valid
+    expect(build(:qc_result, units: nil)).not_to be_valid
   end
 
   it 'must have an asset' do
-    expect(build(:qc_result, asset: nil)).to_not be_valid
+    expect(build(:qc_result, asset: nil)).not_to be_valid
   end
 
   it 'can have a cv' do
@@ -51,7 +51,7 @@ RSpec.describe QcResult, type: :model, qc_result: true do
   end
 
   context 'with an asset' do
-    let(:asset) { build :asset }
+    let(:asset) { build :receptacle }
 
     it 'can update its asset' do
       expect(asset).to receive(:update_from_qc).with(an_instance_of(QcResult))

@@ -34,7 +34,7 @@ RSpec.describe Asset, type: :model do
       let(:parents) { [parent_asset_1, parent_asset_2] }
       let(:child_asset) { create(:asset) }
 
-      before(:each) do
+      before do
         asset.assign_relationships(parents, child_asset)
       end
 
@@ -62,7 +62,7 @@ RSpec.describe Asset, type: :model do
       let(:parents) { [parent_asset_1, parent_asset_2] }
       let(:child_asset) { create(:asset) }
 
-      before(:each) do
+      before do
         asset.parents = [parent_asset_1, parent_asset_2]
         asset.reload
         asset.assign_relationships(asset.parents, child_asset)
@@ -148,6 +148,7 @@ RSpec.describe Asset, type: :model do
       end
     end
   end
+
   context 'when checking scopes' do
     describe '#with_barcode' do
       let!(:ean13_plates_list) { create_list(:plate, 2) }
@@ -178,15 +179,11 @@ RSpec.describe Asset, type: :model do
       it 'finds plates when sent a mixture of valid barcodes' do
         bcs = [
           plate_ean13_1.machine_barcode,
-          #     plate_fluidigm_1.fluidigm_barcode,
-          plate_ean13_2.machine_barcode,
-          #    plate_fluidigm_2.fluidigm_barcode
+          plate_ean13_2.machine_barcode
         ]
         expected_result = [
           plate_ean13_1,
-          #   plate_fluidigm_1,
-          plate_ean13_2,
-          #  plate_fluidigm_2
+          plate_ean13_2
         ]
         expect(Asset.with_barcode(bcs)).to match_array(expected_result)
       end
@@ -197,13 +194,13 @@ RSpec.describe Asset, type: :model do
           'RUBBISH123',
           # plate_fluidigm_1.fluidigm_barcode,
           plate_ean13_2.machine_barcode,
-          '1234567890123',
+          '1234567890123'
           # plate_fluidigm_2.fluidigm_barcode
         ]
         expected_result = [
           plate_ean13_1,
           # plate_fluidigm_1,
-          plate_ean13_2,
+          plate_ean13_2
           # plate_fluidigm_2
         ]
         expect(Asset.with_barcode(bcs)).to match_array(expected_result)

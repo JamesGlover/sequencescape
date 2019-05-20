@@ -1,8 +1,26 @@
 require 'eventful_record'
 require 'external_properties'
 
+# Asset is a very busy class which combines what should probably be two separate concepts:
+# Labware: A physical item which can move round the lab, such as a {Plate} or {Tube}
+#
+# Key subclasses
+# --------------
+# - {Receptacle}: Something which can contain aliquots, such as a {Well} or {Tube}
+#   Currently those these all share a table, and exhibit single table inheritance.
+# - {Plate}: A piece of labware containing multiple receptacles known as {Well wells}.
+#   Plates can be a variety of shapes and sizes, although the marority are 12*8 (96) or
+#   24*16 (384) wells in size.
+# - {Well}: A receptacle on a plate. Wells themselves do not exist independently of plates in reality,
+#   although may occasionally be modelled as such.
+# - {Tube}: A piece of labware with a single {Receptacle}. These behaviours are currently coupled together.
+# - {Lane}: Forms part of a sequencing Flowcell. The flowcell itself is not currently modelled but can be
+#   approximated by a {Batch}
+# - {Fragment}: Represents an isolated segment of DNA on a Gel. Historical.
+# - {Receptacle}: Abstract class inherited by any asset which can contain stuff directly
+#
+# Some of the above are further subclasses to handle specific behaviours.
 class Labware < ApplicationRecord
-
   include StudyReport::AssetDetails
   include ModelExtensions::Asset
   include AssetLink::Associations
@@ -111,42 +129,16 @@ class Labware < ApplicationRecord
 
   # Named scope for search by query string behaviour
   scope :for_search_query, ->(query) {
-    where.not(sti_type: 'Well').where('assets.name LIKE :name', name: "%#{query}%").includes(:barcodes)
+    where.not(sti_type: 'Well').where('labware.name LIKE :name', name: "%#{query}%").includes(:barcodes)
          .or(where.not(sti_type: 'Well').with_safe_id(query).includes(:barcodes))
   }
 
   scope :for_lab_searches_display, -> { includes(:barcodes, requests: [:pipeline, :batch]).order('requests.pipeline_id ASC') }
 
-<<<<<<< HEAD:app/models/labware.rb
-  # All studies related to this asset
-  def related_studies
-    (orders.map(&:study) + studies).compact.uniq
-  end
- # Named scope for search by query string behaviour
- scope :for_search_query, ->(query, with_includes) {
-    search = '((labware.name IS NOT NULL AND labware.name LIKE :name)'
-    arguments = { name: "%#{query}%" }
-
-    # The entire string consists of one of more numeric characters, treat it as an id or barcode
-    if /\A\d+\z/.match?(query)
-      search << ' OR (labware.id = :id) OR (labware.barcode = :barcode)'
-      arguments[:id] = query.to_i
-      arguments[:barcode] = query.to_s
-    end
-
-    # If We're a Sanger Human barcode
-    if match = /\A([A-z]{2})(\d{1,7})[A-z]{0,1}\z/.match(query)
-      prefix_id = BarcodePrefix.find_by(prefix: match[1]).try(:id)
-      number = match[2]
-      search << ' OR (labware.barcode = :barcode AND labware.barcode_prefix_id = :prefix_id)' unless prefix_id.nil?
-      arguments[:barcode] = number
-      arguments[:prefix_id] = prefix_id
-    end
-
   # We accept not only an individual barcode but also an array of them.
   scope :with_barcode, ->(*barcodes) {
     db_barcodes = Barcode.extract_barcodes(barcodes)
-    includes(:barcodes).where(barcodes: { barcode: db_barcodes }).distinct
+    joins(:barcodes).where(barcodes: { barcode: db_barcodes }).distinct
   }
 
   # In contrast to with_barocde, filter_by_barcode only filters in the event
@@ -421,6 +413,11 @@ class Labware < ApplicationRecord
   # See Receptacle for handling of assets with contents
   def tag_count
     nil
+  end
+
+  # We only support wells for the time being
+  def latest_stock_metrics(_product, *_args)
+    []
   end
 
   def contained_samples

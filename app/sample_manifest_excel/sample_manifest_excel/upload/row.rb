@@ -11,9 +11,10 @@ module SampleManifestExcel
     # *columns: The columns which relate to the data.
     class Row
       include ActiveModel::Model
+      include Converters
 
       attr_accessor :number, :data, :columns
-      attr_reader :sample, :sanger_sample_id
+      attr_reader :sanger_sample_id
 
       validates :number, presence: true, numericality: true
       validates_presence_of :data, :columns
@@ -27,7 +28,6 @@ module SampleManifestExcel
       def initialize(attributes = {})
         super
         @sanger_sample_id ||= value(:sanger_sample_id) if columns.present? && data.present?
-        @sample ||= Sample.find_by(sanger_sample_id: sanger_sample_id) if sanger_sample_id.present?
         @specialised_fields = create_specialised_fields if sanger_sample_id.present?
         link_tag_groups_and_indexes
       end
@@ -36,7 +36,8 @@ module SampleManifestExcel
       # Finds the data value for a particular column.
       # Offset by 1. Columns have numbers data is an array
       def at(col_num)
-        data[col_num - 1]
+        val = data[col_num - 1]
+        strip_all_blanks(val)
       end
 
       ##
@@ -75,13 +76,21 @@ module SampleManifestExcel
       # *Saving the aliquot, metadata and sample
       def update_sample(tag_group, override)
         return unless valid?
-        return if sample.updated_by_manifest && !override
 
-        update_specialised_fields(tag_group)
-        aliquot.save
-        metadata.save
-        sample.updated_by_manifest = true
-        @sample_updated = sample.save
+        if sample.updated_by_manifest && !override
+          @sample_skipped = true
+        else
+          update_specialised_fields(tag_group)
+          aliquot.save!
+          metadata.save!
+          sample.updated_by_manifest = true
+          sample.empty_supplier_sample_name = false
+          @sample_updated = sample.save
+        end
+      end
+
+      def changed?
+        @sample_updated && sample.previous_changes.present? || metadata.previous_changes.present? || aliquot.previous_changes.present?
       end
 
       def update_specialised_fields(tag_group)
@@ -113,8 +122,16 @@ module SampleManifestExcel
         @reuploaded || false
       end
 
+      def sample
+        @sample ||= find_or_create_sample if sanger_sample_id.present? && !empty?
+      end
+
       def sample_updated?
         @sample_updated || false
+      end
+
+      def sample_skipped_or_updated?
+        @sample_skipped || sample_updated?
       end
 
       def aliquot_transferred?
@@ -123,12 +140,31 @@ module SampleManifestExcel
 
       def empty?
         primary_column = 'supplier_name'
-        return true unless sample.present? && columns.present? && columns.valid? && columns.names.include?(primary_column)
+        return true unless columns.present? && columns.valid? && columns.names.include?(primary_column)
 
         value(primary_column).blank?
       end
 
+      def labware
+        sample.primary_receptacle.labware
+      end
+
       private
+
+      def find_or_create_sample
+        sample = Sample.find_by(sanger_sample_id: sanger_sample_id)
+        sample.presence || create_sample
+      end
+
+      def create_sample
+        manifest_asset = SampleManifestAsset.find_by(sanger_sample_id: sanger_sample_id)
+        if manifest_asset.present?
+          manifest_asset.sample_manifest.create_sample_and_aliquot(sanger_sample_id, manifest_asset.asset)
+        else
+          errors.add(:base, "#{row_title} Cannot find sample manifest for Sanger ID: #{sanger_sample_id}")
+          nil
+        end
+      end
 
       def sample_can_be_updated
         return unless errors.empty?

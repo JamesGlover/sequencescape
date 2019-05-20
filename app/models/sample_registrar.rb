@@ -44,11 +44,11 @@ class SampleRegistrar < ApplicationRecord
   NoSamplesError = Class.new(RegistrationError)
 
   # We are registering samples on the behalf of a specified user within a specified study
-  belongs_to :user, required: true
-  belongs_to :study, required: true
-  belongs_to :sample, validate: true, autosave: true, required: true
+  belongs_to :user, optional: false
+  belongs_to :study, optional: false
+  belongs_to :sample, validate: true, autosave: true, optional: false
   # Samples always come in a SampleTube when coming through SampleReception
-  belongs_to :sample_tube, validate: true, autosave: true, required: true
+  belongs_to :sample_tube, validate: true, autosave: true, optional: false
   belongs_to :asset_group, validate: true, autosave: true
 
   accepts_nested_attributes_for :sample
@@ -110,7 +110,7 @@ class SampleRegistrar < ApplicationRecord
   end
 
   # SampleTubes are registered within an AssetGroup, unless the AssetGroup is unspecified.
-  attr_accessor :asset_group_helper
+  attr_writer :asset_group_helper
   attr_accessor :asset_group_name
 
   validates_each(:asset_group_name, if: :new_record?) do |record, _attr, value|
@@ -135,6 +135,10 @@ class SampleRegistrar < ApplicationRecord
   # So, once have created an instance we immediately destroy it.  Note that, because of the way ActiveRecord
   # works, this *must* be the LAST after_create callback in this file.
   after_create :delete
+
+  def asset_group_helper
+    @asset_group_helper ||= SampleRegistrar::AssetGroupHelper.new
+  end
 
   # Is this instance to be ignored?
   def ignore?

@@ -6,9 +6,9 @@ RSpec.describe Api::V2::QcResultsController, type: :request, qc_result: true do
   let(:asset_invalid) { attributes_for(:qc_result) }
 
   describe 'by uuid' do
-    let(:asset_1) { attributes_for(:qc_result).merge(uuid: create(:asset).uuid) }
-    let(:asset_2) { attributes_for(:qc_result).merge(uuid: create(:asset).uuid) }
-    let(:asset_3) { attributes_for(:qc_result).merge(uuid: create(:asset).uuid) }
+    let(:asset_1) { attributes_for(:qc_result).merge(uuid: create(:receptacle).uuid) }
+    let(:asset_2) { attributes_for(:qc_result).merge(uuid: create(:receptacle).uuid) }
+    let(:asset_3) { attributes_for(:qc_result).merge(uuid: create(:receptacle).uuid) }
 
     it 'creates some new qc results' do
       params = { data: { attributes: [asset_1, asset_2, asset_3] } }
@@ -31,7 +31,7 @@ RSpec.describe Api::V2::QcResultsController, type: :request, qc_result: true do
     it 'returns an error if somebody tries to create an invalid qc result' do
       expect do
         post api_v2_qc_results_path, params: { data: { attributes: [asset_1, asset_2, asset_3, asset_invalid] } }
-      end.to_not change(QcResult, :count)
+      end.not_to change(QcResult, :count)
       expect(response).to have_http_status(:unprocessable_entity)
       json = ActiveSupport::JSON.decode(response.body)
       expect(json.keys.length).to eq(1)
@@ -39,9 +39,9 @@ RSpec.describe Api::V2::QcResultsController, type: :request, qc_result: true do
   end
 
   describe 'by barcode' do
-    let(:asset_1) { attributes_for(:qc_result).merge(barcode: create(:plate).barcodes.first.barcode) }
-    let(:asset_2) { attributes_for(:qc_result).merge(barcode: create(:plate).barcodes.first.barcode) }
-    let(:asset_3) { attributes_for(:qc_result).merge(barcode: create(:plate).barcodes.first.barcode) }
+    let(:asset_1) { attributes_for(:qc_result).merge(barcode: create(:tube).barcodes.first.barcode) }
+    let(:asset_2) { attributes_for(:qc_result).merge(barcode: create(:tube).barcodes.first.barcode) }
+    let(:asset_3) { attributes_for(:qc_result).merge(barcode: create(:tube).barcodes.first.barcode) }
 
     it 'creates some new qc results' do
       params = { data: { attributes: [asset_1, asset_2, asset_3] } }
@@ -64,7 +64,7 @@ RSpec.describe Api::V2::QcResultsController, type: :request, qc_result: true do
     it 'returns an error if somebody tries to create an invalid qc result' do
       expect do
         post api_v2_qc_results_path, params: { data: { attributes: [asset_1, asset_2, asset_3, asset_invalid] } }
-      end.to_not change(QcResult, :count)
+      end.not_to change(QcResult, :count)
       expect(response).to have_http_status(:unprocessable_entity)
       json = ActiveSupport::JSON.decode(response.body)
       expect(json.keys.length).to eq(1)

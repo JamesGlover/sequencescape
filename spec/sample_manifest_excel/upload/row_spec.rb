@@ -10,37 +10,69 @@ RSpec.describe SampleManifestExcel::Upload::Row, type: :model, sample_manifest_e
     end
   end
 
-  let(:columns)       { SampleManifestExcel.configuration.columns.tube_library_with_tag_sequences.dup }
-  let(:data)          do
-    [sample_tube.samples.first.assets.first.human_barcode, sample_tube.samples.first.sanger_sample_id,
+  let(:columns)           { SampleManifestExcel.configuration.columns.tube_library_with_tag_sequences.dup }
+  let!(:library_type)     { create(:library_type, name: 'My New Library Type') }
+  let!(:reference_genome) { create(:reference_genome, name: 'My reference genome') }
+  let!(:sample_manifest)  { create(:tube_sample_manifest_with_tubes_and_manifest_assets) }
+  let!(:tag_group)        { create(:tag_group) }
+  let(:data) do
+    [sample_manifest.labware.first.human_barcode, sample_manifest.labware.first.sample_manifest_assets.first.sanger_sample_id,
      'AA', '', 'My reference genome', 'My New Library Type', 200, 1500, 'SCG--1222_A01', '', 1, 1, 'Unknown', '', '', '',
      'Cell Line', 'Nov-16', 'Nov-16', '', 'No', '', 'OTHER', '', '', '', '', '', 'SCG--1222_A01',
      9606, 'Homo sapiens', '', '', '', '', 11, 'Unknown']
   end
-  let!(:library_type) { create(:library_type, name: 'My New Library Type') }
-  let!(:reference_genome) { create(:reference_genome, name: 'My reference genome') }
-  let!(:sample_tube)  { create(:sample_tube_with_sanger_sample_id) }
-  let!(:tag_group)    { create(:tag_group) }
+  let(:data_with_spaces) do
+    [sample_manifest.labware.first.human_barcode, sample_manifest.labware.first.sample_manifest_assets.first.sanger_sample_id,
+     ' ATTACTCG ', '', 'My reference genome', 'My New Library Type', 200, 1500, 'SCG--1222_A01', '', 1, 1, 'Unknown', '', '', '',
+     'Cell Line', 'Nov-16', 'Nov-16', '', 'No', '', 'OTHER', '', '', '', '', '', 'SCG--1222_A01',
+     9606, 'Homo sapiens', '', '', '', '', 11, 'Unknown']
+  end
+
+  after(:all) do
+    SampleManifestExcel.reset!
+  end
 
   it 'is not valid without row number' do
-    expect(SampleManifestExcel::Upload::Row.new(number: 'one', data: data, columns: columns)).to_not be_valid
-    expect(SampleManifestExcel::Upload::Row.new(data: data, columns: columns)).to_not be_valid
+    expect(SampleManifestExcel::Upload::Row.new(number: 'one', data: data, columns: columns)).not_to be_valid
+    expect(SampleManifestExcel::Upload::Row.new(data: data, columns: columns)).not_to be_valid
   end
 
   it 'is not valid without some data' do
-    expect(SampleManifestExcel::Upload::Row.new(number: 1, columns: columns)).to_not be_valid
+    expect(SampleManifestExcel::Upload::Row.new(number: 1, columns: columns)).not_to be_valid
   end
 
   it 'is not valid without some columns' do
-    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data)).to_not be_valid
+    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data)).not_to be_valid
   end
 
   it '#value returns value for specified key' do
-    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns).value(:sanger_sample_id)).to eq(sample_tube.samples.first.sanger_sample_id)
+    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns).value(:sanger_sample_id)).to eq(sample_manifest.labware.first.sample_manifest_assets.first.sanger_sample_id)
   end
 
   it '#at returns value at specified index (offset by 1)' do
     expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns).at(3)).to eq('AA')
+  end
+
+  it '#at strips down spaces including non-breaking ones (\u00A0)' do
+    row = SampleManifestExcel::Upload::Row.new(number: 1, data: data_with_spaces, columns: columns)
+    tag_cell_content = data_with_spaces[2]
+    tag_cell_content_retrieved = row.at(3)
+    expect(tag_cell_content.bytes[0]).to eq(32)
+    expect(tag_cell_content.bytes[10]).to eq(160)
+    expect(tag_cell_content_retrieved).to eq('ATTACTCG')
+  end
+
+  it '#at strips down spaces' do
+    row = SampleManifestExcel::Upload::Row.new(number: 1, data: data_with_spaces, columns: columns)
+    reference_genome_cell_content = data_with_spaces[4]
+    reference_genome_cell_content_retrieved = row.at(5)
+    volume_cell_content = data_with_spaces[6]
+    volume_cell_content_retrieved = row.at(7)
+    empty_cell_content = data_with_spaces[3]
+    empty_cell_content_retrieved = row.at(4)
+    expect(reference_genome_cell_content_retrieved).to eq(reference_genome_cell_content)
+    expect(volume_cell_content_retrieved).to eq(volume_cell_content)
+    expect(empty_cell_content_retrieved).to eq(empty_cell_content)
   end
 
   it '#first? is true if this is the first row' do
@@ -48,35 +80,36 @@ RSpec.describe SampleManifestExcel::Upload::Row, type: :model, sample_manifest_e
   end
 
   it 'is not valid without a primary receptacle or sample' do
-    sample = create(:sample)
-    data[1] = sample.id
-    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).to_not be_valid
+    data[1] = 2
+    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).not_to be_valid
     data[1] = 999999
     row = SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)
-    expect(row).to_not be_valid
+    expect(row).not_to be_valid
     expect(row.errors.full_messages).to include('Row 1 - Sample can\'t be blank.')
   end
 
   it 'is not valid unless all specialised fields are valid' do
     expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).to be_valid
     data[5] = 'Dodgy library type'
-    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).to_not be_valid
+    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).not_to be_valid
     data[5] = 'My New Library Type'
     data[6] = 'one'
-    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).to_not be_valid
+    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).not_to be_valid
   end
 
   it 'is not valid unless metadata is valid' do
     SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)
     expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).to be_valid
     data[16] = 'Cell-line'
-    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).to_not be_valid
+    expect(SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)).not_to be_valid
   end
 
   it 'updates the aliquot with the specialised fields' do
+    sample_count = Sample.count
     row = SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)
     row.update_specialised_fields(tag_group)
     aliquot = row.aliquot
+    expect(Sample.count - sample_count).to eq(1)
     expect(aliquot.tag.oligo).to eq('AA')
     expect(aliquot.tag2).to be nil
     expect(aliquot.insert_size_from).to eq(200)
@@ -109,10 +142,10 @@ RSpec.describe SampleManifestExcel::Upload::Row, type: :model, sample_manifest_e
   end
 
   it 'knows if it is empty' do
-    empty_data = [sample_tube.samples.first.assets.first.human_barcode, sample_tube.samples.first.sanger_sample_id,
+    empty_data = [sample_manifest.labware.first.human_barcode, sample_manifest.labware.first.sample_manifest_assets.first.sanger_sample_id,
                   '', '', '', '', '', '', '', '', '', '', '', '', '',
                   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-                  '', '', '', '', '', '', '', sample_tube.samples.first.sanger_sample_id, '']
+                  '', '', '', '', '', '', '', sample_manifest.labware.first.sample_manifest_assets.first.sanger_sample_id, '']
     row = SampleManifestExcel::Upload::Row.new(number: 1, data: data, columns: columns)
     empty_row = SampleManifestExcel::Upload::Row.new(number: 1, data: empty_data, columns: columns)
     expect(row.empty?).to be false
@@ -126,7 +159,7 @@ RSpec.describe SampleManifestExcel::Upload::Row, type: :model, sample_manifest_e
     let!(:mx_library_tube) { create(:multiplexed_library_tube) }
     let(:tags) { SampleManifestExcel::Tags::ExampleData.new.take(0, 4) }
 
-    before(:each) do
+    before do
       @rows = []
       library_tubes.each_with_index do |tube, i|
         create(:external_multiplexed_library_tube_creation_request, asset: tube, target_asset: mx_library_tube)
@@ -144,8 +177,8 @@ RSpec.describe SampleManifestExcel::Upload::Row, type: :model, sample_manifest_e
         row.update_sample(tag_group, false)
         row.transfer_aliquot
       end
-      expect(rows.all?(&:aliquot_transferred?)).to be_truthy
-      expect(rows.all?(&:reuploaded?)).to be_falsey
+      expect(rows).to be_all(&:aliquot_transferred?)
+      expect(rows).not_to be_all(&:reuploaded?)
       mx_library_tube.samples.each_with_index do |sample, i|
         expect(sample.aliquots.first.tag.oligo).to eq(tags[i][:i7])
         expect(sample.aliquots.first.tag2.oligo).to eq(tags[i][:i5])
@@ -163,7 +196,7 @@ RSpec.describe SampleManifestExcel::Upload::Row, type: :model, sample_manifest_e
     let!(:mx_library_tube) { create(:multiplexed_library_tube) }
     let(:tags) { SampleManifestExcel::Tags::ExampleData.new.take(0, 4) }
 
-    before(:each) do
+    before do
       @rows = []
       library_tubes.each_with_index do |tube, i|
         rq = create(:external_multiplexed_library_tube_creation_request, asset: tube, target_asset: mx_library_tube)
@@ -182,8 +215,8 @@ RSpec.describe SampleManifestExcel::Upload::Row, type: :model, sample_manifest_e
         row.update_sample(tag_group, false)
         row.transfer_aliquot
       end
-      expect(rows.all?(&:aliquot_transferred?)).to be_truthy
-      expect(rows.all?(&:reuploaded?)).to be_truthy
+      expect(rows).to be_all(&:aliquot_transferred?)
+      expect(rows).to be_all(&:reuploaded?)
       mx_library_tube.samples.each_with_index do |sample, i|
         expect(sample.aliquots.first.tag.oligo).to eq(tags[i][:i7])
         expect(sample.aliquots.first.tag2.oligo).to eq(tags[i][:i5])
@@ -192,9 +225,5 @@ RSpec.describe SampleManifestExcel::Upload::Row, type: :model, sample_manifest_e
         end
       end
     end
-  end
-
-  after(:all) do
-    SampleManifestExcel.reset!
   end
 end

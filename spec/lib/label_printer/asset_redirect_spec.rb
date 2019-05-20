@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-describe LabelPrinter::Label::AssetRedirect do
+context 'printing different asset types' do
   shared_examples 'a correct filter' do
     subject { described_class.new(options).assets }
 
@@ -45,23 +45,27 @@ describe LabelPrinter::Label::AssetRedirect do
     context 'printing tube' do
       let(:options) { { printables: asset1 } }
 
-      it { should have_key(:round_label_top_line) }
+      it { is_expected.to have_key(:round_label_top_line) }
     end
   end
 
-  context 'printing plates' do
-    let(:asset1) { create :child_plate }
-    let(:asset2) { create :child_plate }
-    let(:asset3) { create :child_plate }
-    it_behaves_like 'a correct filter'
-    it_behaves_like 'a correct plate renderer'
-  end
+  describe LabelPrinter::Label::AssetRedirect do
+    context 'printing plates' do
+      let(:asset1) { create :child_plate }
+      let(:asset2) { create :child_plate }
+      let(:asset3) { create :child_plate }
 
-  context 'printing tubes' do
-    let(:asset1) { create :empty_sample_tube }
-    let(:asset2) { create :empty_sample_tube }
-    let(:asset3) { create :empty_sample_tube }
-    it_behaves_like 'a correct filter'
-    it_behaves_like 'a correct tube renderer'
+      it_behaves_like 'a correct filter'
+      it_behaves_like 'a correct plate renderer'
+    end
+
+    context 'printing tubes' do
+      let(:asset1) { create :empty_sample_tube }
+      let(:asset2) { create :empty_sample_tube }
+      let(:asset3) { create :empty_sample_tube }
+
+      it_behaves_like 'a correct filter'
+      it_behaves_like 'a correct tube renderer'
+    end
   end
 end

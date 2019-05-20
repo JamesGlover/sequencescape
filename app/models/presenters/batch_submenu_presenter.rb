@@ -1,6 +1,13 @@
 module Presenters
+  # The {Batch} show page in the {BatchesController} has a side menu which displays
+  # a variety of options depending on properties of the batch. The {BatchSubmenuPresenter}
+  # encapsulates the logic which was previously in the view itself.
   class BatchSubmenuPresenter
     attr_reader :options
+    # Provide access to url_for and other Rails URL helpers {ActionDispatch::Routing::UrlFor}
+    # Included directly as Rails.application.routes.url_helpers itself generates a
+    # new module every time it is called
+    # @see https://api.rubyonrails.org/v5.1/classes/ActionDispatch/Routing/UrlFor.html
     include Rails.application.routes.url_helpers
     include ActionView::Helpers::TextHelper
 
@@ -72,6 +79,10 @@ module Presenters
       [cherrypicking?, genotyping?, pacbio?, pacbio_sample_pipeline?].any?
     end
 
+    def has_tube_labels?
+      @batch.requests.any? { |r| r.target_asset.respond_to?(:human_barcode) }
+    end
+
     def has_stock_labels?
       [not_sequencing?, can_create_stock_assets?, !is_multiplexed?].all?
     end
@@ -80,13 +91,11 @@ module Presenters
       add_submenu_option 'Edit batch', edit_batch_path(@batch) if is_manager?
 
       # Printing of labels is enabled for anybody
-      add_submenu_option 'Print labels', :print_labels if is_pulldown_pipeline?
+      add_submenu_option 'Print labels', :print_labels if has_tube_labels?
       add_submenu_option 'Print pool label', :print_multiplex_labels if is_multiplexed?
-      add_submenu_option 'Print labels', :print_labels if is_multiplexed?
       add_submenu_option 'Print stock pool label', :print_stock_multiplex_labels if is_multiplexed?
       add_submenu_option 'Print plate labels', :print_plate_labels if has_plate_labels?
       add_submenu_option 'Print stock labels', :print_stock_labels if has_stock_labels?
-      add_submenu_option 'Print labels', :print_labels if not_sequencing?
 
       # Other options are enabled only for managers
       if is_manager?

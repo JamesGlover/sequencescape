@@ -9,19 +9,25 @@ module Api
 
       immutable # uncomment to make the resource immutable
 
-      default_includes :uuid_object, :barcodes
+      default_includes :uuid_object, :barcodes, :plate_purpose, :transfer_requests
 
       # Associations:
       has_one :purpose, readonly: true, foreign_key: :plate_purpose_id
+      has_one :custom_metadatum_collection
+
       has_many :samples, readonly: true
       has_many :studies, readonly: true
       has_many :projects, readonly: true
       has_many :wells, readonly: true
+      has_many :comments, readonly: true
 
       has_many :ancestors, readonly: true, polymorphic: true
       has_many :descendants, readonly: true, polymorphic: true
       has_many :parents, readonly: true, polymorphic: true
       has_many :children, readonly: true, polymorphic: true
+
+      has_many :child_plates, readonly: true
+      has_many :child_tubes, readonly: true
 
       # Attributes
       attribute :uuid, readonly: true

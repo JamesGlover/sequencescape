@@ -3,12 +3,13 @@
 require 'rails_helper'
 require 'timecop'
 
-feature 'track SampleManifest updates' do
+describe 'track SampleManifest updates' do
   include FetchTable
 
   def load_manifest_spec
     SampleManifestExcel.configure do |config|
       config.folder = File.join('spec', 'data', 'sample_manifest_excel')
+      config.tag_group = create(:tag_group).name
       config.load!
     end
   end
@@ -20,7 +21,7 @@ feature 'track SampleManifest updates' do
   let!(:supplier) { create :supplier }
   let!(:study) { create :study }
 
-  background do
+  before do
     new_time = Time.zone.local(2010, 7, 12, 10, 25, 0)
     Timecop.freeze new_time
     login_user user
@@ -29,7 +30,11 @@ feature 'track SampleManifest updates' do
     click_link('Sample Manifests')
   end
 
-  scenario 'Some samples get updated by a manifest and events get created' do
+  after do
+    Timecop.return
+  end
+
+  it 'Some samples get updated by a manifest and events get created' do
     broadcast_events_count = BroadcastEvent.count
     expect(page).to have_content('Create manifest for plates')
 
@@ -39,42 +44,27 @@ feature 'track SampleManifest updates' do
 
     expect(BroadcastEvent.count).to eq broadcast_events_count + 1
 
-    samples = sample_manifest.samples.each_with_index do |sample, index|
-      sample.update(sanger_sample_id: "sample_#{index}")
+    samples = sample_manifest.sample_manifest_assets.each_with_index do |sample_manifest_asset, index|
+      sample_manifest_asset.update(sanger_sample_id: "sample_#{index}")
     end
-    sample1 = samples[1]
-    sample7 = samples[7]
-
-    visit(history_sample_path(sample1))
-    table = [['Message', 'Content', 'Created at', 'Created by'],
-             ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john']]
-    expect(fetch_table('table#events')).to eq(table)
-
-    visit(history_sample_path(sample7))
-    table = [['Message', 'Content', 'Created at', 'Created by'],
-             ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john']]
-    expect(fetch_table('table#events')).to eq(table)
 
     visit('/sdb/')
     click_on 'View all manifests'
     attach_file('File to upload', 'test/data/test_blank_wells.csv')
     click_button 'Upload manifest'
-    Delayed::Worker.new.work_off
 
     expect(BroadcastEvent.count).to eq broadcast_events_count + 2
     updated_broadcast_event = BroadcastEvent.last
-    # subjects are 1 study, 1 plate and 7 samples
-    expect(updated_broadcast_event.subjects.count).to eq 9
+    # subjects are 1 study, 1 plate and 11 samples
+    expect(updated_broadcast_event.subjects.count).to eq 13
 
-    visit(history_sample_path(sample1))
+    sample_1 = Sample.find_by!(sanger_sample_id: 'sample_1')
+
+    visit(history_sample_path(sample_1))
     table = [['Message', 'Content', 'Created at', 'Created by'],
              ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john'],
              ['Updated by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john']]
-    expect(fetch_table('table#events')).to eq(table)
 
-    visit(history_sample_path(sample7))
-    table = [['Message', 'Content', 'Created at', 'Created by'],
-             ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john']]
     expect(fetch_table('table#events')).to eq(table)
 
     # A different user logs in and updates the manifest
@@ -85,20 +75,21 @@ feature 'track SampleManifest updates' do
 
     # upload without override
     click_button 'Upload manifest'
-    Delayed::Worker.new.work_off
 
     expect(BroadcastEvent.count).to eq broadcast_events_count + 3
     updated_broadcast_event = BroadcastEvent.last
-    # subjects are 1 study, 1 plate and 5 samples (only 'new' ones)
-    expect(updated_broadcast_event.subjects.count).to eq 7
+    # subjects are 1 study, 1 plate and 1 samples (only 'new' ones)
+    expect(updated_broadcast_event.subjects.count).to eq 3
 
-    visit(history_sample_path(sample1))
+    visit(history_sample_path(sample_1))
     table = [['Message', 'Content', 'Created at', 'Created by'],
              ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john'],
              ['Updated by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john']]
     expect(fetch_table('table#events')).to eq(table)
 
-    visit(history_sample_path(sample7))
+    sample_7 = Sample.find_by!(sanger_sample_id: 'sample_7')
+
+    visit(history_sample_path(sample_7))
     table = [['Message', 'Content', 'Created at', 'Created by'],
              ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john'],
              ['Updated by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'jane']]
@@ -117,14 +108,14 @@ feature 'track SampleManifest updates' do
     updated_broadcast_event = BroadcastEvent.last
     expect(updated_broadcast_event.subjects.count).to eq 14
 
-    visit(history_sample_path(sample1))
+    visit(history_sample_path(sample_1))
     table = [['Message', 'Content', 'Created at', 'Created by'],
              ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john'],
              ['Updated by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john'],
              ['Updated by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'jane']]
     expect(fetch_table('table#events')).to eq(table)
 
-    visit(history_sample_path(sample7))
+    visit(history_sample_path(sample_7))
 
     table = [['Message', 'Content', 'Created at', 'Created by'],
              ['Created by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'john'],
@@ -140,9 +131,5 @@ feature 'track SampleManifest updates' do
              ['Updated by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'jane'],
              ['Updated by Sample Manifest', '2010-07-12', 'Monday 12 July, 2010', 'jane']]
     expect(fetch_table('table#events')).to eq(table)
-  end
-
-  after do
-    Timecop.return
   end
 end

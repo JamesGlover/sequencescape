@@ -11,7 +11,7 @@ FactoryBot.define do
   end
 
   factory :asset do
-    name                { |_a| generate :asset_name }
+    name                { generate :asset_name }
     value               { '' }
     qc_state            { '' }
   end
@@ -41,7 +41,11 @@ FactoryBot.define do
     key                 { '' }
   end
 
-  factory :lab_event do |e|
+  factory :lab_event do
+    factory :flowcell_event do
+      descriptors { { 'Chip Barcode' => 'fcb' } }
+      descriptor_fields { descriptors.keys }
+    end
   end
 
   factory :family do
@@ -221,6 +225,11 @@ FactoryBot.define do
       batch
       association(:request, factory: :cherrypick_request)
     end
+
+    factory :sequencing_batch_request do
+      batch
+      association(:request, factory: :complete_sequencing_request)
+    end
   end
 
   factory :request_information_type do
@@ -268,8 +277,11 @@ FactoryBot.define do
   end
 
   factory :asset_link do
-    association(:ancestor, factory: :asset)
-    association(:descendant, factory: :asset)
+    # Asset links get annoyed if created between nodes which have
+    # not been persisted.
+    association(:ancestor, factory: :asset, strategy: :create)
+    association(:descendant, factory: :asset, strategy: :create)
+    direct { true }
   end
 
   # Converts i to base 4, then substitutes in ATCG to
@@ -281,9 +293,10 @@ FactoryBot.define do
   factory :tag, aliases: [:tag2] do
     tag_group
     oligo
+    map_id { 1 }
   end
 
-  factory :tag_group do |_t|
+  factory :tag_group do
     sequence(:name) { |n| "Tag Group #{n}" }
 
     transient do

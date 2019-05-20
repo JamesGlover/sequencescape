@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 
 group :default do
-  gem 'rails', '~> 5.1.2'
+  gem 'rails', '~> 5.1.6'
 
   # State machine
   gem 'aasm'
@@ -43,9 +43,6 @@ group :default do
   # For background processing
   # Locked for ruby version
   gem 'delayed_job_active_record'
-
-  gem 'ruby_walk', '>= 0.0.3',
-      github: 'sanger/ruby_walk'
 
   gem 'irods_reader', '>=0.0.2',
       github: 'sanger/irods_reader'
@@ -129,6 +126,7 @@ group :development do
   gem 'yard', require: false
   # Enforces coding styles and detects some bad practices
   gem 'rubocop', require: false
+  gem 'rubocop-performance'
   gem 'rubocop-rspec', require: false
   # MiniProfiler allows you to see the speed of a request conveniently on the page.
   # It also shows the SQL queries performed and allows you to profile a specific block of code.
@@ -140,6 +138,7 @@ end
 
 group :development, :test, :cucumber do
   gem 'pry'
+  gem 'pry-stack_explorer'
 end
 
 group :profile do
@@ -161,6 +160,7 @@ group :test do
   # with rails versions.
   gem 'minitest', '5.10.3'
   gem 'minitest-profiler'
+  gem 'rspec_junit_formatter'
 end
 
 group :test, :cucumber do

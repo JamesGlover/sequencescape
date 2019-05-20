@@ -1,3 +1,5 @@
+# Property of {Project} set on {Project::Metadata}
+# High level organisational area for funding
 class BudgetDivision < ApplicationRecord
   extend Attributable::Association::Target
 
@@ -9,8 +11,7 @@ class BudgetDivision < ApplicationRecord
 
   module Associations
     def self.included(base)
-      base.validates_presence_of :budget_division_id
-      base.belongs_to :budget_division
+      base.belongs_to :budget_division, optional: false
     end
   end
 end

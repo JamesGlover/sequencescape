@@ -5,9 +5,23 @@ require 'support/barcode_helper'
 
 RSpec.describe Api::V2::Aker::JobsController, type: :request, aker: true do
   include BarcodeHelper
+  let(:my_config) do
+    %(
+    sample_metadata.gender              <=   gender
+    sample_metadata.donor_id            <=   donor_id
+    sample_metadata.supplier_name       <=   supplier_name
+    sample_metadata.phenotype           <=   phenotype
+    sample_metadata.sample_common_name  <=   common_name
+    well_attribute.measured_volume      <=>  volume
+    well_attribute.concentration        <=>  concentration
+    )
+  end
+
   before do
     mock_plate_barcode_service
     PlatePurpose.stock_plate_purpose
+
+    Aker::Material.config = my_config
   end
 
   context 'when there is one job in the message' do
@@ -24,7 +38,7 @@ RSpec.describe Api::V2::Aker::JobsController, type: :request, aker: true do
       params['data'][0]['attributes'].delete('job_id')
       expect do
         post api_v2_aker_jobs_path, params: params
-      end.to_not change(Aker::Job, :count)
+      end.not_to change(Aker::Job, :count)
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
@@ -32,7 +46,7 @@ RSpec.describe Api::V2::Aker::JobsController, type: :request, aker: true do
       params['data'][0]['attributes'].delete('data_release_uuid')
       expect do
         post api_v2_aker_jobs_path, params: params
-      end.to_not change(Aker::Job, :count)
+      end.not_to change(Aker::Job, :count)
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
@@ -40,7 +54,7 @@ RSpec.describe Api::V2::Aker::JobsController, type: :request, aker: true do
       params['data'][0]['attributes'].delete('aker_job_url')
       expect do
         post api_v2_aker_jobs_path, params: params
-      end.to_not change(Aker::Job, :count)
+      end.not_to change(Aker::Job, :count)
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
@@ -48,7 +62,7 @@ RSpec.describe Api::V2::Aker::JobsController, type: :request, aker: true do
       params['data'][0]['attributes'].delete('job_uuid')
       expect do
         post api_v2_aker_jobs_path, params: params
-      end.to_not change(Aker::Job, :count)
+      end.not_to change(Aker::Job, :count)
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
@@ -56,7 +70,7 @@ RSpec.describe Api::V2::Aker::JobsController, type: :request, aker: true do
       params['data'][0]['attributes'].delete('materials')
       expect do
         post api_v2_aker_jobs_path, params: params
-      end.to_not change(Aker::Job, :count)
+      end.not_to change(Aker::Job, :count)
       expect(response).to have_http_status(:unprocessable_entity)
     end
   end
@@ -74,6 +88,7 @@ RSpec.describe Api::V2::Aker::JobsController, type: :request, aker: true do
         expect(response).to have_http_status(:created)
       end
     end
+
     context 'when only one job is valid' do
       let(:job1) { build(:aker_job_json) }
       let(:job2) { build(:aker_job_json) }
@@ -83,7 +98,7 @@ RSpec.describe Api::V2::Aker::JobsController, type: :request, aker: true do
         params['data'][0]['attributes'].delete('job_id')
         expect do
           post api_v2_aker_jobs_path, params: params
-        end.to_not change(Aker::Job, :count)
+        end.not_to change(Aker::Job, :count)
         expect(response).to have_http_status(:unprocessable_entity)
       end
     end

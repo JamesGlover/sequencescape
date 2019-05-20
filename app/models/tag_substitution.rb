@@ -12,7 +12,7 @@
 class TagSubstitution
   include ActiveModel::Model
 
-  attr_accessor :user, :ticket, :comment
+  attr_accessor :user, :ticket, :comment, :disable_clash_detection
   attr_reader :substitutions
   attr_writer :name
 
@@ -32,7 +32,7 @@ class TagSubstitution
 
   validates :substitutions, presence: true
   validate :substitutions_valid?, if: :substitutions
-  validate :no_duplicate_tag_pairs, if: :substitutions
+  validate :no_duplicate_tag_pairs, if: :substitutions, unless: :disable_clash_detection
 
   def substitutions_valid?
     @substitutions.reduce(true) do |valid, sub|
@@ -58,9 +58,9 @@ class TagSubstitution
     end
     rebroadcast_flowcells
     true
-  rescue ActiveRecord::RecordNotUnique => exception
+  rescue ActiveRecord::RecordNotUnique => e
     # We'll specifically handle tag clashes here so that we can produce more informative messages
-    raise exception unless /aliquot_tags_and_tag2s_are_unique_within_receptacle/.match?(exception.message)
+    raise e unless /aliquot_tags_and_tag2s_are_unique_within_receptacle/.match?(e.message)
 
     errors.add(:base, 'A tag clash was detected while performing the substitutions. No changes have been made.')
     false
@@ -142,6 +142,8 @@ class TagSubstitution
   end
 
   def rebroadcast_flowcells
-    Batch.joins(:requests).where(requests: { target_asset_id: lane_ids }).distinct.each(&:rebroadcast)
+    # Touch updates the batch (and hence message timestamp) and triggers the after_comit callback
+    # which broadcasts the batch.
+    Batch.joins(:requests).where(requests: { target_asset_id: lane_ids }).distinct.each(&:touch)
   end
 end
