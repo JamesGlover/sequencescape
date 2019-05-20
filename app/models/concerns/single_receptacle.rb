@@ -6,8 +6,6 @@ module SingleReceptacle
     has_one :receptacle, ->() { where(map_id: 1) }, required: true, foreign_key: :labware_id
     has_one :primary_aliquot, through: :receptacle
 
-    set_defaults receptacle: ->(labware) { labware.build_receptacle(map: Map.first) }
-
     # Fix to ensure that most code 'just works'
     delegate :aliquots, to: :receptacle
 
@@ -29,6 +27,10 @@ module SingleReceptacle
           self.save!
         end
       ", __FILE__, line)
+    end
+
+    def receptacle
+      super || labware.build_receptacle(map: Map.first)
     end
 
     def compatible_qc_state

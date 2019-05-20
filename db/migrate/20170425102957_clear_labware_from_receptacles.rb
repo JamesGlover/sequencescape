@@ -1,4 +1,4 @@
-class ClearLabwareFromReceptacles < ActiveRecord::Migration
+class ClearLabwareFromReceptacles < ActiveRecord::Migration[4.2]
   class Receptacle < ActiveRecord::Base
     self.table_name = 'receptacles'
   end

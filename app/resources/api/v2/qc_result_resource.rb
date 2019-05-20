@@ -10,7 +10,8 @@ module Api
       # measurement
       attribute :created_at, readonly: true
 
-      has_one :asset
+      has_one :asset, class_name: 'Receptacle'
+      has_one :receptacle
     end
   end
 end

@@ -24,7 +24,7 @@ class AssetLink < ApplicationRecord
   include Api::AssetLinkIO::Extensions
   include Uuid::Uuidable
 
-  acts_as_dag_links node_class_name: 'Asset'
+  acts_as_dag_links node_class_name: 'Labware'
   broadcast_via_warren
 
   self.per_page = 500

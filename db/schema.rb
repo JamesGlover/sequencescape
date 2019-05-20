@@ -10,7 +10,6 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-
 ActiveRecord::Schema.define(version: 20181119105427) do
 
   create_table "aker_containers", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
@@ -176,8 +175,8 @@ ActiveRecord::Schema.define(version: 20181119105427) do
     t.decimal "concentration", precision: 18, scale: 8
     t.integer "legacy_sample_id"
     t.integer "legacy_tag_id"
-    t.index ["barcode_bkp"], name: "index_assets_on_barcode_bkp"
-    t.index ["barcode_prefix_id_bkp"], name: "index_assets_on_barcode_prefix_id_bkp"
+    t.index ["barcode_bkp"], name: "index_assets_deprecated_on_barcode_bkp"
+    t.index ["barcode_prefix_id_bkp"], name: "index_assets_deprecated_on_barcode_prefix_id_bkp"
     t.index ["sti_type", "plate_purpose_id"], name: "index_assets_on_plate_purpose_id_sti_type"
     t.index ["sti_type", "updated_at"], name: "index_assets_deprecated_on_sti_type_and_updated_at"
     t.index ["sti_type"], name: "index_assets_deprecated_on_sti_type"
@@ -633,16 +632,16 @@ ActiveRecord::Schema.define(version: 20181119105427) do
     t.text "descriptors"
     t.text "descriptor_fields"
     t.string "sti_type", limit: 50
-    t.string "barcode"
+    t.string "barcode_bkp"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer "size"
     t.boolean "closed", default: false
     t.string "two_dimensional_barcode"
     t.integer "plate_purpose_id"
-    t.integer "barcode_prefix_id"
-    t.index ["barcode"], name: "index_assets_on_barcode"
-    t.index ["barcode_prefix_id"], name: "index_assets_on_barcode_prefix_id"
+    t.integer "barcode_prefix_id_bkp"
+    t.index ["barcode_bkp"], name: "index_assets_on_barcode_bkp"
+    t.index ["barcode_prefix_id_bkp"], name: "index_assets_on_barcode_prefix_id_bkp"
     t.index ["sti_type", "plate_purpose_id"], name: "index_assets_on_plate_purpose_id_sti_type"
     t.index ["sti_type", "updated_at"], name: "index_assets_on_sti_type_and_updated_at"
     t.index ["sti_type"], name: "index_assets_on_sti_type"
@@ -1144,6 +1143,7 @@ ActiveRecord::Schema.define(version: 20181119105427) do
     t.text "descriptors"
     t.text "descriptor_fields"
     t.string "sti_type", limit: 50
+    t.string "barcode_bkp"
     t.string "qc_state", limit: 20
     t.boolean "resource"
     t.datetime "created_at"
@@ -1151,11 +1151,15 @@ ActiveRecord::Schema.define(version: 20181119105427) do
     t.integer "map_id"
     t.boolean "external_release"
     t.decimal "volume", precision: 10, scale: 2
+    t.integer "barcode_prefix_id_bkp"
     t.decimal "concentration", precision: 18, scale: 8
     t.integer "labware_id"
+    t.index ["barcode_bkp"], name: "index_assets_on_barcode_bkp"
+    t.index ["barcode_prefix_id_bkp"], name: "index_assets_on_barcode_prefix_id_bkp"
     t.index ["labware_id"], name: "fk_rails_2201f76983"
-    t.index ["map_id"], name: "index_assets_on_map_id"
-    t.index ["updated_at"], name: "index_assets_on_sti_type_and_updated_at"
+    t.index ["sti_type", "updated_at"], name: "index_assets_on_sti_type_and_updated_at"
+    t.index ["sti_type"], name: "index_assets_on_plate_purpose_id_sti_type"
+    t.index ["sti_type"], name: "index_assets_on_sti_type"
     t.index ["updated_at"], name: "index_assets_on_updated_at"
   end
 
@@ -1995,13 +1999,13 @@ ActiveRecord::Schema.define(version: 20181119105427) do
 
   add_foreign_key "aliquots", "primer_panels"
   add_foreign_key "aliquots", "requests"
-  add_foreign_key "barcodes", "assets"
+  add_foreign_key "barcodes", "assets_deprecated", column: "asset_id"
   add_foreign_key "billing_items", "requests"
   add_foreign_key "billing_products", "billing_product_catalogues"
   add_foreign_key "plate_purposes", "barcode_prefixes"
-  add_foreign_key "qc_files", "labware", column: "asset_id"
-  add_foreign_key "receptacles", "labware"
+  add_foreign_key "qc_files", "assets_deprecated", column: "asset_id"
   add_foreign_key "qc_results", "qc_assays"
+  add_foreign_key "receptacles", "labware"
   add_foreign_key "request_types", "billing_product_catalogues"
   add_foreign_key "requests", "billing_products"
   add_foreign_key "requests", "work_orders"

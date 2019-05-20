@@ -1,4 +1,4 @@
-class Receptacle < Asset
+class Receptacle < ApplicationRecord
   include Transfer::State
   include Aliquot::Remover
   include Tag::Associations

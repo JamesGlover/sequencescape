@@ -280,7 +280,7 @@ class Request < ApplicationRecord
   scope :for_initial_study_id, ->(id) { where(initial_study_id: id) }
 
   scope :for_request_types, ->(types) { joins(:request_type).where(request_types: { key: types }) }
-  scope :for_search_query, ->(query) { where(id:, query) }
+  scope :for_search_query, ->(query) { where(id: query) }
   scope :for_studies, ->(*studies) { where(initial_study_id: studies) }
 
   scope :with_assets_for_starting_requests, -> { includes([:request_metadata, :request_events, { asset: :aliquots, target_asset: :aliquots }]) }

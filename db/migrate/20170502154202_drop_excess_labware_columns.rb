@@ -1,4 +1,4 @@
-class DropExcessLabwareColumns < ActiveRecord::Migration
+class DropExcessLabwareColumns < ActiveRecord::Migration[4.2]
   def change
     remove_column 'labware', 'value', :string   ,                   limit: 255
     remove_column 'labware', 'qc_state', :string   ,                limit: 20

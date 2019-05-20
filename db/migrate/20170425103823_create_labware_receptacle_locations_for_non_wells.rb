@@ -1,4 +1,4 @@
-class CreateLabwareReceptacleLocationsForNonWells < ActiveRecord::Migration
+class CreateLabwareReceptacleLocationsForNonWells < ActiveRecord::Migration[4.2]
   def up
     ActiveRecord::Base.connection.execute(%q{
       UPDATE receptacles

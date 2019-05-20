@@ -2,8 +2,8 @@
 
 module Api
   module V2
-    # AssetResource
-    class AssetResource < BaseResource
+    # LabwareResource
+    class LabwareResource < BaseResource
       attributes :uuid
 
       default_includes :uuid_object

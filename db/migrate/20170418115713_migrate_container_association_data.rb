@@ -1,4 +1,4 @@
-class MigrateContainerAssociationData < ActiveRecord::Migration
+class MigrateContainerAssociationData < ActiveRecord::Migration[4.2]
   def change
     ActiveRecord::Base.connection.execute(%{
       UPDATE receptacles r

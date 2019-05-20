@@ -1,4 +1,4 @@
-class DuplicateAssetsTables < ActiveRecord::Migration
+class DuplicateAssetsTables < ActiveRecord::Migration[4.2]
   def up
     ActiveRecord::Base.connection.execute('CREATE TABLE receptacles LIKE assets')
     ActiveRecord::Base.connection.execute('INSERT receptacles SELECT * FROM assets')

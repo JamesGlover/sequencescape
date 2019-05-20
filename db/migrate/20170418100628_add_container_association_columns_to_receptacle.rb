@@ -1,4 +1,4 @@
-class AddContainerAssociationColumnsToReceptacle < ActiveRecord::Migration
+class AddContainerAssociationColumnsToReceptacle < ActiveRecord::Migration[4.2]
   def up
     add_reference :receptacles, :labware, foreign_key: true
   end

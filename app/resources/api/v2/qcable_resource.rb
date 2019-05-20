@@ -15,7 +15,8 @@ module Api
 
       # Associations:
       has_one :lot
-      has_one :asset
+      has_one :asset, class_name: 'Labware'
+      has_one :labware
 
       # Attributes
       attribute :uuid, readonly: true
