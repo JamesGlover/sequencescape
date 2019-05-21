@@ -28,7 +28,7 @@ module Aker
           @labware = find_or_create_asset_by_aker_barcode!
           # Connects Aker container with asset. If is a plate, connects with the well, if is a tube, directly with
           # the tube
-          m.update(asset: a_well? ? @labware.wells.located_at(address_for_ss).first : @labware)
+          m.update(asset: a_well? ? @labware.wells.located_at(address_for_ss).first : @labware.receptacle)
         end
       end
 
@@ -51,7 +51,7 @@ module Aker
       end
 
       def find_or_create_asset_by_aker_barcode!
-        labware = Asset.find_from_barcode(barcode)
+        labware = Labware.find_by_barcode(barcode)
         unless labware
           labware = create_asset!
           labware.aker_barcode = barcode

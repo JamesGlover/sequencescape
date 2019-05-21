@@ -91,6 +91,15 @@ class Aliquot < ApplicationRecord
       .count
   end
 
+  def receptacle=(asset)
+    recep = if asset.is_a?(SingleReceptacle)
+               asset.receptacle
+             else
+               asset
+             end
+    super(recep)
+  end
+
   def aliquot_index_value
     aliquot_index.try(:aliquot_index)
   end

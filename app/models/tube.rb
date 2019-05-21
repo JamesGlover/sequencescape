@@ -11,7 +11,7 @@ class Tube < Labware
   # Fallback for tubes without a purpose
   self.default_prefix = 'NT'
 
-  delegate :qc_state, :qc_state=, :aliquots=, to: :receptacle
+  delegate :qc_state, :qc_state=, :aliquots=, :volume=, to: :receptacle
   has_qc_files
 
   def automatic_move?

@@ -86,6 +86,26 @@ class TransferRequest < ApplicationRecord
     end
   end
 
+  # Temporary solution while we update to the new system
+  def asset=(asset)
+    receptacle = if asset.is_a?(SingleReceptacle)
+                   asset.receptacle
+                 else
+                   asset
+                 end
+    super(receptacle)
+  end
+
+  # Temporary solution while we update to the new system
+  def target_asset=(asset)
+    receptacle = if asset.is_a?(SingleReceptacle)
+                   asset.receptacle
+                 else
+                   asset
+                 end
+    super(receptacle)
+  end
+
   # validation method
   def source_and_target_assets_are_different
     return true unless asset_id.present? && asset_id == target_asset_id

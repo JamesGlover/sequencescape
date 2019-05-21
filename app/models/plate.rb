@@ -36,7 +36,7 @@ class Plate < Labware
     def construct!
       plate = proxy_association.owner
       plate.maps.in_row_major_order.ids.map do |location_id|
-        build(map: location)
+        build(map_id: location_id)
       end.tap do |wells|
         proxy_association.owner.save!
       end

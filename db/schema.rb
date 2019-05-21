@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20181119105427) do
+ActiveRecord::Schema.define(version: 20190521080728) do
 
   create_table "aker_containers", id: :integer, force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.string "barcode"
@@ -1999,7 +1999,7 @@ ActiveRecord::Schema.define(version: 20181119105427) do
 
   add_foreign_key "aliquots", "primer_panels"
   add_foreign_key "aliquots", "requests"
-  add_foreign_key "barcodes", "assets_deprecated", column: "asset_id"
+  add_foreign_key "barcodes", "labware", column: "asset_id"
   add_foreign_key "billing_items", "requests"
   add_foreign_key "billing_products", "billing_product_catalogues"
   add_foreign_key "plate_purposes", "barcode_prefixes"
