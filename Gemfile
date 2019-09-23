@@ -138,6 +138,8 @@ group :development do
   gem 'mini_racer'
   # Pat of the JS assets pipleine
   gem 'uglifier', '>= 1.0.3'
+  # Rails 6 adds listen to assist with reloading
+  gem 'listen'
 end
 
 group :development, :test, :cucumber do

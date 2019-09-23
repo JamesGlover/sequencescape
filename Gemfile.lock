@@ -258,6 +258,10 @@ GEM
     launchy (2.4.3)
       addressable (~> 2.3)
     libv8 (7.3.492.27.1)
+    listen (3.1.5)
+      rb-fsevent (~> 0.9, >= 0.9.4)
+      rb-inotify (~> 0.9, >= 0.9.7)
+      ruby_dep (~> 1.2)
     loofah (2.2.3)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -355,6 +359,9 @@ GEM
       thor (>= 0.20.3, < 2.0)
     rainbow (3.0.0)
     rake (12.3.3)
+    rb-fsevent (0.10.3)
+    rb-inotify (0.10.0)
+      ffi (~> 1.0)
     regexp_parser (1.6.0)
     rest-client (2.1.0)
       http-accept (>= 1.7.0, < 2.0)
@@ -406,6 +413,7 @@ GEM
     ruby-prof (1.0.0)
     ruby-progressbar (1.10.1)
     ruby-units (2.3.1)
+    ruby_dep (1.5.0)
     ruby_parser (3.13.1)
       sexp_processor (~> 4.9)
     rubyzip (1.2.4)
@@ -549,6 +557,7 @@ DEPENDENCIES
   jsonapi-resources-matchers
   knapsack
   launchy
+  listen
   mime-types
   mini_racer
   minitest (= 5.10.3)
