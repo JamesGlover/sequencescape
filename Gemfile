@@ -160,7 +160,7 @@ group :profile do
 end
 
 group :test do
-  gem 'rspec-rails', require: false
+  gem 'rspec-rails', '4.0.0.beta2', require: false
   # Rails performance tests
   gem 'rails-perftest'
   gem 'rspec-collection_matchers' # Provides matchers for dealing with arrays
