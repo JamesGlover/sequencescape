@@ -169,11 +169,9 @@ group :test do
   # and test failures more descriptive.
   gem 'rspec-json_expectations', require: false
   # It is needed to use #assigns(attribute) in controllers tests
-  gem 'rails-controller-testing'
-  # Temporarily lock minitest to a specific version due to incompatibilities
-  # with rails versions.
-  gem 'minitest', '5.10.3'
+  gem 'minitest'
   gem 'minitest-profiler'
+  gem 'rails-controller-testing'
   gem 'rspec_junit_formatter'
 end
 
@@ -195,6 +193,8 @@ group :test, :cucumber do
   # Essentially does two things:
   # - Patches rails to share a database connection between threads while Testing
   # - Pathes rspec to ensure capybara has done its stuff before killing the connection
+  # Causing problems in Rails 6. Remove from Rspec, left in place for cucumber, but can
+  # probably be remove there as well.
   gem 'transactional_capybara'
   # Keep webdriver in sync with chrome to prevent frustrating CI failures
   gem 'webdrivers', require: false
