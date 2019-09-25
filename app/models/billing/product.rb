@@ -7,7 +7,7 @@ module Billing
 
     belongs_to :billing_product_catalogue, class_name: 'Billing::ProductCatalogue', foreign_key: :billing_product_catalogue_id
     has_many :requests
-    validates :name, presence: true, uniqueness: true
+    validates :name, presence: true, uniqueness: { case_sensitive: false }
     validates :category, presence: true
   end
 end

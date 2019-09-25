@@ -8,5 +8,5 @@ class WorkOrderType < ApplicationRecord
             presence: true,
             # Format constraints are intended mainly to keep things consistent, especially with request type keys.
             format: { with: /\A[a-z0-9_]+\z/, message: 'should only contain lower case letters, numbers and underscores.' },
-            uniqueness: true
+            uniqueness: { case_sensitive: false }
 end
