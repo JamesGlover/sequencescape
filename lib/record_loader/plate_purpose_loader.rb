@@ -4,14 +4,10 @@ module RecordLoader
 
     DEFAULT_PRINTER_TYPE = '96 Well Plate'.freeze
 
-    def create!
-      ActiveRecord::Base.transaction do
-        @config.each do |name, config|
-          next if existing_purposes.include?(name)
+    def create_or_update!(name, options)
+      return if existing_purposes.include?(name)
 
-          create_purpose(name, config)
-        end
-      end
+      create_purpose(name, options)
     end
 
     private

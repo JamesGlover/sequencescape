@@ -5,12 +5,8 @@ module RecordLoader
   class PlateTypeLoader < RecordLoader::Base
     self.config_folder = 'plate_types'
 
-    def create!
-      ActiveRecord::Base.transaction do
-        @config.each do |name, options|
-          PlateType.create_with(options).find_or_create_by!(name: name)
-        end
-      end
+    def create_or_update!(name, options)
+      PlateType.create_with(options).find_or_create_by!(name: name)
     end
   end
 end
