@@ -8,6 +8,8 @@ group :default do
 
   # State machine
   gem 'aasm'
+  # Required by AASM
+  gem 'after_commit_everywhere', '~> 0.1', '>= 0.1.5'
   gem 'configatron'
   gem 'formtastic'
   gem 'rest-client' # curb substitute.

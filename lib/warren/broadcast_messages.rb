@@ -67,7 +67,10 @@ module Warren::BroadcastMessages
   #
   def queue_associated_for_broadcast
     associated_to_broadcast.each do |association|
-      send(association).try(:add_to_transaction)
+      associated_record = send(association)
+      next unless associated_record
+
+      self.class.connection.add_transaction_record(associated_record)
     end
   end
 
