@@ -87,7 +87,7 @@ class Request < ApplicationRecord
   has_many :billing_items, class_name: 'Billing::Item'
 
   # Only actively used by poolable requests, but here to help with eager loading
-  has_one :pooled_request, dependent: :destroy, class_name: 'PreCapturePool::PooledRequest', foreign_key: :request_id, inverse_of: :request
+  has_one :pooled_request, dependent: :destroy, class_name: 'PreCapturePool::PooledRequest', inverse_of: :request
   has_one :pre_capture_pool, through: :pooled_request, inverse_of: :pooled_requests
 
   delegate :position, to: :batch_request
@@ -236,7 +236,7 @@ class Request < ApplicationRecord
   # https://github.com/rails/rails/issues/15185
   scope :loaded_for_inbox_display, -> { preload([{ submission: { orders: :study }, asset: [:scanned_into_lab_event, :studies, { labware: :barcodes }] }]) }
   scope :loaded_for_sequencing_inbox_display, -> { preload([{ submission: { orders: :study }, asset: %i(requests scanned_into_lab_event most_tagged_aliquot) }, { request_type: :product_line }]) }
-  scope :loaded_for_grouped_inbox_display, -> { preload([{ submission: :orders, asset: { labware: :barcodes } }, :target_asset]) }
+  scope :loaded_for_grouped_inbox_display, -> { preload([{ submission: :orders, asset: { labware: [:purpose, :barcodes] } }, :target_asset, :order]) }
   scope :loaded_for_pacbio_inbox_display, -> { preload(:submission) }
 
   scope :for_submission_id, ->(id) { where(submission_id: id) }

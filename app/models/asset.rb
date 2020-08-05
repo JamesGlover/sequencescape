@@ -49,6 +49,7 @@ class Asset < ApplicationRecord
     event_constructor(:create_external_release!,       ExternalReleaseEvent,          :create_for_asset!)
     event_constructor(:create_state_update!,           Event::AssetSetQcStateEvent,   :create_updated!)
     event_constructor(:create_scanned_into_lab!,       Event::ScannedIntoLabEvent,    :create_for_asset!)
+    event_constructor(:create_labware_failed!,         Event::LabwareFailedEvent,     :create_for_asset!)
     event_constructor(:create_plate!,                  Event::PlateCreationEvent,     :create_for_asset!)
     event_constructor(:create_gel_qc!,                 Event::SampleLogisticsQcEvent, :create_gel_qc_for_asset!)
     event_constructor(:created_using_sample_manifest!, Event::SampleManifestEvent,    :created_sample!)
@@ -191,6 +192,7 @@ class Asset < ApplicationRecord
   # Generates a message to broadcast the tube to the stock warehouse
   # tables. Raises an exception if no template is configured for a give
   # asset. In most cases this is because the asset is not a stock
+  # Called when importing samples, e.g. in sample_manifest > core_behaviour, on manifest upload
   def register_stock!
     class_name = self.class.name
     raise StandardError, "No stock template configured for #{class_name}. If #{class_name} is a stock, set stock_template on the class." if stock_message_template.nil?
@@ -203,6 +205,6 @@ class Asset < ApplicationRecord
   end
 
   def get_qc_result_value_for(key)
-    last_qc_result_for(key).pluck(:value).first
+    last_qc_result_for(key).pick(:value)
   end
 end

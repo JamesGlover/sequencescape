@@ -16,40 +16,50 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v2 do
-      jsonapi_resources :transfer_requests
+      jsonapi_resources :pick_lists
+      jsonapi_resources :aliquots
+      jsonapi_resources :assets
+      jsonapi_resources :comments
       jsonapi_resources :custom_metadatum_collections
+      jsonapi_resources :labware
+      jsonapi_resources :lanes
       jsonapi_resources :lot_types
       jsonapi_resources :lots
-      jsonapi_resources :qcables
+      jsonapi_resources :orders
       jsonapi_resources :plate_templates
-      jsonapi_resources :tag_layout_templates
-      jsonapi_resources :tag_groups
-      jsonapi_resources :comments
+      jsonapi_resources :plates
       jsonapi_resources :pre_capture_pools
       jsonapi_resources :primer_panels
-      jsonapi_resources :request_types
-      jsonapi_resources :purposes
-      jsonapi_resources :submissions
-      jsonapi_resources :orders
-      jsonapi_resources :aliquots
-      jsonapi_resources :requests
-      jsonapi_resources :users
-      jsonapi_resources :tubes
-      jsonapi_resources :lanes
-      jsonapi_resources :wells
-      jsonapi_resources :plates
-      jsonapi_resources :receptacles
-      jsonapi_resources :samples
-      jsonapi_resources :work_orders
-      jsonapi_resources :studies
       jsonapi_resources :projects
-      jsonapi_resources :qc_results
-      jsonapi_resources :assets
+      jsonapi_resources :purposes
       jsonapi_resources :qc_assays
-      jsonapi_resources :labware
+      jsonapi_resources :qc_results
+      jsonapi_resources :qcables
+      jsonapi_resources :racked_tubes
+      jsonapi_resources :receptacles
+      jsonapi_resources :request_types
+      jsonapi_resources :requests
+      jsonapi_resources :samples
+      jsonapi_resources :studies
+      jsonapi_resources :submissions
+      jsonapi_resources :tag_groups
+      jsonapi_resources :tag_layout_templates
+      jsonapi_resources :transfer_requests
+      jsonapi_resources :tube_rack_statuses
+      jsonapi_resources :tube_racks
+      jsonapi_resources :tubes
+      jsonapi_resources :users
+      jsonapi_resources :wells
+      jsonapi_resources :work_orders
 
       namespace :aker do
         resources :jobs, only: [:create]
+      end
+
+      namespace :heron do
+        resources :tube_rack_statuses, only: [:create]
+        resources :tube_racks, only: [:create]
+        resources :plates, only: [:create]
       end
     end
   end
@@ -92,6 +102,9 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :tube_rack_summaries, only: :show
+  resources :tube_rack_statuses, only: :index
+
   resources :reference_genomes
   resources :barcode_printers
 
@@ -123,13 +136,16 @@ Rails.application.routes.draw do
     resources :comments, controller: 'batches/comments'
     resources :stock_assets, only: %i[new create]
 
+    resources :robots do
+      resource :driver_file, only: :show
+    end
+
     member do
       get :print_labels
       get :print_stock_labels
       get :print_plate_labels
       get :filtered
       post :swap
-      get :gwl_file
       post :fail_items
       post :reset_batch
       get :download_spreadsheet
@@ -551,14 +567,6 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :receptions, only: [:index] do
-    collection do
-      post :confirm_reception
-      get :reception
-      post :receive_barcode
-    end
-  end
-
   resources :sequenom_qc_plates, only: :index
   resources :study_reports
 
@@ -590,6 +598,8 @@ Rails.application.routes.draw do
   end
 
   resources :labwhere_receptions, only: %i[index create]
+
+  resources :report_fails, only: %i[index create]
 
   resources :qc_files, only: %i[show create]
 
@@ -625,4 +635,7 @@ Rails.application.routes.draw do
 
   # We removed workflows, which broke study links. Some customers may have their own studies bookmarked
   get 'studies/:study_id/workflows/:id', to: redirect('studies/%{study_id}/information')
+
+  resources :quad_stamp, only: %i[new create]
+  resources :pick_lists, only: %i[index show]
 end

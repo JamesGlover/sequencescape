@@ -82,7 +82,8 @@ class AccessionService
         # for some reasons, ebi doesn't give us back a accession number for the submission if it's a MODIFY action
         # therefore, we should be ready to get one or not
         number_generated = true
-        if success == 'true'
+        case success
+        when 'true'
           # extract and update accession numbers
           accession_number = submission.all_accessionables.each do |acc|
             accession_number = acc.extract_accession_number(xmldoc)
@@ -100,7 +101,7 @@ class AccessionService
 
           raise NumberNotGenerated, 'Service gave no numbers back' unless number_generated
 
-        elsif success == 'false'
+        when 'false'
           errors = xmldoc.root.elements.to_a('//ERROR').map(&:text)
           raise AccessionServiceError, "Could not get accession number. Error in submitted data: #{$!} #{errors.map { |e| "\n  - #{e}" }}"
         else
@@ -249,13 +250,13 @@ class AccessionService
     response = rc.post(payload)
     case response.code
     when (200...300) # success
-      return response.body.to_s
+      response.body.to_s
     when (400...600)
       Rails.logger.warn($!)
       $! = nil
       raise AccessionServiceError
     else
-      return ''
+      ''
     end
   rescue StandardError => e
     raise AccessionServiceError, "Could not get accession number. EBI may be down or invalid data submitted: #{$!}"

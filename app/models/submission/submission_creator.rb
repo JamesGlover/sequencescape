@@ -50,6 +50,8 @@ class Submission::SubmissionCreator < Submission::PresenterSkeleton
 
   # Returns the either the first order associated with the submission or
   # creates a new blank order.
+  # @note Following the creation of an order, this will actually be the last order
+  # created.
   def order
     return @order if @order.present?
     return submission.orders.first if submission.present?
@@ -148,6 +150,7 @@ class Submission::SubmissionCreator < Submission::PresenterSkeleton
   def wells_on_specified_plate_purpose_for(plate_purpose, samples)
     samples.map do |sample|
       # Prioritise the newest well
+
       sample.wells.on_plate_purpose(plate_purpose).order(id: :desc).first ||
         raise(InvalidInputException, "No #{plate_purpose.name} plate found with sample: #{sample.name}")
     end
@@ -235,7 +238,6 @@ class Submission::SubmissionCreator < Submission::PresenterSkeleton
   # This is a legacy of the old controller...
   def find_samples_from_text(sample_text)
     names = sample_text.split(/\s+/)
-
     samples = Sample.includes(:assets).where(['name IN (:names) OR sanger_sample_id IN (:names)', { names: names }])
 
     name_set  = Set.new(names)

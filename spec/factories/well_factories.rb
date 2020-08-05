@@ -13,6 +13,10 @@ FactoryBot.define do
     factory :untagged_well, parent: :well do
       aliquots { build_list(:untagged_aliquot, 1, aliquot_options) }
     end
+
+    factory :picked_well do
+      well_attribute { build :well_attribute, picked_volume: 12 }
+    end
   end
 
   factory :well_attribute do
@@ -54,7 +58,7 @@ FactoryBot.define do
     end
   end
 
-  factory :well_link, class: Well::Link do
+  factory :well_link, class: 'Well::Link' do
     association(:source_well, factory: :well)
     association(:target_well, factory: :well)
     type { 'stock' }

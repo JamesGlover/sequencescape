@@ -122,6 +122,140 @@ namespace :limber do
         asset_shape: AssetShape.find_by(name: 'Standard')
       )
     end
+
+    unless Purpose.where(name: 'TR Stock 96').exists?
+      TubeRack::Purpose.create!(
+        name: 'TR Stock 96',
+        target_type: 'TubeRack',
+        stock_plate: true,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: false,
+        size: 96
+      )
+    end
+
+    unless Purpose.where(name: 'TR Stock 48').exists?
+      TubeRack::Purpose.create!(
+        name: 'TR Stock 48',
+        target_type: 'TubeRack',
+        stock_plate: true,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: false,
+        size: 48
+      )
+    end
+
+    unless Purpose.where(name: 'Heron Lysed Tube Rack').exists?
+      TubeRack::Purpose.create!(
+        name: 'Heron Lysed Tube Rack',
+        target_type: 'TubeRack',
+        stock_plate: true,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: false,
+        size: 96
+      )
+    end
+
+    unless Purpose.where(name: 'LDS Stock').exists?
+      PlatePurpose.create!(
+        name: 'LDS Stock',
+        target_type: 'Plate',
+        stock_plate: true,
+        input_plate: true,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: false,
+        size: 96,
+        asset_shape: AssetShape.find_by(name: 'Standard')
+      )
+    end
+
+    unless Purpose.where(name: 'LDS Cherrypick').exists?
+      PlatePurpose.create!(
+        name: 'LDS Cherrypick',
+        target_type: 'Plate',
+        stock_plate: true,
+        input_plate: true,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: true,
+        size: 96,
+        asset_shape: AssetShape.find_by(name: 'Standard')
+      )
+    end
+
+    unless Purpose.where(name: 'LHR Stock').exists?
+      PlatePurpose.create!(
+        name: 'LHR Stock',
+        target_type: 'Plate',
+        stock_plate: true,
+        input_plate: false,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: false,
+        size: 96,
+        asset_shape: AssetShape.find_by(name: 'Standard')
+      )
+    end
+
+    unless Purpose.where(name: 'LHR Cherrypick').exists?
+      PlatePurpose.create!(
+        name: 'LHR Cherrypick',
+        target_type: 'Plate',
+        stock_plate: true,
+        input_plate: false,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: true,
+        size: 96,
+        asset_shape: AssetShape.find_by(name: 'Standard')
+      )
+    end
+
+    unless Purpose.where(name: 'LHR RT').exists?
+      PlatePurpose.create!(
+        name: 'LHR RT',
+        target_type: 'Plate',
+        stock_plate: true,
+        input_plate: true,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: true,
+        size: 96,
+        asset_shape: AssetShape.find_by(name: 'Standard')
+      )
+    end
+
+    unless Purpose.where(name: 'LHR-384 RT').exists?
+      PlatePurpose.create!(
+        name: 'LHR-384 RT',
+        target_type: 'Plate',
+        stock_plate: true,
+        input_plate: true,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '384 Well Plate'),
+        cherrypickable_target: true,
+        size: 384,
+        asset_shape: AssetShape.find_by(name: 'Standard')
+      )
+    end
+
+    unless Purpose.where(name: 'Heron Lysed Plate').exists?
+      PlatePurpose.create!(
+        name: 'Heron Lysed Plate',
+        target_type: 'Plate',
+        stock_plate: true,
+        input_plate: true,
+        default_state: 'pending',
+        barcode_printer_type: BarcodePrinterType.find_by(name: '96 Well Plate'),
+        cherrypickable_target: true,
+        size: 96,
+        asset_shape: AssetShape.find_by(name: 'Standard')
+      )
+    end
   end
 
   desc 'Create the limber request types'
@@ -131,6 +265,13 @@ namespace :limber do
       %w[WGS LCMB].each do |prefix|
         Limber::Helper::RequestTypeConstructor.new(prefix).build!
       end
+
+      Limber::Helper::RequestTypeConstructor.new(
+        'Duplex-Seq',
+        library_types: ['Duplex-Seq'],
+        default_purposes: ['LDS Stock', 'LDS Cherrypick']
+      ).build!
+
       Limber::Helper::RequestTypeConstructor.new(
         'PCR Free',
         library_types: ['HiSeqX PCR free', 'PCR Free 384', 'Chromium single cell CNV', 'DAFT-seq'],
@@ -220,7 +361,9 @@ namespace :limber do
           'Ribozero RNA depletion',
           'Ribozero RNA-seq (Bacterial)',
           'Ribozero RNA-seq (HMR)',
-          'TraDIS'
+          'TraDIS',
+          'Chromium Visium',
+          'Hi-C'
         ],
         product_line: 'Bespoke',
         default_purposes: ['LBB Cherrypick'] # It requires default_purpose to accept an array.
@@ -260,6 +403,20 @@ namespace :limber do
         ],
         product_line: 'Bespoke',
         default_purposes: ['LBB Cherrypick']              # It requires default_purpose to accept an array.
+      ).build!
+
+      Limber::Helper::RequestTypeConstructor.new(
+        'Heron',
+        request_class: 'IlluminaHtp::Requests::HeronRequest',
+        library_types:  [
+          'PCR amplicon ligated adapters',
+          'PCR amplicon ligated adapters 384',
+          'PCR with TruSeq tails amplicon',
+          'PCR with TruSeq tails amplicon 384',
+          'Sanger_artic_v3_96',
+          'Sanger_artic_v4_96'
+        ],
+        default_purposes: ['LHR RT', 'LHR-384 RT']             # It requires default_purpose to accept an array.
       ).build!
 
       unless RequestType.where(key: 'limber_multiplexing').exists?
@@ -344,7 +501,8 @@ namespace :limber do
                                      :create_request_types,
                                      :create_barcode_printer_types,
                                      'sequencing:novaseq:setup',
-                                     'sequencing:gbs_miseq:setup'] do
+                                     'sequencing:gbs_miseq:setup',
+                                     'sequencing:heron_miseq:setup'] do
     puts 'Creating submission templates....'
 
     base_list = %w(
@@ -412,8 +570,16 @@ namespace :limber do
         Limber::Helper::LibraryAndMultiplexingTemplateConstructor.new(prefix: prefix, catalogue: catalogue).build!
       end
 
+      heron_catalogue = ProductCatalogue.find_or_create_by!(name: 'Heron')
+      Limber::Helper::TemplateConstructor.new(prefix: 'Heron', catalogue: heron_catalogue, sequencing_keys: base_list).build!
+      Limber::Helper::LibraryOnlyTemplateConstructor.new(prefix: 'Heron', catalogue: heron_catalogue).build!
+      Limber::Helper::LibraryAndMultiplexingTemplateConstructor.new(prefix: 'Heron', catalogue: heron_catalogue).build!
+
       lcbm_catalogue = ProductCatalogue.create_with(selection_behaviour: 'SingleProduct').find_or_create_by!(name: 'LCMB')
       Limber::Helper::LibraryOnlyTemplateConstructor.new(prefix: 'LCMB', catalogue: lcbm_catalogue).build!
+
+      duplex_seq_catalogue = ProductCatalogue.create_with(selection_behaviour: 'SingleProduct').find_or_create_by!(name: 'Duplex-Seq')
+      Limber::Helper::LibraryOnlyTemplateConstructor.new(prefix: 'Duplex-Seq', catalogue: duplex_seq_catalogue).build!
 
       mda_catalogue = ProductCatalogue.find_or_create_by!(name: 'GnT MDA')
       Limber::Helper::LibraryOnlyTemplateConstructor.new(prefix: 'GnT MDA', catalogue: mda_catalogue).build!
@@ -463,6 +629,18 @@ namespace :limber do
           },
           product_line: ProductLine.find_by!(name: 'Bespoke'),
           product_catalogue: ProductCatalogue.find_by!(name: 'Generic')
+        )
+      end
+
+      unless SubmissionTemplate.find_by(name: 'MiSeq for Heron')
+        SubmissionTemplate.create!(
+          name: 'MiSeq for Heron',
+          submission_class_name: 'AutomatedOrder',
+          submission_parameters: {
+            request_type_ids_list: [RequestType.where(key: 'heron_miseq_sequencing').pluck(:id)]
+          },
+          product_line: ProductLine.find_by!(name: 'Illumina-HTP'),
+          product_catalogue: ProductCatalogue.find_by!(name: 'Heron')
         )
       end
     end

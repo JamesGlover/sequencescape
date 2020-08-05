@@ -40,6 +40,10 @@ FactoryBot.define do
         factory :gbs_request_type do
           request_class { IlluminaHtp::Requests::GbsRequest }
         end
+
+        factory :heron_request_type do
+          request_class { IlluminaHtp::Requests::HeronRequest }
+        end
       end
 
       factory :multiplex_request_type do
@@ -151,7 +155,7 @@ FactoryBot.define do
     is_default { true }
   end
 
-  factory :request_type_validator, class: RequestType::Validator do
+  factory :request_type_validator, class: 'RequestType::Validator' do
     transient do
       options { [37, 54, 76, 108] }
       default { options.first }
@@ -166,7 +170,7 @@ FactoryBot.define do
       association(:request_type, factory: :sequencing_request_type)
     end
 
-    factory :library_request_type_validator, class: RequestType::Validator do
+    factory :library_request_type_validator, class: 'RequestType::Validator' do
       request_option { 'library_type' }
       association(:request_type, factory: :library_creation_request_type)
       valid_options { |rtva| RequestType::Validator::LibraryTypeValidator.new(rtva.request_type.id) }

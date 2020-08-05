@@ -47,6 +47,9 @@ class Submission < ApplicationRecord
   # and JUST allowing comments on submissions
   has_many :comments_from_requests, through: :requests, source: :comments
 
+  has_many :receptacles, through: :orders, source: :assets
+  has_many :batches, -> { distinct }, through: :requests
+
   # Required at initial construction time ...
   validates_with OrderCompatibilityValidator, if: :building?
 
@@ -194,7 +197,7 @@ class Submission < ApplicationRecord
       # If we get here we've got custom pooling behaviour defined.
       index = request.request_type.pool_index_for_request(request)
       number_to_return = next_possible_requests.count / request.request_type.pool_count
-      return next_possible_requests.slice(index * number_to_return, number_to_return)
+      next_possible_requests.slice(index * number_to_return, number_to_return)
 
     else
       multiplier = multiplier_for(request.next_request_type_id)

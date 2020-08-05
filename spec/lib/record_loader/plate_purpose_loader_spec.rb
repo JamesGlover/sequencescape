@@ -8,7 +8,7 @@ RSpec.describe RecordLoader::PlatePurposeLoader, type: :model, loader: true do
     described_class.new(directory: test_directory, files: selected_files)
   end
 
-  let(:test_directory) { Rails.root.join('spec', 'data', 'record_loader', 'plate_purposes') }
+  let(:test_directory) { Rails.root.join('spec/data/record_loader/plate_purposes') }
   let(:created_purposes) { ['Basic Plate', 'Other Plate', 'Type with creator'] }
 
   context 'with no files specified' do
@@ -23,7 +23,7 @@ RSpec.describe RecordLoader::PlatePurposeLoader, type: :model, loader: true do
         expect(Purpose.where(name: created_purposes).count).to eq(3)
       end
 
-      it 'sets the barcode printer' do
+      it 'sets the barcode printer' do # rubocop:todo RSpec/AggregateExamples
         expect(Purpose.where(name: created_purposes).last.barcode_printer_type).to eq(BarcodePrinterType.find_by(name: '96 Well Plate'))
       end
     end
@@ -55,7 +55,7 @@ RSpec.describe RecordLoader::PlatePurposeLoader, type: :model, loader: true do
       expect(Plate::Creator.joins(:plate_purposes).where(plate_purposes: { name: created_purposes.last })).to exist
     end
 
-    it 'sets creator parents' do
+    it 'sets creator parents' do # rubocop:todo RSpec/AggregateExamples
       expect(the_creator.parent_plate_purposes).to eq(PlatePurpose.where(name: 'Stock Plate'))
     end
   end

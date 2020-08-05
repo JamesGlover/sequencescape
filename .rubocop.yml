@@ -1,13 +1,11 @@
 inherit_from: .rubocop_todo.yml
 require:
- - 'test_prof/rubocop'
- - 'rubocop-performance'
+ - test_prof/rubocop
+ - rubocop-performance
  - rubocop-rails
  - rubocop-rspec
-RSpec/AggregateFailures:
-  Enabled: true
-  Include:
-    - 'spec/**/*.rb'
+RSpec/AggregateExamples:
+  AddAggregateFailuresMetadata: false
 # Added exclude because api and feature specs do not have a specific class.
 RSpec/DescribeClass:
   Exclude:
@@ -17,7 +15,6 @@ RSpec/DescribeClass:
     - 'spec/lib/warren/*.rb'
     - 'spec/models/billing/*.rb'
 AllCops:
-  TargetRubyVersion: 2.6
   Exclude:
     - db/schema.rb
     - db/views_schema.rb
@@ -109,7 +106,7 @@ Metrics/MethodLength:
   Exclude:
     - 'db/migrate/*'
     - 'db/migrate_asset_refactor/*'
-Layout/IndentFirstArrayElement:
+Layout/FirstArrayElementIndentation:
   EnforcedStyle: consistent
 Style/ClassAndModuleChildren:
   Enabled: false
@@ -124,3 +121,67 @@ Rails/UnknownEnv:
     - test
     - cucumber
     - profile
+
+# Pending Cops
+Layout/EmptyLinesAroundAttributeAccessor:
+  Enabled: true
+Layout/SpaceAroundMethodCallOperator:
+  Enabled: true
+Lint/DeprecatedOpenSSLConstant:
+  Enabled: true
+Lint/RaiseException:
+  Enabled: true
+Lint/StructNewOverride:
+  Enabled: true
+Style/ExponentialNotation:
+  Enabled: true
+Style/HashEachMethods:
+  Enabled: true
+Style/HashTransformKeys:
+  Enabled: true
+Style/HashTransformValues:
+  Enabled: true
+Style/SlicingWithRange:
+  Enabled: true
+Lint/MixedRegexpCaptureTypes:
+  Enabled: true
+Style/RedundantFetchBlock:
+  Enabled: true
+Style/RedundantRegexpCharacterClass:
+  Enabled: true
+Style/RedundantRegexpEscape:
+  Enabled: true
+Lint/DuplicateElsifCondition:
+  Enabled: true
+Style/AccessorGrouping:
+  Enabled: true
+Style/ArrayCoercion:
+  Enabled: true
+Style/BisectedAttrAccessor:
+  Enabled: true
+Style/CaseLikeIf:
+  Enabled: true
+Style/HashAsLastArrayItem:
+  Enabled: true
+Style/HashLikeCase:
+  Enabled: true
+Style/RedundantAssignment:
+  Enabled: true
+Style/RedundantFileExtensionInRequire:
+  Enabled: true
+Performance/AncestorsInclude:
+  Enabled: true
+Performance/BigDecimalWithNumericArgument:
+  Enabled: true
+Performance/RedundantSortBlock:
+  Enabled: true
+Performance/RedundantStringChars:
+  Enabled: true
+Performance/ReverseFirst:
+  Enabled: true
+Performance/SortReverse:
+  Enabled: true
+Performance/Squeeze:
+  Enabled: true
+Performance/StringInclude:
+  Enabled: true

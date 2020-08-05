@@ -19,6 +19,10 @@
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
+require 'knapsack'
+
+Knapsack::Adapters::RSpecAdapter.bind
+
 require 'simplecov'
 
 require 'webdrivers/chromedriver'
@@ -50,6 +54,7 @@ def enable_chrome_headless_downloads(driver)
 end
 
 Capybara.javascript_driver = ENV.fetch('JS_DRIVER', 'headless_chrome').to_sym
+Capybara.default_max_wait_time = 10
 
 WebMock.disable_net_connect!(allow_localhost: true)
 

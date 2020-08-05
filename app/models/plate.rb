@@ -34,7 +34,7 @@ class Plate < Labware
 
   has_qc_files
 
-  belongs_to :plate_purpose, foreign_key: :plate_purpose_id, inverse_of: :plates
+  belongs_to :plate_purpose, inverse_of: :plates
   belongs_to :purpose, foreign_key: :plate_purpose_id
   has_many :wells, inverse_of: :plate, foreign_key: :labware_id do
     # Build empty wells for the plate.
@@ -63,14 +63,14 @@ class Plate < Labware
 
   # Contained associations all look up through wells (Wells in turn delegate to aliquots)
   has_many :contained_samples, through: :wells, source: :samples
-  has_many :conatined_aliquots, through: :wells, source: :aliquots
+  has_many :contained_aliquots, through: :wells, source: :aliquots
 
   # We also look up studies and projects through wells
   has_many :studies, -> { distinct }, through: :wells
   has_many :projects, -> { distinct }, through: :wells
   has_many :well_requests_as_target, through: :wells, source: :requests_as_target
   has_many :well_requests_as_source, through: :wells, source: :requests_as_source
-  has_many :in_progress_requests, through: :conatined_aliquots, source: :request
+  has_many :in_progress_requests, through: :contained_aliquots, source: :request
   has_many :orders_as_target, -> { distinct }, through: :well_requests_as_target, source: :order
   # We use stock well associations here as stock_wells is already used to generate some kind of hash.
   has_many :stock_requests, -> { distinct }, through: :stock_well_associations, source: :requests
@@ -87,6 +87,12 @@ class Plate < Labware
 
   def labware_type
     super || PlateType.plate_default_type
+  end
+
+  # Used to unify interface with TubeRacks. Returns a list of all receptacles {Well wells}
+  # with position information included for aid performance
+  def receptacles_with_position
+    wells.includes(:map)
   end
 
   # The state of a plate loosely defines what has happened to it. In most cases it is determined
@@ -407,7 +413,7 @@ class Plate < Labware
   def stock_wells
     # Optimisation: if the plate is a stock plate then it's wells are it's stock wells!]
     if stock_plate?
-      wells.with_pool_id.each_with_object({}) { |w, store| store[w] = [w] }
+      wells.with_pool_id.index_with { |w| [w] }
     else
       wells.include_stock_wells.with_pool_id.each_with_object({}) do |w, store|
         storted_stock_wells = w.stock_wells.sort_by { |sw| sw.map.column_order }
@@ -492,6 +498,13 @@ class Plate < Labware
     else
       wells.in_column_major_order
     end
+  end
+
+  # When Cherrypicking, especially on the Hamilton, control plates get placed
+  # on a seperate bed. ControlPlates overide this.
+  # @return [false]
+  def pick_as_control?
+    false
   end
 
   private

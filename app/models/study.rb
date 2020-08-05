@@ -96,9 +96,7 @@ class Study < ApplicationRecord
   # Class variables
   self.per_page = 500
 
-  attr_accessor :approval
-  attr_accessor :run_count
-  attr_accessor :total_price
+  attr_accessor :approval, :run_count, :total_price
 
   # Associations
   has_many_events
@@ -249,7 +247,7 @@ class Study < ApplicationRecord
       contains_human_dna: YES_OR_NO,
       commercially_available: YES_OR_NO
     }.each_with_object({}) do |(k, v), h|
-      h[k] = v.each_with_object({}) { |b, a| a[b.downcase] = b }
+      h[k] = v.index_by { |b| b.downcase }
     end
 
     # These fields are warehoused, so need to match the encoding restrictions there
@@ -271,6 +269,7 @@ class Study < ApplicationRecord
       end
     end
   end
+  validates_associated :study_metadata, on: %i[accession EGA ENA]
 
   # See app/models/study/metadata.rb for further customization
 
@@ -354,7 +353,7 @@ class Study < ApplicationRecord
   end
 
   def each_well_for_qc_report_in_batches(exclude_existing, product_criteria, plate_purposes = nil)
-    base_scope = Well.on_plate_purpose(PlatePurpose.where(name: plate_purposes || STOCK_PLATE_PURPOSES))
+    base_scope = Well.on_plate_purpose_included(PlatePurpose.where(name: plate_purposes || STOCK_PLATE_PURPOSES))
                      .for_study_through_aliquot(self)
                      .without_blank_samples
                      .includes(:well_attribute, samples: :sample_metadata)
@@ -362,13 +361,6 @@ class Study < ApplicationRecord
     scope = exclude_existing ? base_scope.without_report(product_criteria) : base_scope
     scope.find_in_batches { |wells| yield wells }
   end
-
-  # We only need to validate the field if we are enforcing data release
-  def validating_ena_required_fields_with_enforce_data_release=(state)
-    self.validating_ena_required_fields_without_enforce_data_release = state if enforce_data_release
-  end
-  alias validating_ena_required_fields_with_enforce_data_release= validating_ena_required_fields=
-  alias validating_ena_required_fields= validating_ena_required_fields_with_enforce_data_release=
 
   def warnings
     # These studies are now invalid, but the warning should remain until existing studies are fixed.
@@ -401,7 +393,7 @@ class Study < ApplicationRecord
     if (total - failed - cancelled) > 0
       (counts.fetch('passed', 0) * 100) / (total - failed - cancelled)
     else
-      return 0
+      0
     end
   end
 
@@ -513,10 +505,7 @@ class Study < ApplicationRecord
   end
 
   def validate_ena_required_fields!
-    self.validating_ena_required_fields = true
-    valid? or raise ActiveRecord::RecordInvalid, self
-  ensure
-    self.validating_ena_required_fields = false
+    valid?(:accession) or raise ActiveRecord::RecordInvalid, self
   end
 
   def mailing_list_of_managers

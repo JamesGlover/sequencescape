@@ -67,6 +67,13 @@ RSpec.describe SampleManifestExcel::Worksheet, type: :model, sample_manifest_exc
       worksheet = SampleManifestExcel::Worksheet::DataWorksheet.new(options.merge(columns: column_list, sample_manifest: sample_manifest))
       expect(worksheet.type).to eq('Tubes')
     end
+
+    it 'be Tube Rack for a tube rack manifest' do
+      sample_manifest = create(:tube_rack_manifest)
+      column_list = SampleManifestExcel.configuration.columns.tube_rack_default.dup
+      worksheet = SampleManifestExcel::Worksheet::DataWorksheet.new(options.merge(columns: column_list, sample_manifest: sample_manifest))
+      expect(worksheet.type).to eq('Tube Racks')
+    end
   end
 
   context 'data worksheet' do
@@ -88,8 +95,12 @@ RSpec.describe SampleManifestExcel::Worksheet, type: :model, sample_manifest_exc
       expect(worksheet.axlsx_worksheet).to be_present
     end
 
-    it 'last row should be correct' do
+    it 'last row should be correct' do # rubocop:todo RSpec/AggregateExamples
       expect(worksheet.last_row).to eq(spreadsheet.sheet(0).last_row)
+    end
+
+    it 'computed first row should be correct' do # rubocop:todo RSpec/AggregateExamples
+      expect(worksheet.computed_first_row).to eq(worksheet.first_row)
     end
 
     it 'adds title and description' do
@@ -115,7 +126,7 @@ RSpec.describe SampleManifestExcel::Worksheet, type: :model, sample_manifest_exc
       end
     end
 
-    it 'adds all of the details' do
+    it 'adds all of the details' do # rubocop:todo RSpec/AggregateExamples
       expect(spreadsheet.sheet(0).last_row).to eq(sample_manifest.details_array.count + 9)
     end
 
@@ -127,20 +138,82 @@ RSpec.describe SampleManifestExcel::Worksheet, type: :model, sample_manifest_exc
       end
     end
 
-    it 'updates all of the columns' do
+    it 'updates all of the columns' do # rubocop:todo RSpec/AggregateExamples
       expect(worksheet.columns.values).to be_all(&:updated?)
     end
 
-    it 'panes should be frozen correctly' do
+    it 'panes should be frozen correctly' do # rubocop:todo RSpec/AggregateExamples
       expect(worksheet.axlsx_worksheet.sheet_view.pane.x_split).to eq(worksheet.freeze_after_column(:sanger_sample_id))
       expect(worksheet.axlsx_worksheet.sheet_view.pane.y_split).to eq(worksheet.first_row - 1)
       expect(worksheet.axlsx_worksheet.sheet_view.pane.state).to eq('frozen')
     end
 
-    it 'worksheet is protected with password but columns and rows format can be changed' do
+    it 'worksheet is protected with password but columns and rows format can be changed' do # rubocop:todo RSpec/AggregateExamples
       expect(worksheet.axlsx_worksheet.sheet_protection.password).to be_present
       expect(worksheet.axlsx_worksheet.sheet_protection.format_columns).to be_falsey
       expect(worksheet.axlsx_worksheet.sheet_protection.format_rows).to be_falsey
+    end
+  end
+
+  context 'tube rack worksheet' do
+    let!(:worksheet) do
+      SampleManifestExcel::Worksheet::DataWorksheet.new(
+        workbook: workbook,
+        columns: SampleManifestExcel.configuration.columns.tube_rack_default.dup,
+        sample_manifest: sample_manifest,
+        ranges: SampleManifestExcel.configuration.ranges.dup,
+        password: '1111'
+      )
+    end
+
+    before do
+      save_file
+    end
+
+    context 'when a single rack' do
+      let(:sample_manifest) { create(:tube_rack_manifest) }
+
+      it 'adds extra cells into tube rack manifests' do
+        expect(spreadsheet.sheet(0).cell(7, 1)).to eq('No. Tube Racks Sent:')
+        expect(spreadsheet.sheet(0).cell(7, 2)).to eq(sample_manifest.count.to_s)
+        expect(spreadsheet.sheet(0).cell(8, 1)).to eq('Rack size:')
+        expect(spreadsheet.sheet(0).cell(8, 2)).to eq(sample_manifest.tube_rack_purpose.size.to_s)
+        expect(spreadsheet.sheet(0).cell(9, 1)).to eq('Rack barcode (1):')
+      end
+
+      it 'panes should be frozen correctly' do
+        expect(worksheet.axlsx_worksheet.sheet_view.pane.x_split).to eq(worksheet.freeze_after_column(:sanger_sample_id))
+        expect(worksheet.axlsx_worksheet.sheet_view.pane.y_split).to eq(worksheet.computed_first_row - 1)
+        expect(worksheet.axlsx_worksheet.sheet_view.pane.state).to eq('frozen')
+      end
+
+      it 'computed first row should be correct' do # rubocop:todo RSpec/AggregateExamples
+        expect(worksheet.computed_first_row).to eq(worksheet.first_row + 2)
+      end
+    end
+
+    context 'when multiple racks' do
+      let(:sample_manifest) { create(:tube_rack_manifest, count: 3) }
+
+      it 'adds extra cells into tube rack manifests' do
+        expect(spreadsheet.sheet(0).cell(7, 1)).to eq('No. Tube Racks Sent:')
+        expect(spreadsheet.sheet(0).cell(7, 2)).to eq(sample_manifest.count.to_s)
+        expect(spreadsheet.sheet(0).cell(8, 1)).to eq('Rack size:')
+        expect(spreadsheet.sheet(0).cell(8, 2)).to eq(sample_manifest.tube_rack_purpose.size.to_s)
+        expect(spreadsheet.sheet(0).cell(9, 1)).to eq('Rack barcode (1):')
+        expect(spreadsheet.sheet(0).cell(10, 1)).to eq('Rack barcode (2):')
+        expect(spreadsheet.sheet(0).cell(11, 1)).to eq('Rack barcode (3):')
+      end
+
+      it 'panes should be frozen correctly' do
+        expect(worksheet.axlsx_worksheet.sheet_view.pane.x_split).to eq(worksheet.freeze_after_column(:sanger_sample_id))
+        expect(worksheet.axlsx_worksheet.sheet_view.pane.y_split).to eq(worksheet.computed_first_row - 1)
+        expect(worksheet.axlsx_worksheet.sheet_view.pane.state).to eq('frozen')
+      end
+
+      it 'computed first row should be correct' do # rubocop:todo RSpec/AggregateExamples
+        expect(worksheet.computed_first_row).to eq(worksheet.first_row + 4)
+      end
     end
   end
 
@@ -188,7 +261,7 @@ RSpec.describe SampleManifestExcel::Worksheet, type: :model, sample_manifest_exc
         expect(worksheet.axlsx_worksheet).to be_present
       end
 
-      it 'last row should be correct' do
+      it 'last row should be correct' do # rubocop:todo RSpec/AggregateExamples
         expect(worksheet.last_row).to eq(worksheet.first_row + 5)
       end
 
@@ -374,7 +447,7 @@ RSpec.describe SampleManifestExcel::Worksheet, type: :model, sample_manifest_exc
         expect(worksheet.axlsx_worksheet).to be_present
       end
 
-      it 'last row should be correct' do
+      it 'last row should be correct' do # rubocop:todo RSpec/AggregateExamples
         expect(worksheet.last_row).to eq(worksheet.first_row + (attributes[:num_plates] * attributes[:num_samples_per_plate]) - 1)
       end
 

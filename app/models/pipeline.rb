@@ -21,7 +21,8 @@ class Pipeline < ApplicationRecord
                   :genotyping, :sequencing, :purpose_information, :can_create_stock_assets,
                   :inbox_eager_loading, :group_by_submission, :group_by_parent,
                   :generate_target_assets_on_batch_create, :pick_to,
-                  :asset_type, :request_sort_order, instance_writer: false
+                  :asset_type, :request_sort_order, :pick_data,
+                  instance_writer: false
 
   # Pipeline defaults
   self.batch_worksheet = 'detailed_worksheet'
@@ -40,6 +41,7 @@ class Pipeline < ApplicationRecord
   self.group_by_parent = false
   self.generate_target_assets_on_batch_create = false
   self.request_sort_order = { id: :desc }.freeze
+  self.pick_data = false
 
   delegate :item_limit, :batch_limit?, to: :workflow
 
@@ -78,6 +80,11 @@ class Pipeline < ApplicationRecord
       .where(pipelines_request_types: { request_type_id: rt })
   }
 
+  def custom_message
+    # Override this in subclasses if you want to display a custom message in the _pipeline_limit partial (blue box on pipeline show page)
+    I18n.t('pipelines.show_page_custom_message.default')
+  end
+
   def request_types_including_controls
     [control_request_type].compact + request_types
   end
@@ -98,12 +105,12 @@ class Pipeline < ApplicationRecord
 
   # Overridden in group-by parent pipelines to display input plates
   def input_labware(_requests)
-    []
+    Labware.none
   end
 
   # Overridden in group-by parent pipelines to display output
   def output_labware(_requests)
-    []
+    Labware.none
   end
 
   def post_finish_batch(batch, user)
@@ -132,14 +139,12 @@ class Pipeline < ApplicationRecord
     controls.empty? ? false : true
   end
 
+  # Extracts the request ids from the selected requests. Overidden in pipleines
+  # which group by parent, as requests are grouped together by eg. submission id and labware id
+  # and the individual request ids are unavailable
   def extract_requests_from_input_params(params)
-    if (request_ids = params['request']).present?
-      requests.inputs(true).order(:id).find(selected_keys_from(request_ids))
-    elsif (selected_groups = params['request_group']).present?
-      grouping_parser.all(selected_keys_from(selected_groups))
-    else
-      raise StandardError, 'Unknown manner in which to extract requests!'
-    end
+    request_ids = params.fetch('request')
+    requests.inputs(true).order(:id).find(selected_keys_from(request_ids))
   end
 
   def all_requests_from_submissions_selected?(_request_ids)

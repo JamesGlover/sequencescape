@@ -199,6 +199,18 @@ div.quota {
   a { @extend .list-group-item; }
 }
 
+.pick-list-list {
+  @extend .list-group;
+  a {
+    @extend .list-group-item;
+    @extend .list-group-item-action;
+    time {
+      @extend .text-muted;
+      @extend .px-2; // Pad left and right
+    };
+  }
+}
+
 .barcode_list {
   @extend .list-group;
   li {
@@ -726,6 +738,9 @@ table.detailed {
 
 tr.destination{
   background-color: #ccc;
+}
+tr.control {
+  background-color: #eee;
 }
 
 tr.qc_fail.roweven  {
