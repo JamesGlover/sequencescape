@@ -16,8 +16,9 @@ describe 'Plates API', with: :api_v2, tags: :lighthouse do
     let(:request) { api_post '/api/v2/plates', payload }
     let(:plate) do
       request
-      uuid = JSON.parse(response.body).dig('data', 'attributes', 'uuid')
-      Plate.with_uuid(uuid).first
+      plate_id = json.dig('data', 'id')
+      expect(plate_id).not_to be_nil, "Could not extract plate id from response: #{response.body}"
+      Plate.find(plate_id)
     end
 
     shared_examples_for 'a successful plate creation' do
@@ -121,8 +122,8 @@ describe 'Plates API', with: :api_v2, tags: :lighthouse do
         plate_factory.save
         plate = plate_factory.plate
         barcode = plate.barcodes.first.barcode
-        api_get "/api/v2/plates?filter[barcode=#{barcode}&include=purpose,parents"
-        expect(response).to have_http_status(:success)
+        api_get "/api/v2/plates?filter[barcode]=#{barcode}&include=purpose,parents"
+        expect(response).to have_http_status(:success), "Status: #{response.status}. Body: #{response.body}"
       end
     end
 

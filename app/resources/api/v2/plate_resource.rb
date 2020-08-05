@@ -12,22 +12,22 @@ module Api
       default_includes :uuid_object, :barcodes, :plate_purpose, :transfer_requests
 
       # Associations:
-      has_one :purpose, readonly: true, foreign_key: :plate_purpose_id
+      has_one :purpose, immutable: true, foreign_key: :plate_purpose_id
       has_one :custom_metadatum_collection
 
       has_many :samples, readonly: true
       has_many :studies, readonly: true
       has_many :projects, readonly: true
-      has_many :wells, readonly: true
-      has_many :comments, readonly: true
+      has_many :wells, immutable: true
+      has_many :comments
 
-      has_many :ancestors, readonly: true, polymorphic: true
-      has_many :descendants, readonly: true, polymorphic: true
-      has_many :parents, readonly: true, polymorphic: true
-      has_many :children, readonly: true, polymorphic: true
+      has_many :ancestors, readonly: true
+      has_many :descendants, readonly: true
+      has_many :parents, readonly: true
+      has_many :children, readonly: true
 
-      has_many :child_plates, readonly: true
-      has_many :child_tubes, readonly: true
+      has_many :child_plates, readonly: true, class_name: 'Plate'
+      has_many :child_tubes, readonly: true, class_name: 'Tube'
 
       # Attributes
       attribute :uuid, readonly: true
@@ -66,3 +66,11 @@ module Api
     end
   end
 end
+class Api::V2::AncestorResource < JSONAPI::Resource; end
+class Api::V2::AncestorsController < JSONAPI::ResourceController; end
+class Api::V2::DescendantResource < JSONAPI::Resource; end
+class Api::V2::DescendantsController < JSONAPI::ResourceController; end
+class Api::V2::ParentResource < JSONAPI::Resource; end
+class Api::V2::ParentsController < JSONAPI::ResourceController; end
+class Api::V2::ChildResource < JSONAPI::Resource; end
+class Api::V2::ChildrenController < JSONAPI::ResourceController; end
