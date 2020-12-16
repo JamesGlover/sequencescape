@@ -1,0 +1,195 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will download a prebuilt Ruby version, install dependencies and run tests with Rake
+# For more information see: https://github.com/marketplace/actions/setup-ruby-jruby-and-truffleruby
+
+name: Ruby Test
+env:
+  TZ: Europe/London
+  CUCUMBER_FORMAT: summary
+# Linting is cheap, so we'll lint freely.
+on:
+  - push
+  - pull_request
+
+jobs:
+  rake_tests:
+
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+    # Services
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idservices
+    services:
+      mysql:
+        # Use the Mysql docker image https://hub.docker.com/_/mysql
+        image: mysql:5.7 # Using 5.7 to map to what is used in production.
+        ports:
+         - 3306 # Default port mappings
+         # Monitor the health of the container to mesaure when it is ready
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        env:
+          MYSQL_ROOT_PASSWORD: '' # Set root PW to nothing
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7 # ruby/setup-ruby@v1 doesn't support specifying minor releases
+    # Establish a cache of downloaded gems to improve performance
+    - name: Cache gems
+      uses: actions/cache@v2
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-tests-${{ hashFiles('**/Gemfile.lock') }}
+        # If we don't find the specific cache we want, fallback to the last raketests
+        # cache, then finally any cache for this repo.
+        # Github looks for the newest cache beginning with the first entry, before
+        # falling back the the second if none is present.
+        restore-keys: |
+          ${{ runner.os }}-tests-
+          ${{ runner.os }}-
+    # Install only the gems needed for testing
+    # Keep an eye on https://github.com/rubygems/bundler-features/issues/59
+    # in case bundler add an only flag
+    # We also set the install path to vendor/bundle to assist with out caching
+    # bin/setup handles the rest of the configuration for us.
+    - name: Setup environment
+      env:
+        DBPORT: ${{ job.services.mysql.ports[3306] }}
+      run: |
+        bundle config path vendor/bundle
+        bundle config set without 'warehouse deployment profile development cucumber'
+        bin/setup
+    # Actually run our tests
+    - name: Run rake tests
+      env:
+        DBPORT: ${{ job.services.mysql.ports[3306] }}
+      run: bundle exec rake test
+  rspec_tests:
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+    # Services
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idservices
+    services:
+      mysql:
+        # Use the Mysql docker image https://hub.docker.com/_/mysql
+        image: mysql:5.7 # Using 5.7 to map to what is used in production.
+        ports:
+         - 3306 # Default port mappings
+         # Monitor the health of the container to mesaure when it is ready
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        env:
+          MYSQL_ROOT_PASSWORD: '' # Set root PW to nothing
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    # Sets up the matrix for knapsack builds
+    strategy:
+      matrix:
+        ci_node_total: [3]
+        ci_node_index: [0,1,2]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7 # ruby/setup-ruby@v1 doesn't support specifying minor releases
+    # Establish a cache of downloaded gems to improve performance
+    - name: Cache gems
+      uses: actions/cache@v2
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-tests-${{ hashFiles('**/Gemfile.lock') }}
+        # If we don't find the specific cache we want, fallback to the last raketests
+        # cache, then finally any cache for this repo.
+        # Github looks for the newest cache beginning with the first entry, before
+        # falling back the the second if none is present.
+        restore-keys: |
+          ${{ runner.os }}-tests-
+          ${{ runner.os }}-
+    # Install only the gems needed for testing
+    # Keep an eye on https://github.com/rubygems/bundler-features/issues/59
+    # in case bundler add an only flag
+    # We also set the install path to vendor/bundle to assist with out caching
+    # bin/setup handles the rest of the configuration for us.
+    - name: Setup environment
+      env:
+        DBPORT: ${{ job.services.mysql.ports[3306] }}
+      run: |
+        bundle config path vendor/bundle
+        bundle config set without 'warehouse deployment profile development cucumber'
+        bin/setup
+        bundle exec rails webdrivers:chromedriver:update
+        bundle exec rake assets:precompile
+    # Actually run our tests
+    - name: Run rspec tests
+      env:
+        CI_NODE_TOTAL: ${{ matrix.ci_node_total }}
+        CI_NODE_INDEX: ${{ matrix.ci_node_index }}
+        DBPORT: ${{ job.services.mysql.ports[3306] }}
+      run: bundle exec rake "knapsack:rspec[--fail-fast]"
+  cucumber_tests:
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: cucumber
+    # Services
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idservices
+    services:
+      mysql:
+        # Use the Mysql docker image https://hub.docker.com/_/mysql
+        image: mysql:5.7 # Using 5.7 to map to what is used in production.
+        ports:
+         - 3306 # Default port mappings
+         # Monitor the health of the container to mesaure when it is ready
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        env:
+          MYSQL_ROOT_PASSWORD: '' # Set root PW to nothing
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    # Sets up the matrix for knapsack builds
+    strategy:
+      matrix:
+        ci_node_total: [2]
+        ci_node_index: [0,1]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7 # ruby/setup-ruby@v1 doesn't support specifying minor releases
+    # Establish a cache of downloaded gems to improve performance
+    - name: Cache gems
+      uses: actions/cache@v2
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-tests-${{ hashFiles('**/Gemfile.lock') }}
+        # If we don't find the specific cache we want, fallback to the last raketests
+        # cache, then finally any cache for this repo.
+        # Github looks for the newest cache beginning with the first entry, before
+        # falling back the the second if none is present.
+        restore-keys: |
+          ${{ runner.os }}-tests-
+          ${{ runner.os }}-
+    # Install only the gems needed for testing
+    # Keep an eye on https://github.com/rubygems/bundler-features/issues/59
+    # in case bundler add an only flag
+    # We also set the install path to vendor/bundle to assist with out caching
+    # bin/setup handles the rest of the configuration for us.
+    - name: Setup environment
+      env:
+        DBPORT: ${{ job.services.mysql.ports[3306] }}
+      run: |
+        bundle config path vendor/bundle
+        bundle config set without 'warehouse deployment profile development cucumber'
+        bin/setup
+        bundle exec rails webdrivers:chromedriver:update
+        bundle exec rake assets:precompile
+    # Actually run our tests
+    - name: Run rspec tests
+      env:
+        CI_NODE_TOTAL: ${{ matrix.ci_node_total }}
+        CI_NODE_INDEX: ${{ matrix.ci_node_index }}
+        DBPORT: ${{ job.services.mysql.ports[3306] }}
+      run: bundle exec rake knapsack:cucumber

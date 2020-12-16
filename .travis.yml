@@ -37,9 +37,9 @@ jobs:
     name: Coverage
     after_script:
     - "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
-  - if: type != cron AND tag IS blank
-    script: bundle exec rubocop
-    name: Rubocop
+  # - if: type != cron AND tag IS blank
+  #   script: bundle exec rubocop
+  #   name: Rubocop
   - if: type != cron AND tag IS blank
     env:
     - RUBYOPT='-W0'
