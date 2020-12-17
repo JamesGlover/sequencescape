@@ -175,13 +175,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: vendor/bundle
-        key: ${{ runner.os }}-tests-${{ hashFiles('**/Gemfile.lock') }}
+        key: ${{ runner.os }}-cucumber-${{ hashFiles('**/Gemfile.lock') }}
         # If we don't find the specific cache we want, fallback to the last raketests
         # cache, then finally any cache for this repo.
         # Github looks for the newest cache beginning with the first entry, before
         # falling back the the second if none is present.
         restore-keys: |
-          ${{ runner.os }}-tests-
+          ${{ runner.os }}-cucumber-
           ${{ runner.os }}-
     # Install only the gems needed for testing
     # Keep an eye on https://github.com/rubygems/bundler-features/issues/59
@@ -193,7 +193,7 @@ jobs:
         DBPORT: ${{ job.services.mysql.ports[3306] }}
       run: |
         bundle config path vendor/bundle
-        bundle config set without 'warehouse deployment profile development cucumber'
+        bundle config set without 'warehouse deployment profile development test'
         bin/setup
         bundle exec rails webdrivers:chromedriver:update
         bundle exec rake assets:precompile
