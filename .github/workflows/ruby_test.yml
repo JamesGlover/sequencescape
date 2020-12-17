@@ -15,14 +15,6 @@ on:
   - pull_request
 
 jobs:
-  start_coverage:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Initialize Code Climate Test Reporter
-      uses: aktions/codeclimate-test-reporter@v1
-      with:
-        codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
-        command: before-build
   rake_tests:
     runs-on: ubuntu-latest
     needs: start_coverage
@@ -77,16 +69,11 @@ jobs:
       env:
         DBPORT: ${{ job.services.mysql.ports[3306] }}
       run: bundle exec rake test
-    - name: Format Code Climate Test Reporter
-      uses: aktions/codeclimate-test-reporter@v1
-      with:
-        codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
-        command: format-coverage -t simplecov -o tmp/codeclimate.minitest.json coverage/.resultset.json
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v2
       with:
-        name: code-coverage-report
-        path: tmp/codeclimate.minitest.json
+        name: codeclimate-${{ github.job }}-${{ matrix.ci_node_index }}
+        path: coverage/.resultset.json
         retention-days: 1
   rspec_tests:
     runs-on: ubuntu-latest
@@ -151,16 +138,11 @@ jobs:
         CI_NODE_INDEX: ${{ matrix.ci_node_index }}
         DBPORT: ${{ job.services.mysql.ports[3306] }}
       run: bundle exec rake "knapsack:rspec[--fail-fast]"
-    - name: Format Code Climate Test Reporter
-      uses: aktions/codeclimate-test-reporter@v1
-      with:
-        codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
-        command: format-coverage -t simplecov -o tmp/codeclimate.rspec.${{ matrix.ci_node_index }}.json coverage/.resultset.json
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v2
       with:
-        name: code-coverage-report
-        path: tmp/codeclimate.rspec.${{ matrix.ci_node_index }}.json
+        name: codeclimate-${{ github.job }}-${{ matrix.ci_node_index }}
+        path: coverage/.resultset.json
         retention-days: 1
   cucumber_tests:
     runs-on: ubuntu-latest
@@ -225,16 +207,11 @@ jobs:
         CI_NODE_INDEX: ${{ matrix.ci_node_index }}
         DBPORT: ${{ job.services.mysql.ports[3306] }}
       run: bundle exec rake knapsack:cucumber
-    - name: Format Code Climate Test Reporter
-      uses: aktions/codeclimate-test-reporter@v1
-      with:
-        codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
-        command: format-coverage -t simplecov -o tmp/codeclimate.cucumber.${{ matrix.ci_node_index }}.json coverage/.resultset.json
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v2
       with:
-        name: code-coverage-report
-        path: tmp/codeclimate.cucumber.${{ matrix.ci_node_index }}.json
+        name: codeclimate-${{ github.job }}-${{ matrix.ci_node_index }}
+        path: coverage/.resultset.json
         retention-days: 1
   end_coverage:
     runs-on: ubuntu-latest
@@ -243,14 +220,16 @@ jobs:
     - name: Fetch coverage results
       uses: actions/download-artifact@v2
       with:
-        path: tmp/coverage
-    - name: Combine test results
-      uses: aktions/codeclimate-test-reporter@v1
+        path: tmp/
+    - name: Publish code coverage
+      uses: paambaati/codeclimate-action@v2.7.5
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
-        codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
-        command: sum-coverage tmp/coverage/*/codeclimate.*.json -p 6 -o tmp/codeclimate.total.json
-    - name: Upload test results
-      uses: aktions/codeclimate-test-reporter@v1
-      with:
-        codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
-        command: upload-coverage -i tmp/codeclimate.total.json
+        coverageLocations: |
+          tmp/codeclimate-rake_tests-
+          tmp/codeclimate-rspec_tests-0
+          tmp/codeclimate-rspec_tests-1
+          tmp/codeclimate-rspec_tests-2
+          tmp/codeclimate-cucumber_tests-0
+          tmp/codeclimate-cucumber_tests-1
