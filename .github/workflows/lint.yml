@@ -56,3 +56,16 @@ jobs:
     # and parallel to try and improve speed
     - name: Run rubocop
       run: bundle exec rubocop --extra-details --display-style-guide --parallel
+  eslint:
+    name: EsLint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Install
+      uses: CultureHQ/actions-yarn@master
+      with:
+        args: install
+    - name: Lint
+      uses: CultureHQ/actions-yarn@master
+      with:
+        args: lint
