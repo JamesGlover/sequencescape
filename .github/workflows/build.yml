@@ -49,8 +49,7 @@ jobs:
         DBPORT: ${{ job.services.mysql.ports[3306] }}
       run: |
         bundle config path vendor/bundle
-        bundle config set without 'warehouse'
-        bundle install
+        bin/setup
     # Actually run our build
     - name: Compile Build
       run: ./compile-build
