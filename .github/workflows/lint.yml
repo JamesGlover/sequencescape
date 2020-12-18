@@ -25,8 +25,15 @@ jobs:
     - uses: actions/checkout@v2
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 2.7 # ruby/setup-ruby@v1 doesn't support specifying minor releases
+      # with:
+      #   bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+      # Note: For smaller projects, you may be better off enabling this, as it will automatically
+      # handle the 'Cache gems and cops' and 'Install dependencies' sections. However:
+      # - It doesn't appear to offer a way to exclude gemsets
+      # - It shares a cache for all actions
+      # We *Need* the first in Sequencescape to avoid needing to install oracle drivers
+      # in CI. And also take advantage of excluding other gemsets for performance reasons.
+      # However without the first issue, simplicity may win out over speed.
     # Establish a cache of downloaded gems to improve performance
     # vendor/bundle and also of the rubocop cache ${{ env.RUBOCOP_CACHE_ROOT }}
     - name: Cache gems and cops
@@ -61,6 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
+    # These two commands essentially ensure yarn is setup and run yarn install and yarn lint respectively
     - name: Install
       uses: CultureHQ/actions-yarn@master
       with:
