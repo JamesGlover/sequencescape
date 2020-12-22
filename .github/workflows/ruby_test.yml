@@ -13,7 +13,7 @@ jobs:
       RAILS_ENV: test
     # Services
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idservices
-    services:
+    services: &mysql_setup
       mysql:
         # Use the Mysql docker image https://hub.docker.com/_/mysql
         image: mysql:5.7 # Using 5.7 to map to what is used in production.
@@ -69,17 +69,7 @@ jobs:
       RAILS_ENV: test
     # Services
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idservices
-    services:
-      mysql:
-        # Use the Mysql docker image https://hub.docker.com/_/mysql
-        image: mysql:5.7 # Using 5.7 to map to what is used in production.
-        ports:
-         - 3306 # Default port mappings
-         # Monitor the health of the container to mesaure when it is ready
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-        env:
-          MYSQL_ROOT_PASSWORD: '' # Set root PW to nothing
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    services: *mysql_setup
     # Sets up the matrix for knapsack builds
     strategy:
       matrix:
@@ -136,17 +126,7 @@ jobs:
       CUCUMBER_FORMAT: summary
     # Services
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idservices
-    services:
-      mysql:
-        # Use the Mysql docker image https://hub.docker.com/_/mysql
-        image: mysql:5.7 # Using 5.7 to map to what is used in production.
-        ports:
-         - 3306 # Default port mappings
-         # Monitor the health of the container to mesaure when it is ready
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-        env:
-          MYSQL_ROOT_PASSWORD: '' # Set root PW to nothing
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    services: *mysql_setup
     # Sets up the matrix for knapsack builds
     strategy:
       matrix:
