@@ -27,7 +27,7 @@ module ViewsSchema
   # Valid security options, first option is default
   SECURITIES = %w[DEFINER INVOKER].freeze
   VIEW_STATEMENT = '%{action} ALGORITHM=%<algorithm>s SQL SECURITY %<security>s VIEW `%<name>s` AS %<statement>s'.freeze
-  REGEXP = /\ACREATE ALGORITHM=(?<algorithm>\w*) DEFINER=`[^`]*`@`[^`]*` SQL SECURITY (?<security>\w*) VIEW `[^`]+` AS (?<statement>.*)\z/i.freeze
+  REGEXP = /\ACREATE ALGORITHM=(?<algorithm>\w*) DEFINER=`[^`]*`@`[^`]*` SQL SECURITY (?<security>\w*) VIEW `[^`]+` AS (?<statement>.*)\z/i
 
   def self.each_view
     all_views.each do |name|

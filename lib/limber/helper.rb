@@ -2,7 +2,7 @@
 
 module Limber::Helper
   PIPELINE = 'Limber-Htp'
-  PIPELINE_REGEX = /Illumina-[A-z]+ /.freeze
+  PIPELINE_REGEX = /Illumina-[A-z]+ /
   PRODUCTLINE = 'Illumina-Htp'
   DEFAULT_REQUEST_CLASS = 'IlluminaHtp::Requests::StdLibraryRequest'
   DEFAULT_LIBRARY_TYPES = ['Standard'].freeze
