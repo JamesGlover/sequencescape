@@ -103,8 +103,6 @@ GEM
     ast (2.4.1)
     autoprefixer-rails (10.1.0.0)
       execjs
-    binding_of_caller (0.8.0)
-      debug_inspector (>= 0.0.1)
     bootsnap (1.5.1)
       msgpack (~> 1.0)
     bootstrap (4.5.3)
@@ -183,7 +181,6 @@ GEM
       cucumber-messages (~> 13.0, >= 13.0.1)
     daemons (1.3.1)
     database_cleaner (1.8.5)
-    debug_inspector (1.0.0)
     delayed_job (4.1.9)
       activesupport (>= 3.0, < 6.2)
     delayed_job_active_record (4.1.5)
@@ -296,9 +293,6 @@ GEM
     pry-byebug (3.9.0)
       byebug (~> 11.0)
       pry (~> 0.13.0)
-    pry-stack_explorer (0.5.1)
-      binding_of_caller (~> 0.7)
-      pry (~> 0.13)
     public_suffix (4.0.6)
     puma (5.1.1)
       nio4r (~> 2.0)
@@ -570,7 +564,6 @@ DEPENDENCIES
   nokogiri
   pry
   pry-byebug
-  pry-stack_explorer
   puma
   rack-acceptable
   rack-cors
