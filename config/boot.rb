@@ -1,7 +1,7 @@
 ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../Gemfile', __dir__)
 
 require 'bundler/setup' # Set up gems listed in the Gemfile.
-
+require 'fileutils'
 # Bootsnap does not purge its cache, which can cause boot-times to increase
 # over time. This change will purge the cache every 30 days. In development
 # I saw a reduction in boot time from 44 seconds, to 17.
