@@ -15,5 +15,4 @@ SimpleCov.start 'rails' do
   enable_coverage :branch
 
   # You can add_filter here to add anything else you don't want to cover
-
 end
