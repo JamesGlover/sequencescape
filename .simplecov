@@ -16,9 +16,4 @@ SimpleCov.start 'rails' do
 
   # You can add_filter here to add anything else you don't want to cover
 
-  at_exit do
-    result = SimpleCov.result
-    result.command_name = "#{result.command_name}.#{$PID}"
-    result.format!
-  end
 end
