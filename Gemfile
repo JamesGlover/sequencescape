@@ -108,6 +108,9 @@ group :default do
 
   # Authorization
   gem 'cancancan'
+
+  # Magic eager loading
+  gem 'goldiloader'
 end
 
 group :warehouse do
